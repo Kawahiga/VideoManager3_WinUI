@@ -8,60 +8,45 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d">
 
-    <!-- メインとなるGridレイアウト -->
+    <!-- メインのGridを定義します。2行2列の構成です。 -->
     <Grid>
-        <!-- 
-            Gridの定義:
-            - 2つの列 (左ペイン、右ペイン)
-            - 2つの行 (上部エリア、下部ペイン)
-        -->
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" MinWidth="100"/> <!-- 左ペインの初期幅と最小幅 -->
-            <ColumnDefinition Width="5"/> <!-- GridSplitter用の列 -->
-            <ColumnDefinition Width="*"/> <!-- 右ペイン (残りの領域をすべて使用) -->
-        </Grid.ColumnDefinitions>
+        <!-- 行の定義 -->
         <Grid.RowDefinitions>
-            <RowDefinition Height="*"/> <!-- 上部エリア (残りの領域をすべて使用) -->
-            <RowDefinition Height="5"/> <!-- GridSplitter用の行 -->
-            <RowDefinition Height="150" MinHeight="80"/> <!-- 下部ペインの初期高さと最小高さ -->
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="200" />
         </Grid.RowDefinitions>
 
-        <!-- 左ペイン (タグツリー用) -->
-        <Border Grid.Column="0" Grid.Row="0" Background="#f0f0f0">
-            <TextBlock Text="左ペイン (タグツリー)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <!-- 列の定義 -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 左ペイン (タグツリー) -->
+        <!-- Grid.RowSpan="3" を設定することで、このペインが3行分をすべて使用するようにします。-->
+        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" Background="#f0f0f0" BorderBrush="Gray" BorderThickness="0,0,1,0">
+            <TextBlock Text="タグツリー" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
 
-        <!-- 垂直方向のGridSplitter -->
-        <controls:GridSplitter 
-            Grid.Column="1" 
-            Grid.Row="0"
-            Grid.RowSpan="3"
-            Width="5" 
-            ResizeBehavior="BasedOnAlignment"
-            ResizeDirection="Columns"
-            Background="LightGray"
-            HorizontalAlignment="Center" />
+        <!-- 垂直方向のGridSplitter (左ペインと右ペインの間) -->
+        <!-- CommunityToolkitのGridSplitterを使用します -->
+        <controls:GridSplitter Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Width="12" Background="Transparent" HorizontalAlignment="Center" />
 
-        <!-- 右ペイン (ファイル一覧用) -->
-        <Border Grid.Column="2" Grid.Row="0" Background="#e0e0e0">
-            <TextBlock Text="右ペイン (ファイル一覧)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <!-- 右上ペイン (ファイルリスト) -->
+        <Border Grid.Row="0" Grid.Column="2" Background="#e0e0e0">
+            <TextBlock Text="ファイルリスト" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
-        
-        <!-- 水平方向のGridSplitter -->
-        <controls:GridSplitter 
-            Grid.Column="0" 
-            Grid.ColumnSpan="3"
-            Grid.Row="1" 
-            Height="5" 
-            ResizeBehavior="BasedOnAlignment"
-            ResizeDirection="Rows"
-            Background="LightGray"
-            VerticalAlignment="Center" />
 
-        <!-- 下部ペイン (詳細情報用) -->
-        <!-- Grid.ColumnSpan="3" で3つの列にまたがって表示 -->
-        <Border Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3" Background="#d0d0d0">
-            <TextBlock Text="下部ペイン (詳細情報)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        <!-- 水平方向のGridSplitter (右上ペインと右下ペインの間) -->
+        <!-- CommunityToolkitのGridSplitterを使用します -->
+        <controls:GridSplitter Grid.Row="1" Grid.Column="2" Height="12" Background="Transparent" VerticalAlignment="Center" />
+
+        <!-- 右下ペイン (詳細情報) -->
+        <Border Grid.Row="2" Grid.Column="2" Background="#d0d0d0">
+            <TextBlock Text="詳細情報" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
+
     </Grid>
 </Window>

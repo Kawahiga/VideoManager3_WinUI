@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="VideoManager3_WinUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,14 +5,63 @@
     xmlns:local="using:VideoManager3_WinUI"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="VideoManager3_WinUI">
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    mc:Ignorable="d">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-
+    <!-- メインとなるGridレイアウト -->
     <Grid>
+        <!-- 
+            Gridの定義:
+            - 2つの列 (左ペイン、右ペイン)
+            - 2つの行 (上部エリア、下部ペイン)
+        -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200" MinWidth="100"/> <!-- 左ペインの初期幅と最小幅 -->
+            <ColumnDefinition Width="5"/> <!-- GridSplitter用の列 -->
+            <ColumnDefinition Width="*"/> <!-- 右ペイン (残りの領域をすべて使用) -->
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/> <!-- 上部エリア (残りの領域をすべて使用) -->
+            <RowDefinition Height="5"/> <!-- GridSplitter用の行 -->
+            <RowDefinition Height="150" MinHeight="80"/> <!-- 下部ペインの初期高さと最小高さ -->
+        </Grid.RowDefinitions>
 
+        <!-- 左ペイン (タグツリー用) -->
+        <Border Grid.Column="0" Grid.Row="0" Background="#f0f0f0">
+            <TextBlock Text="左ペイン (タグツリー)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Border>
+
+        <!-- 垂直方向のGridSplitter -->
+        <controls:GridSplitter 
+            Grid.Column="1" 
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Width="5" 
+            ResizeBehavior="BasedOnAlignment"
+            ResizeDirection="Columns"
+            Background="LightGray"
+            HorizontalAlignment="Center" />
+
+        <!-- 右ペイン (ファイル一覧用) -->
+        <Border Grid.Column="2" Grid.Row="0" Background="#e0e0e0">
+            <TextBlock Text="右ペイン (ファイル一覧)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Border>
+        
+        <!-- 水平方向のGridSplitter -->
+        <controls:GridSplitter 
+            Grid.Column="0" 
+            Grid.ColumnSpan="3"
+            Grid.Row="1" 
+            Height="5" 
+            ResizeBehavior="BasedOnAlignment"
+            ResizeDirection="Rows"
+            Background="LightGray"
+            VerticalAlignment="Center" />
+
+        <!-- 下部ペイン (詳細情報用) -->
+        <!-- Grid.ColumnSpan="3" で3つの列にまたがって表示 -->
+        <Border Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3" Background="#d0d0d0">
+            <TextBlock Text="下部ペイン (詳細情報)" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Border>
     </Grid>
 </Window>

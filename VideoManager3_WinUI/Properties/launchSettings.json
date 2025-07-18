@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "VideoManager3_WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "VideoManager3_WinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,16 +1,32 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.ObjectModel;
 
 namespace VideoManager3_WinUI;
 
-public class MainViewModel
+public partial class MainViewModel : ObservableObject
 {
+    // 左ペインのタグツリー用アイテム
     public ObservableCollection<TagItem> TagItems { get; } = new();
+
+    // 右ペインの動画一覧用アイテム
+    public ObservableCollection<VideoItem> VideoItems { get; } = new();
 
     public MainViewModel()
     {
         LoadDummyTags();
+        LoadDummyVideos(); // ダミーの動画データを読み込むメソッドを呼び出します。
+    }
+
+    // 右ペインに表示する大量のダミーデータを生成します。
+    // UI仮想化の効果を確認するため、10,000件のアイテムを作成します。
+    private void LoadDummyVideos()
+    {
+        for (int i = 1; i <= 10000; i++)
+        {
+            VideoItems.Add(new VideoItem { FileName = $"Video_{i:D5}.mp4", FilePath = $"C:\\Dummy\\Path\\Video_{i:D5}.mp4" });
+        }
     }
 
     private void LoadDummyTags()

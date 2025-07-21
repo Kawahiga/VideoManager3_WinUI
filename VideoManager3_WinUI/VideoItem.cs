@@ -5,16 +5,31 @@ namespace VideoManager3_WinUI;
 
 public partial class VideoItem : ObservableObject
 {
-    // ファイル名
-    [ObservableProperty]
+    // プライベートなフィールドを定義
     private string? _fileName;
-
-    // ファイルパス
-    [ObservableProperty]
     private string? _filePath;
-
-    // サムネイル画像
-    // 現時点ではダミーですが、将来的には非同期で読み込みます。
-    [ObservableProperty]
     private ImageSource? _thumbnail;
+
+    // ファイル名のプロパティ
+    // [ObservableProperty]を使わず、手動でプロパティを定義します。
+    // setの中でSetPropertyを呼び出すことで、値が変更されたことをUIに通知します。
+    public string? FileName
+    {
+        get => _fileName;
+        set => SetProperty(ref _fileName, value);
+    }
+
+    // ファイルパスのプロパティ
+    public string? FilePath
+    {
+        get => _filePath;
+        set => SetProperty(ref _filePath, value);
+    }
+
+    // サムネイル画像のプロパティ
+    public ImageSource? Thumbnail
+    {
+        get => _thumbnail;
+        set => SetProperty(ref _thumbnail, value);
+    }
 }

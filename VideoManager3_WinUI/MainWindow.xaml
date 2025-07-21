@@ -3,10 +3,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:VideoManager3_WinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
-    xmlns:local="using:VideoManager3_WinUI"
-    xmlns:xaml="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
     <!-- 
@@ -43,6 +42,7 @@
         </TreeView>
 
         <!-- 左右ペイン間のGridSplitter -->
+        <!-- CommunityToolkitのGridSplitterを使用するように修正 -->
         <controls:GridSplitter
             Grid.Row="0"
             Grid.Column="1"
@@ -89,6 +89,7 @@
         </GridView>
 
         <!-- 上下ペイン間のGridSplitter -->
+        <!-- CommunityToolkitのGridSplitterを使用するように修正 -->
         <controls:GridSplitter
             Grid.Row="1"
             Grid.Column="0"

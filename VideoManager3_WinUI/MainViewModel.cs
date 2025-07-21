@@ -25,6 +25,7 @@ public partial class MainViewModel : ObservableObject
     {
         for (int i = 1; i <= 10000; i++)
         {
+            // VideoItemのプロパティ名(FileName, FilePath)はソースジェネレーターによって生成されるため、変更の必要はありません。
             VideoItems.Add(new VideoItem { FileName = $"Video_{i:D5}.mp4", FilePath = $"C:\\Dummy\\Path\\Video_{i:D5}.mp4" });
         }
     }

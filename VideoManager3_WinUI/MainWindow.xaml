@@ -2,115 +2,84 @@
     x:Class="VideoManager3_WinUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:VideoManager3_WinUI"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     mc:Ignorable="d">
 
-    <!-- 
-    仕様書に基づき、GridとGridSplitterを使用して3ペインレイアウトを定義します。
-    - 左ペイン: タグツリー (Column 0)
-    - 右ペイン: 動画一覧 (Column 2)
-    - 下部ペイン: 詳細情報 (Row 2)
-    -->
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="120" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" MinWidth="150" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
 
-        <!-- 左ペイン: タグツリー -->
-        <TreeView
-            x:Name="TagsTreeView"
-            Grid.Row="0"
-            Grid.Column="0">
-            <TreeView.ItemTemplate>
-                <DataTemplate x:DataType="local:TagItem">
-                    <TreeViewItem
-                        Content="{x:Bind Name}"
-                        Foreground="{x:Bind Color}"
-                        ItemsSource="{x:Bind Children}" />
-                </DataTemplate>
-            </TreeView.ItemTemplate>
-        </TreeView>
+        <!-- 上部コマンドバー -->
+        <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
+            <AppBarButton Icon="Add" Label="フォルダの追加" Command="{x:Bind ViewModel.AddFolderCommand}"/>
+            <AppBarButton Icon="Tag" Label="タグの追加" Command="{x:Bind ViewModel.AddTagCommand}"/>
+        </CommandBar>
 
-        <!-- 左右ペイン間のGridSplitter -->
-        <!-- CommunityToolkitのGridSplitterを使用するように修正 -->
-        <controls:GridSplitter
-            Grid.Row="0"
-            Grid.Column="1"
-            Width="5"
-            HorizontalAlignment="Center"
-            Background="LightGray" />
+        <!-- メインコンテンツエリア -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <!-- 左ペイン: タグツリー -->
+                <ColumnDefinition Width="200" MinWidth="100"/>
+                <!-- 縦方向のGridSplitter -->
+                <ColumnDefinition Width="5"/>
+                <!-- 右エリア全体 -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- 右ペイン: 動画一覧 -->
-        <!-- ItemsSourceをViewModelのVideoItemsプロパティにバインドします。 -->
-        <!-- GridViewはデフォルトでUI仮想化が有効になっています。 -->
-        <GridView
-            Grid.Row="0"
-            Grid.Column="2"
-            ItemsSource="{x:Bind ViewModel.VideoItems}"
-            SelectionMode="Extended">
-            <GridView.ItemTemplate>
-                <DataTemplate x:DataType="local:VideoItem">
-                    <!-- 
-                    サムネイルとファイル名を表示するためのテンプレートです。
-                    現時点ではサムネイル部分は背景色のみでプレースホルダーとしています。
-                    -->
-                    <StackPanel
-                        Width="160"
-                        Height="140"
-                        Margin="5"
-                        Padding="5"
-                        Background="LightGray"
-                        BorderBrush="Black"
-                        BorderThickness="1">
-                        <!-- TODO: ここにサムネイル画像を表示するImageコントロールを配置します -->
-                        <Rectangle
-                            Width="150"
-                            Height="90"
-                            Fill="DimGray" />
-                        <TextBlock
-                            Margin="0,5,0,0"
-                            HorizontalAlignment="Center"
-                            Text="{x:Bind FileName}"
-                            TextTrimming="CharacterEllipsis"
-                            TextWrapping="NoWrap" />
+            <!-- 左ペイン: タグツリー -->
+            <TreeView Grid.Column="0"
+                      ItemsSource="{x:Bind ViewModel.TagItems}"
+                      SelectedItem="{x:Bind ViewModel.SelectedTagItem, Mode=TwoWay}">
+                <TreeView.ItemTemplate>
+                    <DataTemplate x:DataType="local:TagItem">
+                        <TreeViewItem ItemsSource="{x:Bind Children}" Content="{x:Bind Name}"/>
+                    </DataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+
+            <!-- 縦方向のGridSplitter -->
+            <controls:GridSplitter Grid.Column="1" Width="5" ResizeBehavior="BasedOnAlignment" ResizeDirection="Columns" Background="LightGray"/>
+
+            <!-- 右エリア: ここに上下分割のGridを配置 -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <!-- 右上ペイン: ファイルリスト -->
+                    <RowDefinition Height="*" MinHeight="150"/>
+                    <!-- 横方向のGridSplitter -->
+                    <RowDefinition Height="5"/>
+                    <!-- 右下ペイン: 詳細情報 -->
+                    <RowDefinition Height="250" MinHeight="150"/>
+                </Grid.RowDefinitions>
+
+                <!-- 右上ペイン: ファイルリスト -->
+                <ListView Grid.Row="0"
+                          ItemsSource="{x:Bind ViewModel.VideoItems}"
+                          SelectedItem="{x:Bind ViewModel.SelectedItem, Mode=TwoWay}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:VideoItem">
+                            <TextBlock Text="{x:Bind Name}"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <!-- 横方向のGridSplitter -->
+                <controls:GridSplitter Grid.Row="1" Height="5" ResizeBehavior="BasedOnAlignment" ResizeDirection="Rows" Background="LightGray"/>
+
+                <!-- 右下ペイン: 詳細情報 -->
+                <Grid Grid.Row="2" Padding="10">
+                    <StackPanel Visibility="{x:Bind ConvertObjectToVisibility(ViewModel.SelectedItem), Mode=OneWay}">
+                        <TextBlock Text="{x:Bind GetItemName(ViewModel.SelectedItem), Mode=OneWay}" FontWeight="Bold" TextWrapping="Wrap"/>
+                        <TextBlock Text="{x:Bind FormatLastModified(ViewModel.SelectedItem), Mode=OneWay}" Margin="0,5,0,0"/>
+                        <TextBlock Text="{x:Bind GetItemPath(ViewModel.SelectedItem), Mode=OneWay}" TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
-                </DataTemplate>
-            </GridView.ItemTemplate>
-        </GridView>
-
-        <!-- 上下ペイン間のGridSplitter -->
-        <!-- CommunityToolkitのGridSplitterを使用するように修正 -->
-        <controls:GridSplitter
-            Grid.Row="1"
-            Grid.Column="0"
-            Grid.ColumnSpan="3"
-            Height="5"
-            VerticalAlignment="Center"
-            Background="LightGray"
-            ResizeDirection="Rows" />
-
-        <!-- 下部ペイン: 詳細情報 -->
-        <Grid
-            Grid.Row="2"
-            Grid.Column="0"
-            Grid.ColumnSpan="3"
-            Padding="10"
-            Background="#FFEAEAEA">
-            <!-- TODO: 選択されたアイテムの詳細情報をここにバインドします -->
-            <TextBlock
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Text="詳細情報パネル" />
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
+

@@ -1,35 +1,61 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI.Xaml.Media;
+using System;
+using System.ComponentModel;
 
-namespace VideoManager3_WinUI;
-
-public partial class VideoItem : ObservableObject
+namespace VideoManager3_WinUI
 {
-    // プライベートなフィールドを定義
-    private string? _fileName;
-    private string? _filePath;
-    private ImageSource? _thumbnail;
-
-    // ファイル名のプロパティ
-    // [ObservableProperty]を使わず、手動でプロパティを定義します。
-    // setの中でSetPropertyを呼び出すことで、値が変更されたことをUIに通知します。
-    public string? FileName
+    // VideoまたはFolderを表すデータモデル
+    public class VideoItem : INotifyPropertyChanged
     {
-        get => _fileName;
-        set => SetProperty(ref _fileName, value);
-    }
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-    // ファイルパスのプロパティ
-    public string? FilePath
-    {
-        get => _filePath;
-        set => SetProperty(ref _filePath, value);
-    }
+        private int _id;
+        public int Id
+        {
+            get => _id;
+            set { _id = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Id))); }
+        }
 
-    // サムネイル画像のプロパティ
-    public ImageSource? Thumbnail
-    {
-        get => _thumbnail;
-        set => SetProperty(ref _thumbnail, value);
+        private string _name = "";
+        public string Name
+        {
+            get => _name;
+            set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
+        }
+
+        private string _path = "";
+        public string Path
+        {
+            get => _path;
+            set { _path = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Path))); }
+        }
+
+        private byte[]? _thumbnail;
+        public byte[]? Thumbnail
+        {
+            get => _thumbnail;
+            set { _thumbnail = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Thumbnail))); }
+        }
+
+        private DateTime _lastModified;
+        public DateTime LastModified
+        {
+            get => _lastModified;
+            set { _lastModified = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastModified))); }
+        }
+
+        private string? _length;
+        public string? Length
+        {
+            get => _length;
+            set { _length = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Length))); }
+        }
+
+        private bool _isFolder;
+        public bool IsFolder
+        {
+            get => _isFolder;
+            set { _isFolder = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFolder))); }
+        }
     }
 }
+

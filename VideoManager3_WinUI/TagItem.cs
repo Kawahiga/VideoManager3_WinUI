@@ -1,16 +1,43 @@
-using Microsoft.UI.Xaml.Media;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
-namespace VideoManager3_WinUI;
-
-public class TagItem
+namespace VideoManager3_WinUI
 {
-    // タグ/グループの名前
-    public string Name { get; set; }
+    // Tagを表すデータモデル
+    public class TagItem : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-    // 子アイテムのコレクション（階層構造のため）
-    public ObservableCollection<TagItem> Children { get; set; } = new();
+        private int _id;
+        public int Id
+        {
+            get => _id;
+            set { _id = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Id))); }
+        }
 
-    // タグ/グループの色
-    public Brush Color { get; set; }
+        private string _name = "";
+        public string Name
+        {
+            get => _name;
+            set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
+        }
+
+        private string? _color;
+        public string? Color
+        {
+            get => _color;
+            set { _color = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color))); }
+        }
+
+        private int? _parentId;
+        public int? ParentId
+        {
+            get => _parentId;
+            set { _parentId = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ParentId))); }
+        }
+
+        // 階層構造のための子要素
+        public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
+    }
 }
+

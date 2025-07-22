@@ -1,72 +1,127 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.UI;
-using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
-namespace VideoManager3_WinUI;
-
-public partial class MainViewModel : ObservableObject
+namespace VideoManager3_WinUI
 {
-    // 左ペインのタグツリー用アイテム
-    public ObservableCollection<TagItem> TagItems { get; } = new();
-
-    // 右ペインの動画一覧用アイテム
-    public ObservableCollection<VideoItem> VideoItems { get; } = new();
-
-    public MainViewModel()
+    public class MainViewModel : INotifyPropertyChanged
     {
-        LoadDummyTags();
-        LoadDummyVideos(); // ダミーの動画データを読み込むメソッドを呼び出します。
-    }
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-    // 右ペインに表示する大量のダミーデータを生成します。
-    // UI仮想化の効果を確認するため、10,000件のアイテムを作成します。
-    private void LoadDummyVideos()
-    {
-        for (int i = 1; i <= 10000; i++)
+        // Viewにダイアログ表示を依頼するためのコールバック関数
+        public Func<Task<string?>>? ShowAddTagDialogAsync { get; set; }
+
+        public ObservableCollection<VideoItem> VideoItems { get; set; }
+        public ObservableCollection<TagItem> TagItems { get; set; }
+
+        private VideoItem? _selectedItem;
+        public VideoItem? SelectedItem
         {
-            // VideoItemのプロパティ名(FileName, FilePath)はソースジェネレーターによって生成されるため、変更の必要はありません。
-            VideoItems.Add(new VideoItem { FileName = $"Video_{i:D5}.mp4", FilePath = $"C:\\Dummy\\Path\\Video_{i:D5}.mp4" });
+            get => _selectedItem;
+            set { if (Equals(_selectedItem, value)) return; _selectedItem = value; OnPropertyChanged(); }
+        }
+        
+        private TagItem? _selectedTagItem;
+        public TagItem? SelectedTagItem
+        {
+            get => _selectedTagItem;
+            set { if (Equals(_selectedTagItem, value)) return; _selectedTagItem = value; OnPropertyChanged(); }
+        }
+
+        public ICommand AddFolderCommand { get; }
+        public ICommand AddTagCommand { get; }
+
+        private IntPtr _hWnd;
+
+        public MainViewModel()
+        {
+            VideoItems = new ObservableCollection<VideoItem>();
+            TagItems = new ObservableCollection<TagItem>();
+            LoadDataFromDatabase();
+
+            AddFolderCommand = new RelayCommand(async (param) => await ExecuteAddFolder());
+            AddTagCommand = new RelayCommand(async (param) => await ExecuteAddTag());
+        }
+
+        // InitializeメソッドからXamlRootの受け取りを削除
+        public void Initialize(IntPtr hWnd)
+        {
+            _hWnd = hWnd;
+        }
+
+        private async Task ExecuteAddFolder()
+        {
+            var folderPicker = new FolderPicker { SuggestedStartLocation = PickerLocationId.VideosLibrary };
+            folderPicker.FileTypeFilter.Add("*");
+            InitializeWithWindow.Initialize(folderPicker, _hWnd);
+
+            StorageFolder folder = await folderPicker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                await ScanAndAddVideos(folder);
+                LoadDataFromDatabase();
+            }
+        }
+
+        private async Task ExecuteAddTag()
+        {
+            // Viewに設定されたダイアログ表示用の関数を呼び出す
+            if (ShowAddTagDialogAsync == null) return;
+
+            var newTagName = await ShowAddTagDialogAsync();
+
+            // 結果がnullでなければ(キャンセルされていなければ)DBに登録
+            if (!string.IsNullOrEmpty(newTagName))
+            {
+                int? parentId = SelectedTagItem?.Id;
+                App.Database.AddTag(newTagName, parentId);
+                LoadDataFromDatabase();
+            }
+        }
+
+        private async Task ScanAndAddVideos(StorageFolder rootFolder)
+        {
+            var videoItems = new ObservableCollection<VideoItem>();
+            var subFolders = await rootFolder.GetFoldersAsync();
+            foreach (var subFolder in subFolders)
+            {
+                videoItems.Add(new VideoItem { Name = subFolder.Name, Path = subFolder.Path, LastModified = subFolder.DateCreated.DateTime, IsFolder = true });
+            }
+            var files = await rootFolder.GetFilesAsync();
+            foreach (var file in files.Where(f => f.FileType.Equals(".mp4", StringComparison.OrdinalIgnoreCase)))
+            {
+                var properties = await file.GetBasicPropertiesAsync();
+                videoItems.Add(new VideoItem { Name = file.Name, Path = file.Path, LastModified = properties.DateModified.DateTime, IsFolder = false });
+            }
+            if (videoItems.Any())
+            {
+                App.Database.AddVideoItems(videoItems);
+            }
+        }
+
+        private void LoadDataFromDatabase()
+        {
+            var videos = App.Database.GetVideos();
+            VideoItems.Clear();
+            foreach (var video in videos) { VideoItems.Add(video); }
+
+            var tags = App.Database.GetTags();
+            TagItems.Clear();
+            foreach (var tag in tags) { TagItems.Add(tag); }
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
-
-    private void LoadDummyTags()
-    {
-        var group1 = new TagItem
-        {
-            Name = "ジャンル",
-            Color = new SolidColorBrush(Colors.CornflowerBlue),
-            Children =
-            {
-                new TagItem { Name = "アクション", Color = new SolidColorBrush(Colors.OrangeRed) },
-                new TagItem { Name = "コメディ", Color = new SolidColorBrush(Colors.Gold) },
-            }
-        };
-
-        var group2 = new TagItem
-        {
-            Name = "製作者",
-            Color = new SolidColorBrush(Colors.SeaGreen),
-            Children =
-            {
-                new TagItem
-                {
-                    Name = "スタジオA",
-                    Color = new SolidColorBrush(Colors.LightGreen),
-                    Children =
-                    {
-                        new TagItem { Name = "監督X", Color = new SolidColorBrush(Colors.Turquoise) },
-                        new TagItem { Name = "監督Y", Color = new SolidColorBrush(Colors.Turquoise) }
-                    }
-                },
-                new TagItem { Name = "スタジオB", Color = new SolidColorBrush(Colors.LightGreen) },
-            }
-        };
-
-        var singleTag = new TagItem { Name = "お気に入り", Color = new SolidColorBrush(Colors.HotPink) };
-
-        TagItems.Add(group1);
-        TagItems.Add(group2);
-        TagItems.Add(singleTag);
-    }
 }
+

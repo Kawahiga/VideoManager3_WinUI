@@ -1,127 +1,161 @@
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using WinRT.Interop;
+using Windows.Storage.Streams;
 
 namespace VideoManager3_WinUI
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
+        public ICommand AddFolderCommand { get; }
+        public ICommand ToggleViewCommand { get; }
+        
+        private bool _isGridView = true;
+        public bool IsGridView
+        {
+            get => _isGridView;
+            set
+            {
+                if (_isGridView != value)
+                {
+                    _isGridView = value;
+                    OnPropertyChanged(nameof(IsGridView));
+                    OnPropertyChanged(nameof(IsListView));
+                }
+            }
+        }
+        public bool IsListView => !_isGridView;
 
-        // Viewにダイアログ表示を依頼するためのコールバック関数
-        public Func<Task<string?>>? ShowAddTagDialogAsync { get; set; }
-
-        public ObservableCollection<VideoItem> VideoItems { get; set; }
-        public ObservableCollection<TagItem> TagItems { get; set; }
-
+        // 選択されたアイテムを保持するプロパティを追加
         private VideoItem? _selectedItem;
         public VideoItem? SelectedItem
         {
             get => _selectedItem;
-            set { if (Equals(_selectedItem, value)) return; _selectedItem = value; OnPropertyChanged(); }
-        }
-        
-        private TagItem? _selectedTagItem;
-        public TagItem? SelectedTagItem
-        {
-            get => _selectedTagItem;
-            set { if (Equals(_selectedTagItem, value)) return; _selectedTagItem = value; OnPropertyChanged(); }
-        }
-
-        public ICommand AddFolderCommand { get; }
-        public ICommand AddTagCommand { get; }
-
-        private IntPtr _hWnd;
-
-        public MainViewModel()
-        {
-            VideoItems = new ObservableCollection<VideoItem>();
-            TagItems = new ObservableCollection<TagItem>();
-            LoadDataFromDatabase();
-
-            AddFolderCommand = new RelayCommand(async (param) => await ExecuteAddFolder());
-            AddTagCommand = new RelayCommand(async (param) => await ExecuteAddTag());
+            set
+            {
+                if (_selectedItem != value)
+                {
+                    _selectedItem = value;
+                    OnPropertyChanged(nameof(SelectedItem));
+                }
+            }
         }
 
-        // InitializeメソッドからXamlRootの受け取りを削除
-        public void Initialize(IntPtr hWnd)
+        private readonly DispatcherQueue _dispatcherQueue;
+        private readonly ThumbnailService _thumbnailService;
+        private readonly DatabaseService _databaseService;
+
+        public MainViewModel(DispatcherQueue dispatcherQueue)
         {
-            _hWnd = hWnd;
+            _dispatcherQueue = dispatcherQueue;
+            _thumbnailService = new ThumbnailService();
+
+            var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
+            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+            _databaseService = new DatabaseService(dbPath);
+
+            AddFolderCommand = new RelayCommand(async () => await AddFolder());
+            ToggleViewCommand = new RelayCommand(ToggleView);
+            
+            _ = LoadVideosFromDbAsync();
         }
 
-        private async Task ExecuteAddFolder()
+        private async Task LoadVideosFromDbAsync()
         {
-            var folderPicker = new FolderPicker { SuggestedStartLocation = PickerLocationId.VideosLibrary };
+            var videosFromDb = await _databaseService.GetAllVideosAsync();
+            foreach (var video in videosFromDb)
+            {
+                Videos.Add(video);
+                _ = Task.Run(() => LoadThumbnailAsync(video));
+            }
+        }
+
+        private async Task AddFolder()
+        {
+            var folderPicker = new FolderPicker
+            {
+                SuggestedStartLocation = PickerLocationId.VideosLibrary
+            };
             folderPicker.FileTypeFilter.Add("*");
-            InitializeWithWindow.Initialize(folderPicker, _hWnd);
+
+            if (App.m_window == null) return;
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
+            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
 
             StorageFolder folder = await folderPicker.PickSingleFolderAsync();
             if (folder != null)
             {
-                await ScanAndAddVideos(folder);
-                LoadDataFromDatabase();
+                var files = await folder.GetFilesAsync();
+                foreach (var file in files)
+                {
+                    if (file.FileType.ToLower() == ".mp4")
+                    {
+                        bool exists = false;
+                        foreach (var v in Videos)
+                        {
+                            if (v.FilePath == file.Path)
+                            {
+                                exists = true;
+                                break;
+                            }
+                        }
+
+                        if (!exists)
+                        {
+                            var videoItem = new VideoItem(file.Path);
+                            await _databaseService.AddVideoAsync(videoItem);
+                            Videos.Add(videoItem);
+                            _ = Task.Run(() => LoadThumbnailAsync(videoItem));
+                        }
+                    }
+                }
             }
         }
 
-        private async Task ExecuteAddTag()
+        private async Task LoadThumbnailAsync(VideoItem videoItem)
         {
-            // Viewに設定されたダイアログ表示用の関数を呼び出す
-            if (ShowAddTagDialogAsync == null) return;
+            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
-            var newTagName = await ShowAddTagDialogAsync();
-
-            // 結果がnullでなければ(キャンセルされていなければ)DBに登録
-            if (!string.IsNullOrEmpty(newTagName))
+            if (imageBytes != null && imageBytes.Length > 0)
             {
-                int? parentId = SelectedTagItem?.Id;
-                App.Database.AddTag(newTagName, parentId);
-                LoadDataFromDatabase();
+                _dispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        var bitmapImage = new BitmapImage();
+                        using var stream = new InMemoryRandomAccessStream();
+                        await stream.WriteAsync(imageBytes.AsBuffer());
+                        stream.Seek(0);
+                        await bitmapImage.SetSourceAsync(stream);
+
+                        videoItem.Thumbnail = bitmapImage;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}");
+                    }
+                });
             }
         }
 
-        private async Task ScanAndAddVideos(StorageFolder rootFolder)
+        private void ToggleView()
         {
-            var videoItems = new ObservableCollection<VideoItem>();
-            var subFolders = await rootFolder.GetFoldersAsync();
-            foreach (var subFolder in subFolders)
-            {
-                videoItems.Add(new VideoItem { Name = subFolder.Name, Path = subFolder.Path, LastModified = subFolder.DateCreated.DateTime, IsFolder = true });
-            }
-            var files = await rootFolder.GetFilesAsync();
-            foreach (var file in files.Where(f => f.FileType.Equals(".mp4", StringComparison.OrdinalIgnoreCase)))
-            {
-                var properties = await file.GetBasicPropertiesAsync();
-                videoItems.Add(new VideoItem { Name = file.Name, Path = file.Path, LastModified = properties.DateModified.DateTime, IsFolder = false });
-            }
-            if (videoItems.Any())
-            {
-                App.Database.AddVideoItems(videoItems);
-            }
+            IsGridView = !IsGridView;
         }
 
-        private void LoadDataFromDatabase()
-        {
-            var videos = App.Database.GetVideos();
-            VideoItems.Clear();
-            foreach (var video in videos) { VideoItems.Add(video); }
-
-            var tags = App.Database.GetTags();
-            TagItems.Clear();
-            foreach (var tag in tags) { TagItems.Add(tag); }
-        }
-
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
-

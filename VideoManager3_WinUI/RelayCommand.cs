@@ -3,25 +3,44 @@ using System.Windows.Input;
 
 namespace VideoManager3_WinUI
 {
-    // ICommandを実装するための汎用的なヘルパークラス
+    // ICommandを実装する汎用的なコマンドクラス
     public class RelayCommand : ICommand
     {
-        private readonly Action<object> _execute;
-        private readonly Func<object, bool> _canExecute;
+        private readonly Action<object?> _execute;
+        private readonly Predicate<object?>? _canExecute;
 
-        public event EventHandler CanExecuteChanged;
+        // Null許容参照型に対応
+        public event EventHandler? CanExecuteChanged;
 
-        public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+        public RelayCommand(Action<object?> execute, Predicate<object?>? canExecute = null)
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
 
-        public bool CanExecute(object parameter) => _canExecute?.Invoke(parameter) ?? true;
+        // ラムダ式でコマンドを作成するためのコンストラクタ
+        public RelayCommand(Action execute, Func<bool>? canExecute = null)
+        {
+            _execute = _ => execute();
+            if (canExecute != null)
+            {
+                _canExecute = _ => canExecute();
+            }
+        }
 
-        public void Execute(object parameter) => _execute(parameter);
+        public bool CanExecute(object? parameter)
+        {
+            return _canExecute == null || _canExecute(parameter);
+        }
 
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        public void Execute(object? parameter)
+        {
+            _execute(parameter);
+        }
+
+        public void RaiseCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }
-

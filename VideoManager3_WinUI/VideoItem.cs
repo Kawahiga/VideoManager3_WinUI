@@ -1,61 +1,41 @@
-using System;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System.ComponentModel;
+using System.IO;
 
 namespace VideoManager3_WinUI
 {
-    // VideoまたはFolderを表すデータモデル
     public class VideoItem : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public int Id { get; set; } // データベースの主キー
+        public string FileName { get; }
+        public string FilePath { get; }
 
-        private int _id;
-        public int Id
-        {
-            get => _id;
-            set { _id = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Id))); }
-        }
-
-        private string _name = "";
-        public string Name
-        {
-            get => _name;
-            set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
-        }
-
-        private string _path = "";
-        public string Path
-        {
-            get => _path;
-            set { _path = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Path))); }
-        }
-
-        private byte[]? _thumbnail;
-        public byte[]? Thumbnail
+        // サムネイルは非同期で読み込まれるため、null許容にする
+        private BitmapImage? _thumbnail;
+        public BitmapImage? Thumbnail
         {
             get => _thumbnail;
-            set { _thumbnail = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Thumbnail))); }
+            set
+            {
+                if (_thumbnail != value)
+                {
+                    _thumbnail = value;
+                    OnPropertyChanged(nameof(Thumbnail));
+                }
+            }
         }
 
-        private DateTime _lastModified;
-        public DateTime LastModified
+        public VideoItem(string filePath)
         {
-            get => _lastModified;
-            set { _lastModified = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LastModified))); }
+            FilePath = filePath;
+            FileName = Path.GetFileName(filePath);
         }
 
-        private string? _length;
-        public string? Length
+        // Null許容参照型に対応
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
         {
-            get => _length;
-            set { _length = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Length))); }
-        }
-
-        private bool _isFolder;
-        public bool IsFolder
-        {
-            get => _isFolder;
-            set { _isFolder = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFolder))); }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
-

@@ -1,13 +1,25 @@
 using FFMpegCore;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
+using Windows.Storage;
 
 namespace VideoManager3_WinUI
 {
     public class ThumbnailService
     {
-        // 戻り値をBitmapImageから画像のバイト配列(byte[]?)に変更
+
+        // サムネイルをキャッシュするフォルダのパス
+        private string TempCacheFolder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "Thumbnails");
+        
+        // サムネイルを作成する秒数
+        private const double ThumbnailWait = 5.0; 
+
+
+        // サムネイル画像を生成し、バイト配列として返す
         public async Task<byte[]?> GetThumbnailBytesAsync(string videoPath)
         {
             if (string.IsNullOrEmpty(videoPath) || !File.Exists(videoPath))
@@ -15,11 +27,23 @@ namespace VideoManager3_WinUI
                 return null;
             }
 
-            string tempThumbnailPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.png");
+            if ( !Directory.Exists(TempCacheFolder) )
+            {
+                Directory.CreateDirectory(TempCacheFolder);
+            }
+
+            // ファイルパスからキャッシュキーを生成
+            string tempThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+
+            if (File.Exists(tempThumbnailPath))
+            {
+                // キャッシュが存在する場合はそれを返す
+                return await File.ReadAllBytesAsync(tempThumbnailPath);
+            }
 
             try
             {
-                await FFMpeg.SnapshotAsync(videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds(1));
+                await FFMpeg.SnapshotAsync(videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds(ThumbnailWait));
 
                 if (!File.Exists(tempThumbnailPath))
                 {
@@ -35,12 +59,23 @@ namespace VideoManager3_WinUI
                 System.Diagnostics.Debug.WriteLine($"Thumbnail generation failed for {videoPath}: {ex.Message}");
                 return null;
             }
-            finally
+        }
+
+        // 動画ファイルのパスからSHA256ハッシュを生成し、キャッシュキーとして返す
+        private string GetCacheKey(string videoPath)
+        {
+            // SHA256でハッシュ値を計算
+            using (var sha256 = SHA256.Create())
             {
-                if (File.Exists(tempThumbnailPath))
+                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(videoPath));
+                // ハッシュ値を16進数の文字列に変換
+                var sb = new StringBuilder();
+                foreach (var b in hashBytes)
                 {
-                    File.Delete(tempThumbnailPath);
+                    sb.Append(b.ToString("x2"));
                 }
+                // 拡張子を追加して返す
+                return sb.ToString() + ".png";
             }
         }
     }

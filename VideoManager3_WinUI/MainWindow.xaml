@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <!-- ツールバー -->
-        <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
+        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
             <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
             <AppBarSeparator/>
             <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}">
@@ -49,12 +49,6 @@
                 </DataTemplate>
             </Grid.Resources>
 
-
-        <!-- 
-        【修正点】
-        - ItemsSourceプロパティを削除
-        - TreeViewに x:Name="TagsTreeView" を追加して、コードからアクセスできるようにする
-        -->
             <TreeView x:Name="TagsTreeView"
                       Grid.Column="0"
                       ItemTemplate="{StaticResource TagItemTemplate}"

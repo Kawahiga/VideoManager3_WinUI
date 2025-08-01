@@ -118,7 +118,7 @@ namespace VideoManager3_WinUI
 
                         if (!exists)
                         {
-                            var videoItem = new VideoItem(file.Path);
+                            var videoItem = new VideoItem(file);
                             await _databaseService.AddVideoAsync(videoItem);
                             Videos.Add(videoItem);
                             _ = Task.Run(() => LoadThumbnailAsync(videoItem));

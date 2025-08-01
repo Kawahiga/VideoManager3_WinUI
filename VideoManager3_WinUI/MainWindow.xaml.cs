@@ -17,10 +17,10 @@ namespace VideoManager3_WinUI
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
 
-        // 【修正点】
-        // XAMLで名前を付けたTagsTreeViewコントロールのRootNodesプロパティに
-        // 直接データを設定する
-        PopulateTreeView(ViewModel.TagItems, TagsTreeView.RootNodes);
+            // 【修正点】
+            // XAMLで名前を付けたTagsTreeViewコントロールのRootNodesプロパティに
+            // 直接データを設定する
+           PopulateTreeView(ViewModel.TagItems, TagsTreeView.RootNodes);
         }
 
         // TagItemのコレクションからTreeViewNodeの階層を再帰的に作成するメソッド

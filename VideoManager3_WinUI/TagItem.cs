@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml.Media;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
@@ -22,8 +23,9 @@ namespace VideoManager3_WinUI
             set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
         }
 
-        private string? _color;
-        public string? Color
+        // タグ/グループの色
+        private Brush? _color;
+        public Brush? Color
         {
             get => _color;
             set { _color = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color))); }

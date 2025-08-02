@@ -1,5 +1,6 @@
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
@@ -25,6 +26,7 @@ namespace VideoManager3_WinUI
 
         public ICommand AddFolderCommand { get; }
         public ICommand ToggleViewCommand { get; }
+        public ICommand EditTagCommand { get; }
 
         private bool _isGridView = true;
         public bool IsGridView
@@ -42,7 +44,7 @@ namespace VideoManager3_WinUI
         }
         public bool IsListView => !_isGridView;
 
-        // 選択されたアイテムを保持するプロパティを追加
+        // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
         public VideoItem? SelectedItem
         {
@@ -54,6 +56,20 @@ namespace VideoManager3_WinUI
                     _selectedItem = value;
                     OnPropertyChanged(nameof(SelectedItem));
                 }
+            }
+        }
+
+        // TreeViewで選択されているタグを保持するためのプロパティ
+        private TagItem? _selectedTag;
+        public TagItem? SelectedTag
+        {
+            get => _selectedTag;
+            set
+            {
+                _selectedTag = value;
+                OnPropertyChanged(nameof(SelectedTag));
+                // 選択状態が変わったら、コマンドの実行可能性を再評価するよう通知
+                ((RelayCommand)EditTagCommand).RaiseCanExecuteChanged();
             }
         }
 
@@ -70,8 +86,10 @@ namespace VideoManager3_WinUI
             Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
             _databaseService = new DatabaseService(dbPath);
 
+            // コマンドの初期化
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
+            EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
 
             //LoadDummyTags();
             _ = LoadTagsAsync();
@@ -144,6 +162,42 @@ namespace VideoManager3_WinUI
             }
         }
 
+        // タグ名を編集
+        private async Task EditTagAsync()
+        {
+            if (SelectedTag == null) return;
+
+            // 編集用のTextBoxを作成
+            var inputTextBox = new TextBox
+            {
+                AcceptsReturn = false,
+                Height = 32,
+                Text = SelectedTag.Name, // 現在のタグ名を設定
+                SelectionStart = SelectedTag.Name.Length // テキスト末尾にカーソルを配置
+            };
+
+            // ContentDialogを作成
+            var dialog = new ContentDialog
+            {
+                Title = "タグ名の変更",
+                Content = inputTextBox,
+                PrimaryButtonText = "OK",
+                CloseButtonText = "キャンセル",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = App.MainWindow.Content.XamlRoot // ダイアログを表示するために必要
+            };
+
+            var result = await dialog.ShowAsync();
+
+            // OKボタンが押され、かつテキストが空でなく、変更があった場合のみ更新
+            if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(inputTextBox.Text) && SelectedTag.Name != inputTextBox.Text)
+            {
+                SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
+                await _databaseService.AddOrUpdateTagAsync(SelectedTag); // データベースを更新
+            }
+        }
+
+
         private async Task AddFolder()
         {
             var folderPicker = new FolderPicker
@@ -205,6 +259,7 @@ namespace VideoManager3_WinUI
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        /*
         private void LoadDummyTags()
         {
             var group1 = new TagItem
@@ -321,5 +376,6 @@ namespace VideoManager3_WinUI
                 }
             }
         }
+        */
     }
 }

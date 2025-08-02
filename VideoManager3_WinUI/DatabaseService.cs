@@ -195,8 +195,7 @@ namespace VideoManager3_WinUI
                 var id = reader.GetInt32(0);
                 var name = reader.GetString(1);
                 var color = reader.IsDBNull(2) ? "#000000" : reader.GetString(2); // DBのColorがNULLの場合、黒をデフォルト値とする
-                var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);// DBのParentIdがNULLの場合、0をデフォルト値とする
-                // var parent = reader.GetInt32(3);
+                var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);   // DBのParentIdがNULLの場合、0をデフォルト値とする
                 var orderInGroup = reader.GetInt32(4);
                 var isGroup = reader.GetBoolean(5);
 

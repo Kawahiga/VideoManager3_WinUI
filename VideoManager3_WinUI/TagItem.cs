@@ -9,6 +9,7 @@ namespace VideoManager3_WinUI
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        // データベースの主キー
         private int _id;
         public int Id
         {
@@ -16,6 +17,7 @@ namespace VideoManager3_WinUI
             set { _id = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Id))); }
         }
 
+        // タグ/グループの名前
         private string _name = "";
         public string Name
         {
@@ -23,7 +25,7 @@ namespace VideoManager3_WinUI
             set { _name = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name))); }
         }
 
-        // タグ/グループの色
+        // 表示用のタグ/グループの色
         private Brush? _color;
         public Brush? Color
         {
@@ -31,11 +33,36 @@ namespace VideoManager3_WinUI
             set { _color = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color))); }
         }
 
+        // DB保存用のタグ/グループのカラーコード（例: "#FF0000"）
+        private string? _colorCode;
+        public string? ColorCode
+        {
+            get => _colorCode;
+            set { _colorCode = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ColorCode))); }
+        }
+
+        // 親タグのID
         private int? _parentId;
         public int? ParentId
         {
             get => _parentId;
             set { _parentId = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ParentId))); }
+        }
+
+        // グループ内での順序
+        private int _orderInGroup;
+        public int OrderInGroup
+        {
+            get => _orderInGroup;
+            set { _orderInGroup = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(OrderInGroup))); }
+        }
+
+        // グループかどうか
+        private bool _isGroup;
+        public bool IsGroup
+        {
+            get => _isGroup;
+            set { _isGroup = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsGroup))); }
         }
 
         // 階層構造のための子要素

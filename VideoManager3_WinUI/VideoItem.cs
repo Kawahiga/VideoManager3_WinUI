@@ -9,6 +9,11 @@ using Windows.Storage;
 using Windows.Storage.FileProperties;
 using Windows.UI.StartScreen;
 
+// エンハンス案
+// 1.拡張子をDBに登録して、動画の種類を識別(動画の種類、ファイル/フォルダの区別)
+// 2.ファイルの生存確認を定期的に行い、存在しないファイルは削除
+// 3.ファイルの削除
+
 namespace VideoManager3_WinUI
 {
     public class VideoItem : INotifyPropertyChanged

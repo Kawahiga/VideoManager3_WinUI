@@ -139,7 +139,7 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- 更新日時 -->
-                            <!-- 日時のフォーマットの変更は一旦保留 StringFormat={}{0:yyyy/MM/dd HH:mm}-->
+                            <!-- 日時のフォーマットの変更は一旦保留 StringFormat={}{0:yyyy年MM月dd日 HH:mm}-->
                             <TextBlock Grid.Row="0" Grid.Column="0"
                                 Text="更新日時:"
                                 FontWeight="SemiBold"
@@ -149,7 +149,6 @@
                                 Margin="0,0,20,5"/>
 
                             <!-- ファイルサイズ -->
-                            <!-- Converter={StaticResource FileSizeConverter} -->
                             <TextBlock Grid.Row="0" Grid.Column="2"
                                 Text="サイズ:"
                                 FontWeight="SemiBold"
@@ -159,7 +158,6 @@
                                 Margin="0,0,20,5"/>
 
                             <!-- 動画の長さ -->
-                            <!-- Converter={StaticResource DurationConverter} -->
                             <TextBlock Grid.Row="0" Grid.Column="4" 
                                 Text="長さ:" 
                                 FontWeight="SemiBold" 

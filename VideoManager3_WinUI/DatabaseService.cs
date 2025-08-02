@@ -32,15 +32,25 @@ namespace VideoManager3_WinUI
                     LastModified TEXT NOT NULL,
                     Duration REAL NOT NULL
                 );
+                
+                DROP TABLE IF EXISTS VideoTags;
+                DROP TABLE IF EXISTS Tags;
+                
                 CREATE TABLE IF NOT EXISTS Tags (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Name TEXT NOT NULL UNIQUE
+                    TagID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TagName TEXT NOT NULL UNIQUE,
+                    TagColor TEXT,
+                    Parent INTEGER,
+                    OrderInGroup INTEGER DEFAULT 0,
+                    IsGroup BOOLEAN DEFAULT 0,
+                    FOREIGN KEY (Parent) REFERENCES Tags(TagID)
                 );
+                
                 CREATE TABLE IF NOT EXISTS VideoTags (
                     VideoId INTEGER,
                     TagId INTEGER,
                     FOREIGN KEY (VideoId) REFERENCES Videos(FileID),
-                    FOREIGN KEY (TagId) REFERENCES Tags(Id),
+                    FOREIGN KEY (TagId) REFERENCES Tags(TagID),
                     PRIMARY KEY (VideoId, TagId)
                 );
             ";
@@ -64,7 +74,7 @@ namespace VideoManager3_WinUI
             command.Parameters.AddWithValue("$fileName", video.FileName);
             command.Parameters.AddWithValue("$fileSize", video.FileSize);
             //command.Parameters.AddWithValue("$lastModified", video.LastModified);
-            // 日付は環境に依存しないISO 8601形式("o")で保存するのが堅牢です
+            // 日付は環境に依存しないISO 8601形式("o")で保存する
             command.Parameters.AddWithValue("$lastModified", video.LastModified.ToString("o"));
             command.Parameters.AddWithValue("$duration", video.Duration);
 

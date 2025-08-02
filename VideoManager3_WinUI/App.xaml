@@ -11,6 +11,8 @@
             </ResourceDictionary.MergedDictionaries>
             <!-- BooleanToVisibilityConverterをアプリケーションリソースとして追加 -->
             <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <local:FileSizeConverter x:Key="FileSizeConverter"/>
+            <local:DurationConverter x:Key="DurationConverter"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

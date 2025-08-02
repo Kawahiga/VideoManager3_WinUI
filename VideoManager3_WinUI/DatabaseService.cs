@@ -127,5 +127,47 @@ namespace VideoManager3_WinUI
             }
             return videos;
         }
+
+        // タグをデータベースに追加または更新する
+        public async Task AddOrUpdateTagAsync(TagItem tag)
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO Tags (TagID, TagName, TagColor, Parent, OrderInGroup, IsGroup)
+                VALUES ($id, $name, $color, $parent, $order, $isGroup)
+                ON CONFLICT(TagID) DO UPDATE SET
+                    TagName = excluded.TagName,
+                    TagColor = excluded.TagColor,
+                    Parent = excluded.Parent,
+                    OrderInGroup = excluded.OrderInGroup,
+                    IsGroup = excluded.IsGroup;
+            ";
+            if (tag.Id == 0) {
+                // 新規追加の場合はIDを自動生成
+                command.CommandText = command.CommandText.Replace("$id", "NULL");
+                
+            } else {
+                // 既存のタグを更新する場合はIDを指定
+                command.Parameters.AddWithValue("$id", tag.Id);
+            }
+            command.Parameters.AddWithValue("$name", tag.Name);
+            command.Parameters.AddWithValue("$color", tag.ColorCode ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$parent", tag.ParentId ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("$order", tag.OrderInGroup);
+            command.Parameters.AddWithValue("$isGroup", tag.IsGroup ? 1 : 0);
+
+            await command.ExecuteNonQueryAsync();
+
+            // 新規追加（Id==0）の場合は新しいIDを取得してセット
+            if (tag.Id == 0)
+            {
+                command.CommandText = "SELECT last_insert_rowid()";
+                command.Parameters.Clear();
+                tag.Id = Convert.ToInt32(await command.ExecuteScalarAsync());
+            }
+        }
     }
 }

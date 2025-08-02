@@ -72,8 +72,8 @@ namespace VideoManager3_WinUI
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
 
-            LoadDummyTags();
-
+             LoadDummyTags();
+ 
             _ = LoadVideosFromDbAsync();
         }
 
@@ -178,40 +178,113 @@ namespace VideoManager3_WinUI
         {
             var group1 = new TagItem
             {
+                Id = 0,
                 Name = "ジャンル",
                 Color = new SolidColorBrush(Colors.CornflowerBlue),
+                ColorCode = "#6495ED",
+                ParentId = null,
+                OrderInGroup = 0,
+                IsGroup = true,
                 Children =
                 {
-                    new TagItem { Name = "アクション", Color = new SolidColorBrush(Colors.OrangeRed) },
-                    new TagItem { Name = "コメディ", Color = new SolidColorBrush(Colors.Gold) },
+                    new TagItem
+                    {
+                        Id = 0,
+                        Name = "アクション",
+                        Color = new SolidColorBrush(Colors.OrangeRed),
+                        ColorCode = "#FF4500",
+                        ParentId = 0,
+                        OrderInGroup = 0,
+                        IsGroup = false,
+                    },
+                    new TagItem
+                    {
+                        Id = 0,
+                        Name = "コメディ",
+                        Color = new SolidColorBrush(Colors.Gold),
+                        ColorCode = "#FFD700",
+                        ParentId = 0,
+                        OrderInGroup = 1,
+                        IsGroup = false,
+                    },
                 }
             };
 
             var group2 = new TagItem
             {
+                Id = 0,
                 Name = "製作者",
                 Color = new SolidColorBrush(Colors.SeaGreen),
+                ColorCode = "#2E8B57",
+                ParentId = null,
+                OrderInGroup = 1,
+                IsGroup = true,
                 Children =
                 {
                     new TagItem
                     {
+                        Id = 0,
                         Name = "スタジオA",
                         Color = new SolidColorBrush(Colors.LightGreen),
+                        ColorCode = "#90EE90",
+                        ParentId = 0,
+                        OrderInGroup = 0,
+                        IsGroup = true,
                         Children =
                         {
-                            new TagItem { Name = "監督X", Color = new SolidColorBrush(Colors.Turquoise) },
-                            new TagItem { Name = "監督Y", Color = new SolidColorBrush(Colors.Turquoise) }
+                            new TagItem {
+                                Id = 0,
+                                Name = "監督X",
+                                Color = new SolidColorBrush(Colors.Turquoise),
+                                ColorCode = "#40E0D0",
+                                ParentId = 0,
+                                OrderInGroup = 0,
+                                IsGroup = false
+                            },
+                            new TagItem {
+                                Id = 0,
+                                Name = "監督Y",
+                                Color = new SolidColorBrush(Colors.Turquoise),
+                                ColorCode = "#40E0D0",
+                                ParentId = 0,
+                                OrderInGroup = 1,
+                                IsGroup = false
+                            }
                         }
                     },
-                    new TagItem { Name = "スタジオB", Color = new SolidColorBrush(Colors.LightGreen) },
+                    new TagItem {
+                        Id = 0,
+                        Name = "スタジオB",
+                        Color = new SolidColorBrush(Colors.LightGreen),
+                        ColorCode = "#90EE90",
+                        ParentId = 0,
+                        OrderInGroup = 1,
+                        IsGroup = true,
+                    },
                 }
             };
 
-            var singleTag = new TagItem { Name = "お気に入り", Color = new SolidColorBrush(Colors.HotPink) };
+            var singleTag = new TagItem {
+                Id = 0,
+                Name = "お気に入り",
+                Color = new SolidColorBrush(Colors.HotPink),
+                ColorCode = "#FF69B4",
+                ParentId = null,
+                OrderInGroup = 2,
+                IsGroup = false
+            };
 
             TagItems.Add(group1);
             TagItems.Add(group2);
             TagItems.Add(singleTag);
+
+            foreach ( var tag in TagItems ) {
+                _databaseService.AddOrUpdateTagAsync(tag);
+                foreach (var child in tag.Children)
+                {
+                    _databaseService.AddOrUpdateTagAsync(child);
+                }
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -72,8 +73,9 @@ namespace VideoManager3_WinUI
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
 
-             LoadDummyTags();
- 
+            //LoadDummyTags();
+            _ = LoadTagsAsync();
+
             _ = LoadVideosFromDbAsync();
         }
 
@@ -84,6 +86,61 @@ namespace VideoManager3_WinUI
             {
                 Videos.Add(video);
                 _ = Task.Run(() => LoadThumbnailAsync(video));
+            }
+        }
+
+        private async Task LoadThumbnailAsync(VideoItem videoItem)
+        {
+            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
+
+            if (imageBytes != null && imageBytes.Length > 0)
+            {
+                _dispatcherQueue.TryEnqueue(async () =>
+                {
+                    try
+                    {
+                        var bitmapImage = new BitmapImage();
+                        using var stream = new InMemoryRandomAccessStream();
+                        await stream.WriteAsync(imageBytes.AsBuffer());
+                        stream.Seek(0);
+                        await bitmapImage.SetSourceAsync(stream);
+
+                        videoItem.Thumbnail = bitmapImage;
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}");
+                    }
+                });
+            }
+        }
+
+        // データベースからタグを読み込み、階層を構築する
+        private async Task LoadTagsAsync()
+        {
+            try
+            {
+                var allTags = await _databaseService.GetTagsAsync();
+                var tagDict = allTags.ToDictionary(t => t.Id);
+
+                foreach (var tag in allTags)
+                {
+                    if (tag.ParentId != 0 && tag.ParentId != null)
+                    {
+                        int parentId = (int)tag.ParentId.Value;
+                        tagDict.TryGetValue(parentId, out TagItem? parentTag);
+                        parentTag?.Children.Add(tag);
+                    }
+                    else
+                    {
+                        TagItems.Add(tag);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading tags from database: {ex.Message}");
+                return;
             }
         }
 
@@ -137,32 +194,6 @@ namespace VideoManager3_WinUI
             }
         }
 
-        private async Task LoadThumbnailAsync(VideoItem videoItem)
-        {
-            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
-
-            if (imageBytes != null && imageBytes.Length > 0)
-            {
-                _dispatcherQueue.TryEnqueue(async () =>
-                {
-                    try
-                    {
-                        var bitmapImage = new BitmapImage();
-                        using var stream = new InMemoryRandomAccessStream();
-                        await stream.WriteAsync(imageBytes.AsBuffer());
-                        stream.Seek(0);
-                        await bitmapImage.SetSourceAsync(stream);
-
-                        videoItem.Thumbnail = bitmapImage;
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}");
-                    }
-                });
-            }
-        }
-
         private void ToggleView()
         {
             IsGridView = !IsGridView;
@@ -193,7 +224,7 @@ namespace VideoManager3_WinUI
                         Name = "アクション",
                         Color = new SolidColorBrush(Colors.OrangeRed),
                         ColorCode = "#FF4500",
-                        ParentId = 0,
+                        ParentId = 1,
                         OrderInGroup = 0,
                         IsGroup = false,
                     },
@@ -203,7 +234,7 @@ namespace VideoManager3_WinUI
                         Name = "コメディ",
                         Color = new SolidColorBrush(Colors.Gold),
                         ColorCode = "#FFD700",
-                        ParentId = 0,
+                        ParentId = 1,
                         OrderInGroup = 1,
                         IsGroup = false,
                     },
@@ -227,7 +258,7 @@ namespace VideoManager3_WinUI
                         Name = "スタジオA",
                         Color = new SolidColorBrush(Colors.LightGreen),
                         ColorCode = "#90EE90",
-                        ParentId = 0,
+                        ParentId = 4,
                         OrderInGroup = 0,
                         IsGroup = true,
                         Children =
@@ -237,7 +268,7 @@ namespace VideoManager3_WinUI
                                 Name = "監督X",
                                 Color = new SolidColorBrush(Colors.Turquoise),
                                 ColorCode = "#40E0D0",
-                                ParentId = 0,
+                                ParentId = 5,
                                 OrderInGroup = 0,
                                 IsGroup = false
                             },
@@ -246,7 +277,7 @@ namespace VideoManager3_WinUI
                                 Name = "監督Y",
                                 Color = new SolidColorBrush(Colors.Turquoise),
                                 ColorCode = "#40E0D0",
-                                ParentId = 0,
+                                ParentId = 5,
                                 OrderInGroup = 1,
                                 IsGroup = false
                             }
@@ -257,7 +288,7 @@ namespace VideoManager3_WinUI
                         Name = "スタジオB",
                         Color = new SolidColorBrush(Colors.LightGreen),
                         ColorCode = "#90EE90",
-                        ParentId = 0,
+                        ParentId = 4,
                         OrderInGroup = 1,
                         IsGroup = true,
                     },
@@ -283,6 +314,10 @@ namespace VideoManager3_WinUI
                 foreach (var child in tag.Children)
                 {
                     _databaseService.AddOrUpdateTagAsync(child);
+                    foreach (var grandChild in child.Children)
+                    {
+                        _databaseService.AddOrUpdateTagAsync(grandChild);
+                    }
                 }
             }
         }

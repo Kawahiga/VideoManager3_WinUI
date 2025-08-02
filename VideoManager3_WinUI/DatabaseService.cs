@@ -1,7 +1,6 @@
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace VideoManager3_WinUI
@@ -22,6 +21,8 @@ namespace VideoManager3_WinUI
             connection.Open();
 
             var command = connection.CreateCommand();
+
+            // DROP TABLE IF EXISTS Tags;
             command.CommandText =
             @"
                 CREATE TABLE IF NOT EXISTS Videos (
@@ -34,7 +35,6 @@ namespace VideoManager3_WinUI
                 );
                 
                 DROP TABLE IF EXISTS VideoTags;
-                DROP TABLE IF EXISTS Tags;
                 
                 CREATE TABLE IF NOT EXISTS Tags (
                     TagID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,40 +134,86 @@ namespace VideoManager3_WinUI
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();
 
-            var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO Tags (TagID, TagName, TagColor, Parent, OrderInGroup, IsGroup)
-                VALUES ($id, $name, $color, $parent, $order, $isGroup)
-                ON CONFLICT(TagID) DO UPDATE SET
-                    TagName = excluded.TagName,
-                    TagColor = excluded.TagColor,
-                    Parent = excluded.Parent,
-                    OrderInGroup = excluded.OrderInGroup,
-                    IsGroup = excluded.IsGroup;
-            ";
-            if (tag.Id == 0) {
-                // 新規追加の場合はIDを自動生成
-                command.CommandText = command.CommandText.Replace("$id", "NULL");
-                
-            } else {
-                // 既存のタグを更新する場合はIDを指定
-                command.Parameters.AddWithValue("$id", tag.Id);
-            }
-            command.Parameters.AddWithValue("$name", tag.Name);
-            command.Parameters.AddWithValue("$color", tag.ColorCode ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("$parent", tag.ParentId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("$order", tag.OrderInGroup);
-            command.Parameters.AddWithValue("$isGroup", tag.IsGroup ? 1 : 0);
-
-            await command.ExecuteNonQueryAsync();
-
-            // 新規追加（Id==0）の場合は新しいIDを取得してセット
             if (tag.Id == 0)
             {
+                // 新規追加
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    INSERT INTO Tags (TagName, TagColor, Parent, OrderInGroup, IsGroup)
+                    VALUES ($name, $color, $parent, $order, $isGroup);
+                ";
+                command.Parameters.AddWithValue("$name", tag.Name);
+                command.Parameters.AddWithValue("$color", tag.ColorCode ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$parent", tag.ParentId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$order", tag.OrderInGroup);
+                command.Parameters.AddWithValue("$isGroup", tag.IsGroup ? 1 : 0);
+                await command.ExecuteNonQueryAsync();
+
+                // 新しく生成されたIDを取得してセット
                 command.CommandText = "SELECT last_insert_rowid()";
                 command.Parameters.Clear();
                 tag.Id = Convert.ToInt32(await command.ExecuteScalarAsync());
             }
+            else
+            {
+                // 更新
+                var command = connection.CreateCommand();
+                command.CommandText = @"
+                    UPDATE Tags SET
+                        TagName = $name,
+                        TagColor = $color,
+                        Parent = $parent,
+                        OrderInGroup = $order,
+                        IsGroup = $isGroup
+                    WHERE TagID = $id;
+                ";
+                command.Parameters.AddWithValue("$id", tag.Id);
+                command.Parameters.AddWithValue("$name", tag.Name);
+                command.Parameters.AddWithValue("$color", tag.ColorCode ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$parent", tag.ParentId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$order", tag.OrderInGroup);
+                command.Parameters.AddWithValue("$isGroup", tag.IsGroup ? 1 : 0);
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // データベースからすべてのタグを読み込む
+        public async Task<List<TagItem>> GetTagsAsync()
+        {
+            var tags = new List<TagItem>();
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT TagID, TagName, TagColor, Parent, OrderInGroup, IsGroup
+                FROM Tags";
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(0);
+                var name = reader.GetString(1);
+                var color = reader.IsDBNull(2) ? "#000000" : reader.GetString(2); // DBのColorがNULLの場合、黒をデフォルト値とする
+                var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);// DBのParentIdがNULLの場合、0をデフォルト値とする
+                // var parent = reader.GetInt32(3);
+                var orderInGroup = reader.GetInt32(4);
+                var isGroup = reader.GetBoolean(5);
+
+                var tag = new TagItem
+                {
+                    Id = id,
+                    Name = name,
+                    ColorCode = color,
+                    ParentId = parent,
+                    OrderInGroup = orderInGroup,
+                    IsGroup = isGroup
+                };
+                tags.Add(tag);
+                
+            }
+
+            return tags;
         }
     }
 }

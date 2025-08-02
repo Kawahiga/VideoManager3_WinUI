@@ -16,9 +16,9 @@ namespace VideoManager3_WinUI
         public int Id { get; set; } // データベースの主キー
         public string FileName { get; }
         public string FilePath { get; }
-        public long FileSize { get; set; }
+        public long FileSize { get; set; }  // ファイルサイズ（バイト単位）
         public DateTime LastModified { get; set; }
-        public double Duration { get; set; }
+        public double Duration { get; set; }    // 動画の再生時間（秒）
 
         // サムネイルは非同期で読み込まれるため、null許容にする
         private BitmapImage? _thumbnail;
@@ -33,18 +33,6 @@ namespace VideoManager3_WinUI
                     OnPropertyChanged(nameof(Thumbnail));
                 }
             }
-        }
-
-        public VideoItem( StorageFile file )
-        {
-            Id = 0;
-            FilePath = file.Path;
-            FileName = file.Name;
-            FileSize = 0;
-            LastModified = file.DateCreated.DateTime;
-            Duration = 0;
-
-            //FileSize = (await file.GetBasicPropertiesAsync()).Size;
         }
 
         public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration )

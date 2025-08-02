@@ -116,25 +116,78 @@
                 <controls:GridSplitter Grid.Row="1" Height="5" ResizeDirection="Rows" ResizeBehavior="BasedOnAlignment" Background="Transparent" HorizontalAlignment="Stretch" />
 
                 <!-- 右ペイン下部: 詳細情報 -->
-                <Grid Grid.Row="2" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" Padding="10">
-                    <StackPanel>
-                        <TextBlock Text="詳細情報" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <Grid>
+                <Grid Grid.Row="2" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" Padding="15">
+                    <!-- データコンテキストをSelectedItemに設定すると、中のBindingが書きやすくなるよ -->
+                    <StackPanel DataContext="{Binding SelectedItem}">
+                        <!-- ファイル名 -->
+                        <TextBlock 
+                            Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" 
+                            FontWeight="Bold" 
+                            FontSize="16" 
+                            TextWrapping="Wrap" 
+                            Margin="0,0,0,10"/>
+
+                        <!-- 更新日時、サイズ、長さ-->
+                        <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
                             </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="ファイル名:" Margin="0,0,10,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedItem.FileName, TargetNullValue='---'}" TextWrapping="Wrap"/>
-                            
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="パス:" Margin="0,0,10,5"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedItem.FilePath, TargetNullValue='---'}" TextWrapping="Wrap"/>
+                            <!-- 更新日時 -->
+                            <!-- 日時のフォーマットの変更は一旦保留 StringFormat={}{0:yyyy/MM/dd HH:mm}-->
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                Text="更新日時:"
+                                FontWeight="SemiBold"
+                                Margin="0,0,10,5" />
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                Text="{Binding LastModified}"
+                                Margin="0,0,20,5"/>
+
+                            <!-- ファイルサイズ -->
+                            <!-- Converter={StaticResource FileSizeConverter} -->
+                            <TextBlock Grid.Row="0" Grid.Column="2"
+                                Text="サイズ:"
+                                FontWeight="SemiBold"
+                                Margin="0,0,10,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3"
+                                Text="{Binding FileSize}"
+                                Margin="0,0,20,5"/>
+
+                            <!-- 動画の長さ -->
+                            <!-- Converter={StaticResource DurationConverter} -->
+                            <TextBlock Grid.Row="0" Grid.Column="4" 
+                                Text="長さ:" 
+                                FontWeight="SemiBold" 
+                                Margin="0,0,10,0"/>
+                            <TextBlock Grid.Row="0" Grid.Column="5" 
+                                Text="{Binding Duration}"
+                                Margin="0,0,0,0"/>
                         </Grid>
+
+                        <!-- ラベル -->
+                        <TextBlock Text="ラベル:" FontWeight="SemiBold" Margin="0,5,0,5"/>
+                        <!--
+                        <ItemsControl ItemsSource="{Binding Labels}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                ラベルの見た目はここで自由にデザインできるよ！ 
+                                <DataTemplate x:DataType="local:LabelItem">
+                                    <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,0">
+                                        <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" FontWeight="SemiBold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        -->
                     </StackPanel>
                 </Grid>
             </Grid>

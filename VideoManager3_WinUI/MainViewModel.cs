@@ -12,6 +12,7 @@ using System.Windows.Input;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using Windows.UI.StartScreen;
 
 namespace VideoManager3_WinUI
 {
@@ -118,7 +119,15 @@ namespace VideoManager3_WinUI
 
                         if (!exists)
                         {
-                            var videoItem = new VideoItem(file);
+                            // 動画ファイルの基本プロパティとビデオプロパティを取得
+                            int id = 0; // IDはデータベースで自動生成されるため、ここでは仮の値
+                            string filePath = file.Path;
+                            string fileName = file.Name;
+                            long fileSize = (long)(await file.GetBasicPropertiesAsync()).Size;
+                            DateTime lastMod = (await file.GetBasicPropertiesAsync()).DateModified.DateTime;
+                            double duration = (await file.Properties.GetVideoPropertiesAsync()).Duration.TotalSeconds;
+
+                            var videoItem = new VideoItem( id, filePath, fileName, fileSize, lastMod, duration);
                             await _databaseService.AddVideoAsync(videoItem);
                             Videos.Add(videoItem);
                             _ = Task.Run(() => LoadThumbnailAsync(videoItem));

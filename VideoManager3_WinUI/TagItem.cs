@@ -1,8 +1,11 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows.Input;
+using System;
+
 
 // エンハンス案
 // 1.タグの展開状態を保存するためのプロパティを追加

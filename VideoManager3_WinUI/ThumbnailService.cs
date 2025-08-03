@@ -13,7 +13,7 @@ namespace VideoManager3_WinUI
 
         // サムネイルをキャッシュするフォルダのパス
         private string TempCacheFolder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "Thumbnails");
-        
+
         // サムネイルを作成する秒数
         private const double ThumbnailWait = 5.0; 
 

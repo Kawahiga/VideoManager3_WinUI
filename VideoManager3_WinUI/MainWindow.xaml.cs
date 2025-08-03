@@ -12,6 +12,7 @@ namespace VideoManager3_WinUI
         public MainWindow()
         {
             this.InitializeComponent();
+            this.Title = "動画管理くん";
             ViewModel = new MainViewModel(DispatcherQueue.GetForCurrentThread());
             // Window.ContentをFrameworkElementにキャストしてDataContextを設定
             (this.Content as FrameworkElement)!.DataContext = ViewModel;

@@ -40,6 +40,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- 左ペイン: タグツリー -->
+            <!--
             <Grid.Resources>
                 <DataTemplate x:Key="TagItemTemplate" x:DataType="xaml:TreeViewNode">
                     <StackPanel Orientation="Horizontal" Height="24">
@@ -56,7 +57,6 @@
                       Margin="5">
                 <TreeView.ContextFlyout>
                     <MenuFlyout>
-                        <!-- 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
                         <MenuFlyoutItem Text="名前の変更" Command="{Binding EditTagCommand}"/>
                         <MenuFlyoutItem Text="色の変更" />
                         <MenuFlyoutSeparator/>
@@ -67,7 +67,24 @@
                     </MenuFlyout>
                 </TreeView.ContextFlyout>
             </TreeView>
+            -->
 
+            <!-- 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
+            <Grid Grid.Column="0" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
+                    <TextBlock Text="タグツリー" TextAlignment="Left" Margin="10"/>
+
+                    <TreeView x:Name="TagsTreeView"
+                              ItemsSource="{x:Bind TagRootItems}"
+                              Margin="5">
+                        <TreeView.ItemTemplate>
+                            <DataTemplate x:DataType="local:TagItem">
+                                <TreeViewItem ItemsSource="{x:Bind Children}" Content="{x:Bind Name}"/>
+                            </DataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </StackPanel>
+            </Grid>
 
 
             <!-- 縦方向のグリッドスプリッター -->

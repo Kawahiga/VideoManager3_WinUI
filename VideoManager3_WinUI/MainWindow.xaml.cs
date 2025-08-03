@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace VideoManager3_WinUI
 {
@@ -9,45 +10,19 @@ namespace VideoManager3_WinUI
     {
         public MainViewModel ViewModel { get; }
 
+        public ObservableCollection<TagItem> TagRootItems { get; set; }
+
         public MainWindow()
         {
             this.InitializeComponent();
             this.Title = "動画管理くん";
+
             ViewModel = new MainViewModel(DispatcherQueue.GetForCurrentThread());
             // Window.ContentをFrameworkElementにキャストしてDataContextを設定
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
-
-            // 【修正点】
-            // XAMLで名前を付けたTagsTreeViewコントロールのRootNodesプロパティに
-            // 直接データを設定する
-           PopulateTreeView(ViewModel.TagItems, TagsTreeView.RootNodes);
+            // タグの初期化
+            TagRootItems = ViewModel.TagItems;
         }
-
-        // TagItemのコレクションからTreeViewNodeの階層を再帰的に作成するメソッド
-        private void PopulateTreeView(IEnumerable<TagItem> tagItems, IList<TreeViewNode> parentNodes)
-        {
-            foreach (var tagItem in tagItems)
-            {
-                // 各TagItemをContentに持つTreeViewNodeを作成
-                var node = new TreeViewNode()
-                {
-                    Content = tagItem,
-                };
-
-                // 子要素があれば、再帰的に処理
-                if (tagItem.Children != null && tagItem.Children.Count > 0)
-                {
-                    PopulateTreeView(tagItem.Children, node.Children);
-                }
-
-                parentNodes.Add(node);
-            }
-        }
-
-
-
-
-
     }
 }

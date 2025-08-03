@@ -1,5 +1,6 @@
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -7,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -91,7 +93,9 @@ namespace VideoManager3_WinUI
             // コマンドの初期化
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
-            EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
+            //EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
+
+            EditTagCommand = new RelayCommand(EditTag);
 
             //LoadDummyTags();
             _ = LoadTagsAsync();
@@ -161,6 +165,24 @@ namespace VideoManager3_WinUI
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading tags from database: {ex.Message}");
                 return;
+            }
+        }
+
+
+        private void EditTag(object? parameter)
+        {
+            // 渡されたパラメータがTagItemかどうかをチェック
+            if (parameter is TagItem tagToEdit)
+            {
+                // ここにタグを編集するロジックを実装します。
+                // 例えば、ダイアログを開いて名前を変更するなど。
+                Debug.WriteLine($"編集対象のタグ: {tagToEdit.Name} (ID: {tagToEdit.Id})");
+
+                // TODO: タグ編集用のダイアログ表示などの処理を実装
+            }
+            else
+            {
+                Debug.WriteLine("EditTagに予期しない型のパラメータが渡されました。");
             }
         }
 

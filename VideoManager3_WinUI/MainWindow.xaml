@@ -85,16 +85,22 @@
                                     <StackPanel Orientation="Horizontal" Height="24">
                                         <Rectangle Width="16" Height="16" Fill="{x:Bind (local:TagItem).Color}" Margin="0,0,8,0"/>
                                         <TextBlock Text="{x:Bind (local:TagItem).Name}" VerticalAlignment="Center"/>
+
                                     </StackPanel>
 
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="名前の変更" Command="{Binding DataContext.EditTagCommand, ElementName=TagsTreeView}" CommandParameter="{Binding}"/>
+
+                                            <MenuFlyoutItem Text="名前の変更" Click="Rename_Click"/>
+                                            
                                             <!--
-                                            <MenuFlyoutItem Text="名前の変更" Click="EditTagCommand"/>
+                                            <MenuFlyoutItem Text="タグを編集"
+                                                Command="{Binding ElementName=self, Path=ViewModel.EditTagCommand}"
+                                                CommandParameter="{Binding}"/>
                                             -->
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>
+                                    
                                 </TreeViewItem>
                             </DataTemplate>
                         </TreeView.ItemTemplate>

@@ -38,7 +38,14 @@ namespace VideoManager3_WinUI
         public Brush? Color
         {
             get => _color;
-            set { _color = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color))); }
+            set {
+                _color = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Color)));
+                // Colorプロパティが変更されたときにColorCodeも更新
+                ColorCode = value is SolidColorBrush solidColorBrush
+                    ? $"#{solidColorBrush.Color.A:X2}{solidColorBrush.Color.R:X2}{solidColorBrush.Color.G:X2}{solidColorBrush.Color.B:X2}"
+                    : null;
+            }
         }
 
         // DB保存用のタグ/グループのカラーコード（例: "#FF0000"）
@@ -46,8 +53,7 @@ namespace VideoManager3_WinUI
         public string? ColorCode
         {
             get => _colorCode;
-            set
-            {
+            set {
                 if (_colorCode != value)
                 {
                     _colorCode = value;

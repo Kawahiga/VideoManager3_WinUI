@@ -59,6 +59,10 @@ namespace VideoManager3_WinUI
                     PRIMARY KEY (VideoId, TagId)
                 );
             ";
+            // エンハンス案：関連づいたIDが削除された場合に、関連する行も削除するためのON DELETE CASCADEを設定
+            // FOREIGN KEY (VideoId) REFERENCES Videos(FileID) ON DELETE CASCADE,
+            // FOREIGN KEY(TagId) REFERENCES Tags(TagID) ON DELETE CASCADE,
+
             command.ExecuteNonQuery();
         }
 
@@ -232,6 +236,20 @@ namespace VideoManager3_WinUI
             command.CommandText = @"
                 INSERT OR IGNORE INTO VideoTags (VideoId, TagId)
                 VALUES ($videoId, $tagId);
+            ";
+            command.Parameters.AddWithValue("$videoId", video.Id);
+            command.Parameters.AddWithValue("$tagId", tag.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+        // 動画からタグを削除する
+        public async Task RemoveTagFromVideoAsync(VideoItem video, TagItem tag)
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM VideoTags
+                WHERE VideoId = $videoId AND TagId = $tagId;
             ";
             command.Parameters.AddWithValue("$videoId", video.Id);
             command.Parameters.AddWithValue("$tagId", tag.Id);

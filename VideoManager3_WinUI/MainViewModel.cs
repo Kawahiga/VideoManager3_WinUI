@@ -140,29 +140,41 @@ namespace VideoManager3_WinUI
         // データベースからタグを読み込み、階層を構築する
         private async Task LoadTagsAsync()
         {
+            _dispatcherQueue.TryEnqueue(() => TagItems.Clear());
+
             try
             {
                 var allTags = await _databaseService.GetTagsAsync();
                 var tagDict = allTags.ToDictionary(t => t.Id);
 
-                foreach (var tag in allTags)
+                var rootTags = new List<TagItem>();
+
+                foreach (var tag in allTags.OrderBy(t => t.OrderInGroup))
                 {
-                    if (tag.ParentId != 0 && tag.ParentId != null)
+                    if (tag.ParentId.HasValue && tag.ParentId != 0)
                     {
-                        int parentId = (int)tag.ParentId.Value;
-                        tagDict.TryGetValue(parentId, out TagItem? parentTag);
-                        parentTag?.Children.Add(tag);
+                        if (tagDict.TryGetValue(tag.ParentId.Value, out var parentTag))
+                        {
+                            parentTag.Children.Add(tag);
+                        }
                     }
                     else
                     {
-                        TagItems.Add(tag);
+                        rootTags.Add(tag);
                     }
                 }
+
+                _dispatcherQueue.TryEnqueue(() =>
+                {
+                    foreach (var tag in rootTags)
+                    {
+                        TagItems.Add(tag);
+                    }
+                });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading tags from database: {ex.Message}");
-                return;
             }
         }
 
@@ -200,6 +212,7 @@ namespace VideoManager3_WinUI
             {
                 SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
                 await _databaseService.AddOrUpdateTagAsync(SelectedTag); // データベースを更新
+                await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
             }
         }
 
@@ -211,8 +224,7 @@ namespace VideoManager3_WinUI
                 SuggestedStartLocation = PickerLocationId.VideosLibrary
             };
             folderPicker.FileTypeFilter.Add("*");
-            folderPicker.FileTypeFilter.Add(".mp4");
-
+            
             if (App.m_window == null) return;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);

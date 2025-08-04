@@ -175,6 +175,7 @@
                         <TextBlock 
                             Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" 
                             FontWeight="Bold" 
+                            IsTextSelectionEnabled="True"
                             FontSize="16" 
                             TextWrapping="Wrap" 
                             Margin="0,0,0,10"/>

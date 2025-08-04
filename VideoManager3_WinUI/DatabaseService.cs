@@ -3,6 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+// 未実装項目
+// ・動画をデータベースから削除
+// ・タグをデータベースから削除
+// ・動画からタグを削除
+// ・例外処理の実装
+// ・タグから動画を取得（タグからの絞り込みで必要？）
+
 namespace VideoManager3_WinUI
 {
     public class DatabaseService
@@ -33,8 +40,6 @@ namespace VideoManager3_WinUI
                     LastModified TEXT NOT NULL,
                     Duration REAL NOT NULL
                 );
-                
-                DROP TABLE IF EXISTS VideoTags;
                 
                 CREATE TABLE IF NOT EXISTS Tags (
                     TagID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,6 +138,7 @@ namespace VideoManager3_WinUI
         {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();
+            var command = connection.CreateCommand();
 
             // parentが0の場合はNULLに設定
             if (tag.ParentId == 0) tag.ParentId = null;
@@ -140,7 +146,6 @@ namespace VideoManager3_WinUI
             if (tag.Id == 0)
             {
                 // 新規追加
-                var command = connection.CreateCommand();
                 command.CommandText = @"
                     INSERT INTO Tags (TagName, TagColor, Parent, OrderInGroup, IsGroup)
                     VALUES ($name, $color, $parent, $order, $isGroup);
@@ -160,7 +165,6 @@ namespace VideoManager3_WinUI
             else
             {
                 // 更新
-                var command = connection.CreateCommand();
                 command.CommandText = @"
                     UPDATE Tags SET
                         TagName = $name,
@@ -212,9 +216,10 @@ namespace VideoManager3_WinUI
                     IsGroup = isGroup
                 };
                 tags.Add(tag);
-                
+
             }
+
             return tags;
         }
-    }
+     }
 }

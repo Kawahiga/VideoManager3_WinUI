@@ -140,7 +140,7 @@ namespace VideoManager3_WinUI
             await connection.OpenAsync();
             var command = connection.CreateCommand();
 
-            // parentが0の場合はNULLに設定
+            // parentの値が0の場合はnullを設定
             if (tag.ParentId == 0) tag.ParentId = null;
 
             if (tag.Id == 0)
@@ -218,8 +218,61 @@ namespace VideoManager3_WinUI
                 tags.Add(tag);
 
             }
-
             return tags;
         }
-     }
+
+        // 動画にタグを追加する
+        public async Task AddTagToVideoAsync(VideoItem video, TagItem tag)
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+
+            // 既に存在する場合は無視する
+            command.CommandText = @"
+                INSERT OR IGNORE INTO VideoTags (VideoId, TagId)
+                VALUES ($videoId, $tagId);
+            ";
+            command.Parameters.AddWithValue("$videoId", video.Id);
+            command.Parameters.AddWithValue("$tagId", tag.Id);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        // データベースから動画に関連付けられたタグを取得する
+        public async Task<List<TagItem>> GetTagsForVideoAsync(VideoItem video)
+        {
+            var tags = new List<TagItem>();
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT t.TagID, t.TagName, t.TagColor, t.Parent, t.OrderInGroup, t.IsGroup
+                FROM Tags t
+                JOIN VideoTags vt ON vt.TagId = t.TagID
+                WHERE vt.VideoId = $videoId;
+            ";
+            command.Parameters.AddWithValue("$videoId", video.Id);
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(0);
+                var name = reader.GetString(1);
+                var color = reader.IsDBNull(2) ? "#000000" : reader.GetString(2); // DBのColorがNULLの場合、黒をデフォルト値とする
+                var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);   // DBのParentIdがNULLの場合、0をデフォルト値とする
+                var orderInGroup = reader.GetInt32(4);
+                var isGroup = reader.GetBoolean(5);
+                var tag = new TagItem
+                {
+                    Id = id,
+                    Name = name,
+                    ColorCode = color,
+                    ParentId = parent,
+                    OrderInGroup = orderInGroup,
+                    IsGroup = isGroup
+                };
+                tags.Add(tag);
+            }
+            return tags;
+        }
+    }
 }

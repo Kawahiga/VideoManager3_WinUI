@@ -11,8 +11,6 @@ namespace VideoManager3_WinUI
     {
         public MainViewModel ViewModel { get; }
 
-  //      public ObservableCollection<TagItem> TagRootItems { get; set; }
-
         public MainWindow()
         {
             this.InitializeComponent();
@@ -22,9 +20,10 @@ namespace VideoManager3_WinUI
             // Window.ContentをFrameworkElementにキャストしてDataContextを設定
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
-            // タグの初期化
-//            TagRootItems = ViewModel.TagItems;
         }
+
+
+        // タグを編集を実行するイベントハンドラー（ツリー選択時とファイル選択時で共用できる？）
         private async void TagEdit(object sender, RoutedEventArgs e)
         {
             ViewModel.EditTagCommand.Execute(null);

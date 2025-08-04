@@ -11,8 +11,8 @@
 
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>    <!-- ツールバー -->
+            <RowDefinition Height="*"/>       <!-- メインコンテンツエリア -->
         </Grid.RowDefinitions>
 
         <!-- ツールバー -->
@@ -34,42 +34,12 @@
         <!-- メインコンテンツエリア (左ペイン + 右ペイン) -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220" MinWidth="100"/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="*" MinWidth="200"/>
+                <ColumnDefinition Width="220" MinWidth="100"/>  <!-- 左ペイン: タグツリー -->
+                <ColumnDefinition Width="5"/>                   <!-- 縦方向のグリッドスプリッター -->
+                <ColumnDefinition Width="*" MinWidth="200"/>    <!-- 右ペイン: 動画リストと詳細情報 -->
             </Grid.ColumnDefinitions>
 
             <!-- 左ペイン: タグツリー -->
-            <!--
-            <Grid.Resources>
-                <DataTemplate x:Key="TagItemTemplate" x:DataType="xaml:TreeViewNode">
-                    <StackPanel Orientation="Horizontal" Height="24">
-                        <Rectangle Width="16" Height="16" Fill="{x:Bind ((local:TagItem)Content).Color}" Margin="0,0,8,0"/>
-                        <TextBlock Text="{x:Bind ((local:TagItem)Content).Name}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </DataTemplate>
-            </Grid.Resources>
-
-            <TreeView x:Name="TagsTreeView"
-                    Grid.Column="0"
-                    ItemTemplate="{StaticResource TagItemTemplate}"
-                    Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"
-                    Margin="5">
-                <TreeView.ContextFlyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem Text="名前の変更" Command="{Binding EditTagCommand}"/>
-                        <MenuFlyoutItem Text="色の変更" />
-                        <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem Text="新しいタグ" />
-                        <MenuFlyoutItem Text="新しいグループ" />
-                        <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem Text="削除" />
-                    </MenuFlyout>
-                </TreeView.ContextFlyout>
-            </TreeView>
-            -->
-
-            <!-- 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
             <Grid Grid.Column="0" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
                 <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
                     <TextBlock Text="タグツリー" TextAlignment="Left" Margin="10"/>
@@ -82,22 +52,16 @@
                             <DataTemplate x:DataType="local:TagItem">
                                 <TreeViewItem ItemsSource="{x:Bind Children}">
 
+                                    <!-- ツリーの項目定義 色付きの矩形＋アイテム名 -->
                                     <StackPanel Orientation="Horizontal" Height="24">
                                         <Rectangle Width="16" Height="16" Fill="{x:Bind (local:TagItem).Color}" Margin="0,0,8,0"/>
                                         <TextBlock Text="{x:Bind (local:TagItem).Name}" VerticalAlignment="Center"/>
-
                                     </StackPanel>
 
+                                    <!-- 右クリックメニュー定義 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
-
                                             <MenuFlyoutItem Text="名前の変更" Click="TagEdit"/>
-                                            
-                                            <!--
-                                            <MenuFlyoutItem Text="タグを編集"
-                                                Command="{Binding ElementName=self, Path=ViewModel.EditTagCommand}"
-                                                CommandParameter="{Binding}"/>
-                                            -->
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>
                                     
@@ -115,9 +79,9 @@
             <!-- 右ペイン: 上下に分割 -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="5"/>
-                    <RowDefinition Height="Auto" MinHeight="80"/>
+                    <RowDefinition Height="*"/>                    <!-- 動画リスト -->
+                    <RowDefinition Height="5"/>                    <!-- 横方向のグリッドスプリッター -->
+                    <RowDefinition Height="Auto" MinHeight="130"/>  <!-- 詳細情報 -->
                 </Grid.RowDefinitions>
 
                 <!-- 右ペイン上部: 動画リスト -->
@@ -191,8 +155,7 @@
                                 <ColumnDefinition Width="Auto" MinWidth="20"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- 更新日時 -->
-                            <!-- 日時のフォーマットの変更は一旦保留 StringFormat={}{0:yyyy年MM月dd日 HH:mm}-->
+                            <!-- 更新日時 日時のフォーマットの変更は一旦保留 StringFormat={}{0:yyyy年MM月dd日 HH:mm}-->
                             <TextBlock Grid.Row="0" Grid.Column="0"
                                 Text="更新日時:"
                                 FontWeight="SemiBold"
@@ -221,24 +184,28 @@
                         </Grid>
 
                         <!-- ラベル -->
-                        <TextBlock Text="ラベル:" FontWeight="SemiBold" Margin="0,5,0,5"/>
-                        <!--
-                        <ItemsControl ItemsSource="{Binding Labels}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                ラベルの見た目はここで自由にデザインできるよ！ 
-                                <DataTemplate x:DataType="local:LabelItem">
-                                    <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,0">
-                                        <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" FontWeight="SemiBold"/>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="タグ:" FontWeight="SemiBold" Margin="0,5,10,5" VerticalAlignment="Top"/>
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding VideoTagItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <controls:WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <!-- ラベルの見た目はここで自由にデザインできるよ！ -->
+                                    <DataTemplate x:DataType="local:TagItem">
+                                        <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
+                                            <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Grid>

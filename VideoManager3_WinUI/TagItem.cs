@@ -94,6 +94,18 @@ namespace VideoManager3_WinUI
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
 
+        // 子要素まで探索して、指定したIDのタグを取得する
+        public TagItem? FindTagById(int id)
+        {
+            if (Id == id) return this;
+            foreach (var child in Children)
+            {
+                var found = child.FindTagById(id);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         // DB用のカラーコードを表示用Brushに変換する
         private static Brush? ConvertStringToBrush(string? colorString)
         {

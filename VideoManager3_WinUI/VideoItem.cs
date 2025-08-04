@@ -2,6 +2,7 @@ using MediaToolkit;
 using MediaToolkit.Model;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using Windows.Media.Playback;
@@ -36,6 +37,20 @@ namespace VideoManager3_WinUI
                 {
                     _thumbnail = value;
                     OnPropertyChanged(nameof(Thumbnail));
+                }
+            }
+        }
+
+        private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
+        public ObservableCollection<TagItem> VideoTagItems
+        {
+            get => videoTagItems;
+            set
+            {
+                if (videoTagItems != value)
+                {
+                    videoTagItems = value;
+                    OnPropertyChanged(nameof(VideoTagItems));
                 }
             }
         }

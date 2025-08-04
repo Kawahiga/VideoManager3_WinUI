@@ -19,6 +19,9 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
 using Windows.UI.StartScreen;
+using static MediaToolkit.Model.Metadata;
+
+// タグとファイルの対応の取り方が下手、、、
 
 namespace VideoManager3_WinUI
 {
@@ -95,22 +98,35 @@ namespace VideoManager3_WinUI
             ToggleViewCommand = new RelayCommand(ToggleView);
             EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
             
-            //LoadDummyTags();
-            _ = LoadTagsAsync();
-
-            _ = LoadVideosFromDbAsync();
+            // 動画とタグの初期読み込み
+            _ = LoadTagsAsync();    // タグの読み込みを非同期で開始
+            _ = LoadVideosFromDbAsync();    // 動画の読み込みを非同期で開始
         }
 
+        // 動画データをデータベースから読み込み、サムネイルを非同期で取得する
         private async Task LoadVideosFromDbAsync()
         {
+            Videos.Clear();
+
             var videosFromDb = await _databaseService.GetAllVideosAsync();
-            foreach (var video in videosFromDb)
+            foreach (VideoItem video in videosFromDb)
             {
+                // 動画アイテムをコレクションに追加
                 Videos.Add(video);
+
+                // 動画のタグをデータベースから取得し追加
+                var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
+                foreach (TagItem tag in tagsFromVideo)
+                {
+                    TagItem? tag1 = TagItems.FirstOrDefault(t => t.Id == tag.Id);
+                    if (tag1 != null) video.VideoTagItems.Add(tag1);
+                }
+
                 _ = Task.Run(() => LoadThumbnailAsync(video));
             }
         }
 
+        // 動画のサムネイルを非同期で読み込み、UIスレッドで設定する
         private async Task LoadThumbnailAsync(VideoItem videoItem)
         {
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
@@ -140,7 +156,7 @@ namespace VideoManager3_WinUI
         // データベースからタグを読み込み、階層を構築する
         private async Task LoadTagsAsync()
         {
-            _dispatcherQueue.TryEnqueue(() => TagItems.Clear());
+            TagItems.Clear();
 
             try
             {
@@ -149,28 +165,31 @@ namespace VideoManager3_WinUI
 
                 var rootTags = new List<TagItem>();
 
-                foreach (var tag in allTags.OrderBy(t => t.OrderInGroup))
-                {
-                    if (tag.ParentId.HasValue && tag.ParentId != 0)
-                    {
-                        if (tagDict.TryGetValue(tag.ParentId.Value, out var parentTag))
-                        {
+                foreach (var tag in allTags.OrderBy(t => t.OrderInGroup)) {
+                    if (tag.ParentId.HasValue && tag.ParentId != 0) {
+                        // 親要素が存在
+                        if (tagDict.TryGetValue(tag.ParentId.Value, out var parentTag)) {
                             parentTag.Children.Add(tag);
                         }
-                    }
-                    else
-                    {
+                    } else {
                         rootTags.Add(tag);
                     }
-                }
-
-                _dispatcherQueue.TryEnqueue(() =>
-                {
-                    foreach (var tag in rootTags)
+                    // ファイルリストのタグを更新
+                    foreach (VideoItem video in Videos)
                     {
-                        TagItems.Add(tag);
+                        var tag1 = video.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
+                        if (tag1 != null)
+                        {
+                            video.VideoTagItems.Remove(tag1);
+                            video.VideoTagItems.Add(tag);
+                        }
                     }
-                });
+                }
+                
+                foreach (var tag in rootTags) {
+                    // タグリストに追加
+                    TagItems.Add(tag);
+                }
             }
             catch (Exception ex)
             {
@@ -178,7 +197,7 @@ namespace VideoManager3_WinUI
             }
         }
 
-        // タグを編集
+        // タグ編集コマンド
         public async Task EditTagAsync()
         {
             if (SelectedTag == null) return;

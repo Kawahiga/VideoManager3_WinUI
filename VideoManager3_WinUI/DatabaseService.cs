@@ -134,6 +134,9 @@ namespace VideoManager3_WinUI
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();
 
+            // parentが0の場合はNULLに設定
+            if (tag.ParentId == 0) tag.ParentId = null;
+
             if (tag.Id == 0)
             {
                 // 新規追加

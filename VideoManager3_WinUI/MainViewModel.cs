@@ -93,10 +93,8 @@ namespace VideoManager3_WinUI
             // コマンドの初期化
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
-            //EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
-
-            EditTagCommand = new RelayCommand(EditTag);
-
+            EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
+            
             //LoadDummyTags();
             _ = LoadTagsAsync();
 
@@ -168,25 +166,7 @@ namespace VideoManager3_WinUI
             }
         }
 
-
-        private void EditTag(object? parameter)
-        {
-            // 渡されたパラメータがTagItemかどうかをチェック
-            if (parameter is TagItem tagToEdit)
-            {
-                // ここにタグを編集するロジックを実装します。
-                // 例えば、ダイアログを開いて名前を変更するなど。
-                Debug.WriteLine($"編集対象のタグ: {tagToEdit.Name} (ID: {tagToEdit.Id})");
-
-                // TODO: タグ編集用のダイアログ表示などの処理を実装
-            }
-            else
-            {
-                Debug.WriteLine("EditTagに予期しない型のパラメータが渡されました。");
-            }
-        }
-
-        // タグ名を編集
+        // タグを編集
         public async Task EditTagAsync()
         {
             if (SelectedTag == null) return;
@@ -203,7 +183,7 @@ namespace VideoManager3_WinUI
             // ContentDialogを作成
             var dialog = new ContentDialog
             {
-                Title = "タグ名の変更",
+                Title = "タグの編集",
                 Content = inputTextBox,
                 PrimaryButtonText = "OK",
                 CloseButtonText = "キャンセル",
@@ -214,7 +194,9 @@ namespace VideoManager3_WinUI
             var result = await dialog.ShowAsync();
 
             // OKボタンが押され、かつテキストが空でなく、変更があった場合のみ更新
-            if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(inputTextBox.Text) && SelectedTag.Name != inputTextBox.Text)
+            if (   result == ContentDialogResult.Primary
+                && !string.IsNullOrWhiteSpace(inputTextBox.Text)
+                && SelectedTag.Name != inputTextBox.Text)
             {
                 SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
                 await _databaseService.AddOrUpdateTagAsync(SelectedTag); // データベースを更新
@@ -229,6 +211,7 @@ namespace VideoManager3_WinUI
                 SuggestedStartLocation = PickerLocationId.VideosLibrary
             };
             folderPicker.FileTypeFilter.Add("*");
+            folderPicker.FileTypeFilter.Add(".mp4");
 
             if (App.m_window == null) return;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
@@ -290,124 +273,5 @@ namespace VideoManager3_WinUI
             OnPropertyChanged(propertyName);
             return true;
         }
-
-        /*
-        private void LoadDummyTags()
-        {
-            var group1 = new TagItem
-            {
-                Id = 0,
-                Name = "ジャンル",
-                Color = new SolidColorBrush(Colors.CornflowerBlue),
-                ColorCode = "#6495ED",
-                ParentId = null,
-                OrderInGroup = 0,
-                IsGroup = true,
-                Children =
-                {
-                    new TagItem
-                    {
-                        Id = 0,
-                        Name = "アクション",
-                        Color = new SolidColorBrush(Colors.OrangeRed),
-                        ColorCode = "#FF4500",
-                        ParentId = 1,
-                        OrderInGroup = 0,
-                        IsGroup = false,
-                    },
-                    new TagItem
-                    {
-                        Id = 0,
-                        Name = "コメディ",
-                        Color = new SolidColorBrush(Colors.Gold),
-                        ColorCode = "#FFD700",
-                        ParentId = 1,
-                        OrderInGroup = 1,
-                        IsGroup = false,
-                    },
-                }
-            };
-
-            var group2 = new TagItem
-            {
-                Id = 0,
-                Name = "製作者",
-                Color = new SolidColorBrush(Colors.SeaGreen),
-                ColorCode = "#2E8B57",
-                ParentId = null,
-                OrderInGroup = 1,
-                IsGroup = true,
-                Children =
-                {
-                    new TagItem
-                    {
-                        Id = 0,
-                        Name = "スタジオA",
-                        Color = new SolidColorBrush(Colors.LightGreen),
-                        ColorCode = "#90EE90",
-                        ParentId = 4,
-                        OrderInGroup = 0,
-                        IsGroup = true,
-                        Children =
-                        {
-                            new TagItem {
-                                Id = 0,
-                                Name = "監督X",
-                                Color = new SolidColorBrush(Colors.Turquoise),
-                                ColorCode = "#40E0D0",
-                                ParentId = 5,
-                                OrderInGroup = 0,
-                                IsGroup = false
-                            },
-                            new TagItem {
-                                Id = 0,
-                                Name = "監督Y",
-                                Color = new SolidColorBrush(Colors.Turquoise),
-                                ColorCode = "#40E0D0",
-                                ParentId = 5,
-                                OrderInGroup = 1,
-                                IsGroup = false
-                            }
-                        }
-                    },
-                    new TagItem {
-                        Id = 0,
-                        Name = "スタジオB",
-                        Color = new SolidColorBrush(Colors.LightGreen),
-                        ColorCode = "#90EE90",
-                        ParentId = 4,
-                        OrderInGroup = 1,
-                        IsGroup = true,
-                    },
-                }
-            };
-
-            var singleTag = new TagItem {
-                Id = 0,
-                Name = "お気に入り",
-                Color = new SolidColorBrush(Colors.HotPink),
-                ColorCode = "#FF69B4",
-                ParentId = null,
-                OrderInGroup = 2,
-                IsGroup = false
-            };
-
-            TagItems.Add(group1);
-            TagItems.Add(group2);
-            TagItems.Add(singleTag);
-
-            foreach ( var tag in TagItems ) {
-                _databaseService.AddOrUpdateTagAsync(tag);
-                foreach (var child in tag.Children)
-                {
-                    _databaseService.AddOrUpdateTagAsync(child);
-                    foreach (var grandChild in child.Children)
-                    {
-                        _databaseService.AddOrUpdateTagAsync(grandChild);
-                    }
-                }
-            }
-        }
-        */
     }
 }

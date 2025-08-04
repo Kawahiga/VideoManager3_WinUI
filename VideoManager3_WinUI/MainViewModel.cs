@@ -114,12 +114,21 @@ namespace VideoManager3_WinUI
                 // 動画アイテムをコレクションに追加
                 Videos.Add(video);
 
-                // 動画のタグをデータベースから取得し追加
+                // 動画のタグをデータベースから取得
                 var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
-                foreach (TagItem tag in tagsFromVideo)
+
+                // 親子関係にあるタグをすべてフラットなリストにし、IDで検索できるよう辞書に変換
+                var allTagsLookup = TagItems.SelectMany(t => t.Children.Concat(new[] { t }))
+                                            .GroupBy(t => t.Id)
+                                            .ToDictionary(g => g.Key, g => g.First());
+
+                // データベースから取得したタグに対応するViewModelのTagItemインスタンスを動画に追加
+                foreach (var tagFromDb in tagsFromVideo)
                 {
-                    TagItem? tag1 = TagItems.FirstOrDefault(t => t.Id == tag.Id);
-                    if (tag1 != null) video.VideoTagItems.Add(tag1);
+                    if (allTagsLookup.TryGetValue(tagFromDb.Id, out var existingTag))
+                    {
+                        video.VideoTagItems.Add(existingTag);
+                    }
                 }
 
                 _ = Task.Run(() => LoadThumbnailAsync(video));
@@ -156,39 +165,54 @@ namespace VideoManager3_WinUI
         // データベースからタグを読み込み、階層を構築する
         private async Task LoadTagsAsync()
         {
-            TagItems.Clear();
-
             try
             {
+                // データベースからすべてのタグを取得
                 var allTags = await _databaseService.GetTagsAsync();
                 var tagDict = allTags.ToDictionary(t => t.Id);
 
                 var rootTags = new List<TagItem>();
 
-                foreach (var tag in allTags.OrderBy(t => t.OrderInGroup)) {
-                    if (tag.ParentId.HasValue && tag.ParentId != 0) {
-                        // 親要素が存在
-                        if (tagDict.TryGetValue(tag.ParentId.Value, out var parentTag)) {
-                            parentTag.Children.Add(tag);
-                        }
-                    } else {
+                // 1. タグの階層を構築
+                foreach (var tag in allTags)
+                {
+                    if (   tag.ParentId.HasValue && tag.ParentId != 0
+                        && tagDict.TryGetValue(tag.ParentId.Value, out var parentTag))
+                    {
+                        parentTag.Children.Add(tag);
+                    }
+                    else
+                    {
                         rootTags.Add(tag);
                     }
-                    // ファイルリストのタグを更新
-                    foreach (VideoItem video in Videos)
+                }
+
+                // 2. 子タグとルートタグを順序でソート
+                foreach (var tag in allTags.Where(t => t.Children.Any()))
+                {
+                    var sortedChildren = tag.Children.OrderBy(c => c.OrderInGroup).ToList();
+                    tag.Children.Clear();
+                    sortedChildren.ForEach(tag.Children.Add);
+                }
+                var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
+
+                // 3. UIスレッドでUIを更新
+                // UIのタグツリーを更新
+                TagItems.Clear();
+                sortedRootTags.ForEach(TagItems.Add);
+
+                // 各動画アイテムが持つタグのインスタンスを最新のものに更新
+                foreach (var video in Videos)
+                {
+                    var currentTagIds = video.VideoTagItems.Select(t => t.Id).ToList();
+                    video.VideoTagItems.Clear();
+                    foreach (var tagId in currentTagIds)
                     {
-                        var tag1 = video.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
-                        if (tag1 != null)
+                        if (tagDict.TryGetValue(tagId, out var updatedTag))
                         {
-                            video.VideoTagItems.Remove(tag1);
-                            video.VideoTagItems.Add(tag);
+                            video.VideoTagItems.Add(updatedTag);
                         }
                     }
-                }
-                
-                foreach (var tag in rootTags) {
-                    // タグリストに追加
-                    TagItems.Add(tag);
                 }
             }
             catch (Exception ex)

@@ -18,6 +18,13 @@
         <!-- ツールバー -->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
             <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
+
+            <AppBarButton Icon="Tag" Label="タグを編集">
+                <AppBarButton.Flyout>
+                    <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
+                </AppBarButton.Flyout>
+            </AppBarButton>
+
             <AppBarSeparator/>
             <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}">
                 <AppBarButton.Icon>

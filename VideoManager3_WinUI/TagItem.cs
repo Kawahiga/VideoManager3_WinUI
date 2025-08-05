@@ -88,6 +88,21 @@ namespace VideoManager3_WinUI
             set { _isGroup = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsGroup))); }
         }
 
+        // 動画にこのタグが付けられているかどうかを示すフラグ
+        private bool _isChecked;
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
+                }
+            }
+        }
+
         // TreeViewの展開状態
         // private bool _isExpanded = true;
 

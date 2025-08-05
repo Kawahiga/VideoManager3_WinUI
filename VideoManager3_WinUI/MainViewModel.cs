@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -31,9 +32,10 @@ namespace VideoManager3_WinUI
 
         public ObservableCollection<TagItem> TagItems { get; } = new();
 
-        public ICommand AddFolderCommand { get; }
-        public ICommand ToggleViewCommand { get; }
-        public ICommand EditTagCommand { get; }
+        public ICommand AddFolderCommand { get; }   // フォルダを指定してファイルを読み込むコマンド
+        public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
+        public ICommand EditTagCommand { get; }     // タグ編集コマンド
+        public ICommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
 
         private bool _isGridView = true;
         public bool IsGridView
@@ -62,6 +64,8 @@ namespace VideoManager3_WinUI
                 {
                     _selectedItem = value;
                     OnPropertyChanged(nameof(SelectedItem));
+                    // 選択アイテムが変わったらコマンドの実行可否を更新
+                    //((RelayCommand)UpdateVideoTagsCommand).RaiseCanExecuteChanged();
                 }
             }
         }
@@ -97,10 +101,65 @@ namespace VideoManager3_WinUI
             AddFolderCommand = new RelayCommand(async () => await AddFolder());
             ToggleViewCommand = new RelayCommand(ToggleView);
             EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
-            
+            UpdateVideoTagsCommand = new RelayCommand<TagItem>(async (tag) => await UpdateVideoTagSelection(tag), (tag) => SelectedItem != null);
+
             // 動画とタグの初期読み込み
             _ = LoadTagsAsync();    // タグの読み込みを非同期で開始
             _ = LoadVideosFromDbAsync();    // 動画の読み込みを非同期で開始
+        }
+
+        // ★追加：タグのチェック状態が変更されたときに呼び出されるメソッド
+        private async Task UpdateVideoTagSelection(TagItem? tag)
+        {
+            if (SelectedItem == null || tag == null) return;
+
+            // チェック状態に応じてDBとViewModelを更新
+            if (tag.IsChecked)
+            {
+                // タグが既に追加されていなければ追加
+                if (!SelectedItem.VideoTagItems.Any(t => t.Id == tag.Id))
+                {
+                    await _databaseService.AddTagToVideoAsync(SelectedItem, tag);
+                    SelectedItem.VideoTagItems.Add(tag);
+                }
+            }
+            else
+            {
+                // タグが既に存在すれば削除
+                var tagToRemove = SelectedItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
+                if (tagToRemove != null)
+                {
+                    await _databaseService.RemoveTagFromVideoAsync(SelectedItem, tagToRemove);
+                    SelectedItem.VideoTagItems.Remove(tagToRemove);
+                }
+            }
+        }
+
+        // ★追加：フライアウトが開かれる直前に、選択中の動画に合わせてタグのチェック状態を更新する
+        public void PrepareTagsForEditing()
+        {
+            if (SelectedItem == null) return;
+
+            // すべてのタグを再帰的に取得
+            var allTags = new List<TagItem>();
+            void FlattenTags(IEnumerable<TagItem> tags)
+            {
+                foreach (var tag in tags)
+                {
+                    allTags.Add(tag);
+                    FlattenTags(tag.Children);
+                }
+            }
+            FlattenTags(TagItems);
+
+            // 現在選択されている動画が持っているタグIDのリストを作成
+            var checkedTagIds = new HashSet<int>(SelectedItem.VideoTagItems.Select(t => t.Id));
+
+            // 全てのタグをループし、選択状態に応じてIsCheckedプロパティを設定
+            foreach (var tag in allTags)
+            {
+                tag.IsChecked = checkedTagIds.Contains(tag.Id);
+            }
         }
 
         // 動画データをデータベースから読み込み、サムネイルを非同期で取得する

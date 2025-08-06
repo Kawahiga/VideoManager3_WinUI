@@ -219,6 +219,7 @@ namespace VideoManager3_WinUI
                     OrderInGroup = orderInGroup,
                     IsGroup = isGroup
                 };
+                tag.IsExpanded = true; // グループタグは初期状態で展開する
                 tags.Add(tag);
 
             }

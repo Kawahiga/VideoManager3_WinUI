@@ -31,6 +31,7 @@
                     <SymbolIcon Symbol="List"/>
                 </AppBarButton.Icon>
             </AppBarButton>
+            <!-- サムネイルのサイズを変更できるようにしたい -->
             <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="ViewAll"/>
@@ -57,7 +58,7 @@
                         Margin="5">
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="local:TagItem">
-                                <TreeViewItem ItemsSource="{x:Bind Children}">
+                                <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
 
                                     <!-- ツリーの項目定義 色付きの矩形＋アイテム名 -->
                                     <StackPanel Orientation="Horizontal" Height="24">

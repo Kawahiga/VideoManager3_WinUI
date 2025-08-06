@@ -104,7 +104,19 @@ namespace VideoManager3_WinUI
         }
 
         // TreeViewの展開状態
-        // private bool _isExpanded = true;
+        private bool _isExpanded = true;
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)));
+                }
+            }
+        }
 
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();

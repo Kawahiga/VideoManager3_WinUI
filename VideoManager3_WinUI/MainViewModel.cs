@@ -234,6 +234,7 @@ namespace VideoManager3_WinUI
         {
             try
             {
+
                 // データベースからすべてのタグを取得
                 var allTags = await _databaseService.GetTagsAsync();
                 var tagDict = allTags.ToDictionary(t => t.Id);
@@ -263,10 +264,15 @@ namespace VideoManager3_WinUI
                 }
                 var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
 
-                // 3. UIスレッドでUIを更新
-                // UIのタグツリーを更新
+                // 3. UIのタグツリーを更新
                 TagItems.Clear();
                 sortedRootTags.ForEach(TagItems.Add);
+
+                // すべてのタグを展開状態にする
+                foreach (var tag in allTags)
+                {
+                    tag.IsExpanded = true;
+                }
 
                 // 各動画アイテムが持つタグのインスタンスを最新のものに更新
                 foreach (var video in Videos)

@@ -177,9 +177,17 @@ namespace VideoManager3_WinUI
                 var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
 
                 // 親子関係にあるタグをすべてフラットなリストにし、IDで検索できるよう辞書に変換
-                var allTagsLookup = TagItems.SelectMany(t => t.Children.Concat(new[] { t }))
-                                            .GroupBy(t => t.Id)
-                                            .ToDictionary(g => g.Key, g => g.First());
+                var allTags = new List<TagItem>();
+                void FlattenTags(IEnumerable<TagItem> tags)
+                {
+                    foreach (var tag in tags)
+                    {
+                        allTags.Add(tag);
+                        FlattenTags(tag.Children);
+                    }
+                }
+                FlattenTags(TagItems);
+                var allTagsLookup = allTags.ToDictionary(t => t.Id);
 
                 // データベースから取得したタグに対応するViewModelのTagItemインスタンスを動画に追加
                 foreach (var tagFromDb in tagsFromVideo)

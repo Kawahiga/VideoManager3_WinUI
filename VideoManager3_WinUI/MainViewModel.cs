@@ -334,7 +334,7 @@ namespace VideoManager3_WinUI
                 SuggestedStartLocation = PickerLocationId.VideosLibrary
             };
             folderPicker.FileTypeFilter.Add("*");
-            
+
             if (App.m_window == null) return;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
             WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
@@ -342,35 +342,51 @@ namespace VideoManager3_WinUI
             StorageFolder folder = await folderPicker.PickSingleFolderAsync();
             if (folder != null)
             {
-                var files = await folder.GetFilesAsync();
-                foreach (var file in files)
+                var items = await folder.GetItemsAsync();
+                foreach (var item in items)
                 {
-                    if (file.FileType.ToLower() == ".mp4")
+                    if (item.IsOfType(StorageItemTypes.Folder))
                     {
-                        bool exists = false;
-                        foreach (var v in Videos)
-                        {
-                            if (v.FilePath == file.Path)
-                            {
-                                exists = true;
-                                break;
-                            }
-                        }
+                        var subFolder = item as StorageFolder;
+                        if (subFolder == null) continue;
 
+                        bool exists = Videos.Any(v => v.FilePath == subFolder.Path);
                         if (!exists)
                         {
-                            // 動画ファイルの基本プロパティとビデオプロパティを取得
-                            int id = 0; // IDはデータベースで自動生成されるため、ここでは仮の値
-                            string filePath = file.Path;
-                            string fileName = file.Name;
-                            long fileSize = (long)(await file.GetBasicPropertiesAsync()).Size;
-                            DateTime lastMod = (await file.GetBasicPropertiesAsync()).DateModified.DateTime;
-                            double duration = (await file.Properties.GetVideoPropertiesAsync()).Duration.TotalSeconds;
-
-                            var videoItem = new VideoItem( id, filePath, fileName, fileSize, lastMod, duration);
+                            var basicProperties = await subFolder.GetBasicPropertiesAsync();
+                            var videoItem = new VideoItem(
+                                id: 0,
+                                filePath: subFolder.Path,
+                                fileName: subFolder.Name,
+                                fileSize: 0,
+                                lastModified: basicProperties.DateModified.DateTime,
+                                duration: 0
+                            );
                             await _databaseService.AddVideoAsync(videoItem);
                             Videos.Add(videoItem);
-                            _ = Task.Run(() => LoadThumbnailAsync(videoItem));
+                        }
+                    }
+                    else if (item.IsOfType(StorageItemTypes.File))
+                    {
+                        var file = item as StorageFile;
+                        if (file != null && file.FileType.ToLower() == ".mp4")
+                        {
+                            bool exists = Videos.Any(v => v.FilePath == file.Path);
+
+                            if (!exists)
+                            {
+                                int id = 0;
+                                string filePath = file.Path;
+                                string fileName = file.Name;
+                                long fileSize = (long)(await file.GetBasicPropertiesAsync()).Size;
+                                DateTime lastMod = (await file.GetBasicPropertiesAsync()).DateModified.DateTime;
+                                double duration = (await file.Properties.GetVideoPropertiesAsync()).Duration.TotalSeconds;
+
+                                var videoItem = new VideoItem(id, filePath, fileName, fileSize, lastMod, duration);
+                                await _databaseService.AddVideoAsync(videoItem);
+                                Videos.Add(videoItem);
+                                _ = Task.Run(() => LoadThumbnailAsync(videoItem));
+                            }
                         }
                     }
                 }

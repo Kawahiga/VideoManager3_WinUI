@@ -24,10 +24,8 @@ using static MediaToolkit.Model.Metadata;
 
 // タグとファイルの対応の取り方が下手、、、
 
-namespace VideoManager3_WinUI
-{
-    public class MainViewModel : INotifyPropertyChanged
-    {
+namespace VideoManager3_WinUI {
+    public class MainViewModel:INotifyPropertyChanged {
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
 
         public ObservableCollection<TagItem> TagItems { get; } = new();
@@ -36,18 +34,17 @@ namespace VideoManager3_WinUI
         public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
         public ICommand EditTagCommand { get; }     // タグ編集コマンド
         public ICommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
+        public ICommand DoubleTappedCommand { get; }    // ファイルをダブルクリックしたときのコマンド
 
         private bool _isGridView = true;
-        public bool IsGridView
-        {
+        public bool IsGridView {
             get => _isGridView;
             set
             {
-                if (_isGridView != value)
-                {
+                if ( _isGridView != value ) {
                     _isGridView = value;
-                    OnPropertyChanged(nameof(IsGridView));
-                    OnPropertyChanged(nameof(IsListView));
+                    OnPropertyChanged( nameof( IsGridView ) );
+                    OnPropertyChanged( nameof( IsListView ) );
                 }
             }
         }
@@ -55,30 +52,28 @@ namespace VideoManager3_WinUI
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
-        public VideoItem? SelectedItem
-        {
+        public VideoItem? SelectedItem {
             get => _selectedItem;
             set
             {
-                if (_selectedItem != value)
-                {
+                if ( _selectedItem != value ) {
                     _selectedItem = value;
-                    OnPropertyChanged(nameof(SelectedItem));
+                    OnPropertyChanged( nameof( SelectedItem ) );
                     // 選択アイテムが変わったらコマンドの実行可否を更新
-                    //((RelayCommand)UpdateVideoTagsCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)DoubleTappedCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)UpdateVideoTagsCommand).RaiseCanExecuteChanged();
                 }
             }
         }
 
         // TreeViewで選択されているタグを保持するためのプロパティ
         private TagItem? _selectedTag;
-        public TagItem? SelectedTag
-        {
+        public TagItem? SelectedTag {
             get => _selectedTag;
             set
             {
                 _selectedTag = value;
-                OnPropertyChanged(nameof(SelectedTag));
+                OnPropertyChanged( nameof( SelectedTag ) );
                 // 選択状態が変わったら、コマンドの実行可能性を再評価するよう通知
                 ((RelayCommand)EditTagCommand).RaiseCanExecuteChanged();
             }
@@ -88,20 +83,21 @@ namespace VideoManager3_WinUI
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
 
-        public MainViewModel(DispatcherQueue dispatcherQueue)
-        {
+        // コンストラクタ
+        public MainViewModel( DispatcherQueue dispatcherQueue ) {
             _dispatcherQueue = dispatcherQueue;
             _thumbnailService = new ThumbnailService();
 
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
-            Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
-            _databaseService = new DatabaseService(dbPath);
+            Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
+            _databaseService = new DatabaseService( dbPath );
 
             // コマンドの初期化
-            AddFolderCommand = new RelayCommand(async () => await AddFolder());
-            ToggleViewCommand = new RelayCommand(ToggleView);
-            EditTagCommand = new RelayCommand(async () => await EditTagAsync(), () => SelectedTag != null);
-            UpdateVideoTagsCommand = new RelayCommand<TagItem>(async (tag) => await UpdateVideoTagSelection(tag), (tag) => SelectedItem != null);
+            AddFolderCommand = new RelayCommand( async () => await AddFolder() );
+            ToggleViewCommand = new RelayCommand( ToggleView );
+            EditTagCommand = new RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
+            UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
+            DoubleTappedCommand = new RelayCommand( OpenFile, () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
             _ = LoadTagsAsync();    // タグの読み込みを非同期で開始
@@ -109,131 +105,112 @@ namespace VideoManager3_WinUI
         }
 
         // ★追加：タグのチェック状態が変更されたときに呼び出されるメソッド
-        private async Task UpdateVideoTagSelection(TagItem? tag)
-        {
-            if (SelectedItem == null || tag == null) return;
+        private async Task UpdateVideoTagSelection( TagItem? tag ) {
+            if ( SelectedItem == null || tag == null )
+                return;
 
             // チェック状態に応じてDBとViewModelを更新
-            if (tag.IsChecked)
-            {
+            if ( tag.IsChecked ) {
                 // タグが既に追加されていなければ追加
-                if (!SelectedItem.VideoTagItems.Any(t => t.Id == tag.Id))
-                {
-                    await _databaseService.AddTagToVideoAsync(SelectedItem, tag);
-                    SelectedItem.VideoTagItems.Add(tag);
+                if ( !SelectedItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
+                    await _databaseService.AddTagToVideoAsync( SelectedItem, tag );
+                    SelectedItem.VideoTagItems.Add( tag );
                 }
-            }
-            else
-            {
+            } else {
                 // タグが既に存在すれば削除
                 var tagToRemove = SelectedItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
-                if (tagToRemove != null)
-                {
-                    await _databaseService.RemoveTagFromVideoAsync(SelectedItem, tagToRemove);
-                    SelectedItem.VideoTagItems.Remove(tagToRemove);
+                if ( tagToRemove != null ) {
+                    await _databaseService.RemoveTagFromVideoAsync( SelectedItem, tagToRemove );
+                    SelectedItem.VideoTagItems.Remove( tagToRemove );
                 }
             }
         }
 
         // ★追加：フライアウトが開かれる直前に、選択中の動画に合わせてタグのチェック状態を更新する
-        public void PrepareTagsForEditing()
-        {
-            if (SelectedItem == null) return;
+        public void PrepareTagsForEditing() {
+            if ( SelectedItem == null )
+                return;
 
             // すべてのタグを再帰的に取得
             var allTags = new List<TagItem>();
-            void FlattenTags(IEnumerable<TagItem> tags)
-            {
-                foreach (var tag in tags)
-                {
-                    allTags.Add(tag);
-                    FlattenTags(tag.Children);
+            void FlattenTags( IEnumerable<TagItem> tags ) {
+                foreach ( var tag in tags ) {
+                    allTags.Add( tag );
+                    FlattenTags( tag.Children );
                 }
             }
-            FlattenTags(TagItems);
+            FlattenTags( TagItems );
 
             // 現在選択されている動画が持っているタグIDのリストを作成
             var checkedTagIds = new HashSet<int>(SelectedItem.VideoTagItems.Select(t => t.Id));
 
             // 全てのタグをループし、選択状態に応じてIsCheckedプロパティを設定
-            foreach (var tag in allTags)
-            {
-                tag.IsChecked = checkedTagIds.Contains(tag.Id);
+            foreach ( var tag in allTags ) {
+                tag.IsChecked = checkedTagIds.Contains( tag.Id );
             }
         }
 
         // 動画データをデータベースから読み込み、サムネイルを非同期で取得する
-        private async Task LoadVideosFromDbAsync()
-        {
+        private async Task LoadVideosFromDbAsync() {
             Videos.Clear();
 
             var videosFromDb = await _databaseService.GetAllVideosAsync();
-            foreach (VideoItem video in videosFromDb)
-            {
+            foreach ( VideoItem video in videosFromDb ) {
                 // 動画アイテムをコレクションに追加
-                Videos.Add(video);
+                Videos.Add( video );
 
                 // 動画のタグをデータベースから取得
                 var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
 
                 // 親子関係にあるタグをすべてフラットなリストにし、IDで検索できるよう辞書に変換
                 var allTags = new List<TagItem>();
-                void FlattenTags(IEnumerable<TagItem> tags)
-                {
-                    foreach (var tag in tags)
-                    {
-                        allTags.Add(tag);
-                        FlattenTags(tag.Children);
+                void FlattenTags( IEnumerable<TagItem> tags ) {
+                    foreach ( var tag in tags ) {
+                        allTags.Add( tag );
+                        FlattenTags( tag.Children );
                     }
                 }
-                FlattenTags(TagItems);
+                FlattenTags( TagItems );
                 var allTagsLookup = allTags.ToDictionary(t => t.Id);
 
                 // データベースから取得したタグに対応するViewModelのTagItemインスタンスを動画に追加
-                foreach (var tagFromDb in tagsFromVideo)
-                {
-                    if (allTagsLookup.TryGetValue(tagFromDb.Id, out var existingTag))
-                    {
-                        video.VideoTagItems.Add(existingTag);
+                foreach ( var tagFromDb in tagsFromVideo ) {
+                    if ( allTagsLookup.TryGetValue( tagFromDb.Id, out var existingTag ) ) {
+                        video.VideoTagItems.Add( existingTag );
                     }
                 }
 
-                _ = Task.Run(() => LoadThumbnailAsync(video));
+                // サムネイルを非同期で読み込み、UIスレッドで設定する
+                _ = Task.Run( () => LoadThumbnailAsync( video ) );
             }
         }
 
         // 動画のサムネイルを非同期で読み込み、UIスレッドで設定する
-        private async Task LoadThumbnailAsync(VideoItem videoItem)
-        {
+        private async Task LoadThumbnailAsync( VideoItem videoItem ) {
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
-            if (imageBytes != null && imageBytes.Length > 0)
-            {
-                _dispatcherQueue.TryEnqueue(async () =>
+            if ( imageBytes != null && imageBytes.Length > 0 ) {
+                _dispatcherQueue.TryEnqueue( async () =>
                 {
-                    try
-                    {
+                    try {
                         var bitmapImage = new BitmapImage();
                         using var stream = new InMemoryRandomAccessStream();
-                        await stream.WriteAsync(imageBytes.AsBuffer());
-                        stream.Seek(0);
-                        await bitmapImage.SetSourceAsync(stream);
+                        await stream.WriteAsync( imageBytes.AsBuffer() );
+                        stream.Seek( 0 );
+                        await bitmapImage.SetSourceAsync( stream );
 
                         videoItem.Thumbnail = bitmapImage;
                     }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}");
+                    catch ( Exception ex ) {
+                        System.Diagnostics.Debug.WriteLine( $"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}" );
                     }
-                });
+                } );
             }
         }
 
         // データベースからタグを読み込み、階層を構築する
-        private async Task LoadTagsAsync()
-        {
-            try
-            {
+        private async Task LoadTagsAsync() {
+            try {
 
                 // データベースからすべてのタグを取得
                 var allTags = await _databaseService.GetTagsAsync();
@@ -242,62 +219,52 @@ namespace VideoManager3_WinUI
                 var rootTags = new List<TagItem>();
 
                 // 1. タグの階層を構築
-                foreach (var tag in allTags)
-                {
-                    if (   tag.ParentId.HasValue && tag.ParentId != 0
-                        && tagDict.TryGetValue(tag.ParentId.Value, out var parentTag))
-                    {
-                        parentTag.Children.Add(tag);
-                    }
-                    else
-                    {
-                        rootTags.Add(tag);
+                foreach ( var tag in allTags ) {
+                    if ( tag.ParentId.HasValue && tag.ParentId != 0
+                        && tagDict.TryGetValue( tag.ParentId.Value, out var parentTag ) ) {
+                        parentTag.Children.Add( tag );
+                    } else {
+                        rootTags.Add( tag );
                     }
                 }
 
                 // 2. 子タグとルートタグを順序でソート
-                foreach (var tag in allTags.Where(t => t.Children.Any()))
-                {
+                foreach ( var tag in allTags.Where( t => t.Children.Any() ) ) {
                     var sortedChildren = tag.Children.OrderBy(c => c.OrderInGroup).ToList();
                     tag.Children.Clear();
-                    sortedChildren.ForEach(tag.Children.Add);
+                    sortedChildren.ForEach( tag.Children.Add );
                 }
                 var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
 
                 // 3. UIのタグツリーを更新
                 TagItems.Clear();
-                sortedRootTags.ForEach(TagItems.Add);
+                sortedRootTags.ForEach( TagItems.Add );
 
                 // すべてのタグを展開状態にする
-                foreach (var tag in allTags)
-                {
+                foreach ( var tag in allTags ) {
                     tag.IsExpanded = true;
                 }
 
                 // 各動画アイテムが持つタグのインスタンスを最新のものに更新
-                foreach (var video in Videos)
-                {
+                foreach ( var video in Videos ) {
                     var currentTagIds = video.VideoTagItems.Select(t => t.Id).ToList();
                     video.VideoTagItems.Clear();
-                    foreach (var tagId in currentTagIds)
-                    {
-                        if (tagDict.TryGetValue(tagId, out var updatedTag))
-                        {
-                            video.VideoTagItems.Add(updatedTag);
+                    foreach ( var tagId in currentTagIds ) {
+                        if ( tagDict.TryGetValue( tagId, out var updatedTag ) ) {
+                            video.VideoTagItems.Add( updatedTag );
                         }
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading tags from database: {ex.Message}");
+            catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
             }
         }
 
         // タグ編集コマンド
-        public async Task EditTagAsync()
-        {
-            if (SelectedTag == null) return;
+        public async Task EditTagAsync() {
+            if ( SelectedTag == null )
+                return;
 
             // 編集用のTextBoxを作成
             var inputTextBox = new TextBox
@@ -322,43 +289,42 @@ namespace VideoManager3_WinUI
             var result = await dialog.ShowAsync();
 
             // OKボタンが押され、かつテキストが空でなく、変更があった場合のみ更新
-            if (   result == ContentDialogResult.Primary
-                && !string.IsNullOrWhiteSpace(inputTextBox.Text)
-                && SelectedTag.Name != inputTextBox.Text)
-            {
+            if ( result == ContentDialogResult.Primary
+                && !string.IsNullOrWhiteSpace( inputTextBox.Text )
+                && SelectedTag.Name != inputTextBox.Text ) {
                 SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
-                await _databaseService.AddOrUpdateTagAsync(SelectedTag); // データベースを更新
+                await _databaseService.AddOrUpdateTagAsync( SelectedTag ); // データベースを更新
                 await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
             }
         }
 
-
-        private async Task AddFolder()
-        {
+        // フォルダを選択してファイルを追加するコマンド
+        // 対象：
+        // ・動画ファイル（.mp4）
+        // ・フォルダ
+        private async Task AddFolder() {
             var folderPicker = new FolderPicker
             {
                 SuggestedStartLocation = PickerLocationId.VideosLibrary
             };
-            folderPicker.FileTypeFilter.Add("*");
+            folderPicker.FileTypeFilter.Add( "*" );
 
-            if (App.m_window == null) return;
+            if ( App.m_window == null )
+                return;
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
-            WinRT.Interop.InitializeWithWindow.Initialize(folderPicker, hwnd);
+            WinRT.Interop.InitializeWithWindow.Initialize( folderPicker, hwnd );
 
             StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-            if (folder != null)
-            {
+            if ( folder != null ) {
                 var items = await folder.GetItemsAsync();
-                foreach (var item in items)
-                {
-                    if (item.IsOfType(StorageItemTypes.Folder))
-                    {
+                foreach ( var item in items ) {
+                    if ( item.IsOfType( StorageItemTypes.Folder ) ) {
                         var subFolder = item as StorageFolder;
-                        if (subFolder == null) continue;
+                        if ( subFolder == null )
+                            continue;
 
                         bool exists = Videos.Any(v => v.FilePath == subFolder.Path);
-                        if (!exists)
-                        {
+                        if ( !exists ) {
                             var basicProperties = await subFolder.GetBasicPropertiesAsync();
                             var videoItem = new VideoItem(
                                 id: 0,
@@ -368,19 +334,15 @@ namespace VideoManager3_WinUI
                                 lastModified: basicProperties.DateModified.DateTime,
                                 duration: 0
                             );
-                            await _databaseService.AddVideoAsync(videoItem);
-                            Videos.Add(videoItem);
+                            await _databaseService.AddVideoAsync( videoItem );
+                            Videos.Add( videoItem );
                         }
-                    }
-                    else if (item.IsOfType(StorageItemTypes.File))
-                    {
+                    } else if ( item.IsOfType( StorageItemTypes.File ) ) {
                         var file = item as StorageFile;
-                        if (file != null && file.FileType.ToLower() == ".mp4")
-                        {
+                        if ( file != null && file.FileType.ToLower() == ".mp4" ) {
                             bool exists = Videos.Any(v => v.FilePath == file.Path);
 
-                            if (!exists)
-                            {
+                            if ( !exists ) {
                                 int id = 0;
                                 string filePath = file.Path;
                                 string fileName = file.Name;
@@ -389,9 +351,9 @@ namespace VideoManager3_WinUI
                                 double duration = (await file.Properties.GetVideoPropertiesAsync()).Duration.TotalSeconds;
 
                                 var videoItem = new VideoItem(id, filePath, fileName, fileSize, lastMod, duration);
-                                await _databaseService.AddVideoAsync(videoItem);
-                                Videos.Add(videoItem);
-                                _ = Task.Run(() => LoadThumbnailAsync(videoItem));
+                                await _databaseService.AddVideoAsync( videoItem );
+                                Videos.Add( videoItem );
+                                _ = Task.Run( () => LoadThumbnailAsync( videoItem ) );
                             }
                         }
                     }
@@ -399,22 +361,34 @@ namespace VideoManager3_WinUI
             }
         }
 
-        private void ToggleView()
-        {
+        // ファイルをダブルクリックしたときのコマンド
+        // 動画ファイルなら再生、フォルダなら開く
+        private void OpenFile() {
+            if ( SelectedItem != null ) {
+                try {
+                    Process.Start( new ProcessStartInfo( SelectedItem.FilePath ) { UseShellExecute = true } );
+                }
+                catch ( Exception ex ) {
+                    Debug.WriteLine( $"Error opening file: {ex.Message}" );
+                }
+            }
+        }
+
+        // ファイルの表示方法を切り替える（一覧表示 ←→ サムネイル ）
+        private void ToggleView() {
             IsGridView = !IsGridView;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected virtual void OnPropertyChanged( string propertyName ) {
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
         }
 
-        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        protected bool SetProperty<T>( ref T field, T value, [CallerMemberName] string propertyName = null ) {
+            if ( EqualityComparer<T>.Default.Equals( field, value ) )
+                return false;
             field = value;
-            OnPropertyChanged(propertyName);
+            OnPropertyChanged( propertyName );
             return true;
         }
     }

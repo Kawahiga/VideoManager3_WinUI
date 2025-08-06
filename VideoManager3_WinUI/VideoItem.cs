@@ -15,10 +15,8 @@ using Windows.UI.StartScreen;
 // 2.ファイルの生存確認を定期的に行い、存在しないファイルは削除
 // 3.ファイルの削除
 
-namespace VideoManager3_WinUI
-{
-    public class VideoItem : INotifyPropertyChanged
-    {
+namespace VideoManager3_WinUI {
+    public class VideoItem:INotifyPropertyChanged {
         public int Id { get; set; } // データベースの主キー
         public string FileName { get; }
         public string FilePath { get; }
@@ -28,35 +26,30 @@ namespace VideoManager3_WinUI
 
         // サムネイルは非同期で読み込まれるため、null許容にする
         private BitmapImage? _thumbnail;
-        public BitmapImage? Thumbnail
-        {
+        public BitmapImage? Thumbnail {
             get => _thumbnail;
             set
             {
-                if (_thumbnail != value)
-                {
+                if ( _thumbnail != value ) {
                     _thumbnail = value;
-                    OnPropertyChanged(nameof(Thumbnail));
+                    OnPropertyChanged( nameof( Thumbnail ) );
                 }
             }
         }
 
         private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
-        public ObservableCollection<TagItem> VideoTagItems
-        {
+        public ObservableCollection<TagItem> VideoTagItems {
             get => videoTagItems;
             set
             {
-                if (videoTagItems != value)
-                {
+                if ( videoTagItems != value ) {
                     videoTagItems = value;
-                    OnPropertyChanged(nameof(VideoTagItems));
+                    OnPropertyChanged( nameof( VideoTagItems ) );
                 }
             }
         }
 
-        public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration )
-        {
+        public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {
             Id = id;
             FilePath = filePath;
             FileName = fileName;
@@ -66,9 +59,8 @@ namespace VideoManager3_WinUI
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected virtual void OnPropertyChanged( string propertyName ) {
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
         }
     }
 }

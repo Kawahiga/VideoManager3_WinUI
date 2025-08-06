@@ -112,7 +112,8 @@
                         SelectionMode="Single" 
                         IsItemClickEnabled="True"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                        Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        DoubleTapped="GridView_DoubleTapped">
                         <GridView.ItemTemplate>
                             <DataTemplate x:DataType="local:VideoItem">
                                 <Grid Width="200" Height="150" Margin="5">

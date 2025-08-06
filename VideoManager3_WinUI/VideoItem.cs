@@ -21,10 +21,10 @@ namespace VideoManager3_WinUI {
         public string FileName { get; }
         public string FilePath { get; }
         public long FileSize { get; set; }  // ファイルサイズ（バイト単位）
-        public DateTime LastModified { get; set; }
+        public DateTime LastModified { get; set; }  // 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
         public double Duration { get; set; }    // 動画の再生時間（秒）
 
-        // サムネイルは非同期で読み込まれるため、null許容にする
+        // サムネイル（非同期で読み込まれるため、null許容にする）
         private BitmapImage? _thumbnail;
         public BitmapImage? Thumbnail {
             get => _thumbnail;
@@ -37,6 +37,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ファイルに設定されたタグ情報
         private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
         public ObservableCollection<TagItem> VideoTagItems {
             get => videoTagItems;

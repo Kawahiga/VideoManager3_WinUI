@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 // ・動画からタグを削除
 // ・例外処理の実装
 // ・タグから動画を取得（タグからの絞り込みで必要？）
+// ・リンク切れになった動画を探して削除
+// そもそも起動時のDBアクセスは1つのメソッドにまとめた方がいい？
 
 namespace VideoManager3_WinUI {
     public class DatabaseService {

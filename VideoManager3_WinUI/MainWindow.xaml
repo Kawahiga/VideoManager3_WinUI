@@ -11,11 +11,16 @@
 
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>    <!-- ツールバー -->
+            <RowDefinition Height="Auto"/>    <!-- 上部ツールバー -->
             <RowDefinition Height="*"/>       <!-- メインコンテンツエリア -->
         </Grid.RowDefinitions>
 
-        <!-- ツールバー -->
+        <!-- 上部ツールバー -->
+        <!-- 未実装項目
+        ・サムネイルのサイズの変更スライドバー
+        ・削除ボタン
+        ・検索ボックス
+        ・ソートボタン-->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
             <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
 
@@ -31,7 +36,6 @@
                     <SymbolIcon Symbol="List"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-            <!-- サムネイルのサイズを変更できるようにしたい -->
             <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="ViewAll"/>
@@ -60,10 +64,13 @@
                             <DataTemplate x:DataType="local:TagItem">
                                 <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
 
-                                    <!-- ツリーの項目定義 色付きの矩形＋アイテム名 -->
+                                    <!-- ツリーの項目定義 -->
                                     <StackPanel Orientation="Horizontal" Height="24">
+                                        <!-- 色付きの矩形 -->
                                         <Rectangle Width="16" Height="16" Fill="{x:Bind (local:TagItem).Color}" Margin="0,0,8,0"/>
+                                        <!-- アイテム名 -->
                                         <TextBlock Text="{x:Bind (local:TagItem).Name}" VerticalAlignment="Center"/>
+                                        <!-- 関連づいたファイルの数（未実装） -->
                                     </StackPanel>
 
                                     <!-- 右クリックメニュー定義 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
@@ -130,6 +137,7 @@
                                             </Binding>
                                         </Image.Source>
                                     </Image>
+                                    <!-- 動画に設定されたタグ一覧をファイル名とは別に表示（未実装） -->
                                     <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
@@ -142,8 +150,8 @@
 
                 <!-- 右ペイン下部: 詳細情報 -->
                 <Grid Grid.Row="2" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" Padding="15">
-                    <!-- データコンテキストをSelectedItemに設定すると、中のBindingが書きやすくなるよ -->
                     <StackPanel DataContext="{Binding SelectedItem}">
+                        
                         <!-- ファイル名 -->
                         <TextBlock 
                             Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" 
@@ -192,7 +200,7 @@
                                 Margin="0,0,0,0"/>
                         </Grid>
 
-                        <!-- ラベル -->
+                        <!-- ファイルに設定されたラベル一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -206,7 +214,6 @@
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
-                                    <!-- ラベルの見た目はここで自由にデザインできるよ！ -->
                                     <DataTemplate x:DataType="local:TagItem">
                                         <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
                                             <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" />

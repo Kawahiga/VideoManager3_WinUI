@@ -34,9 +34,9 @@ namespace VideoManager3_WinUI {
                     FileID INTEGER PRIMARY KEY AUTOINCREMENT,
                     FilePath TEXT NOT NULL UNIQUE,
                     FileName TEXT NOT NULL,
-                    FileSize INTEGER NOT NULL,
-                    LastModified TEXT NOT NULL,
-                    Duration REAL NOT NULL
+                    FileSize INTEGER DEFAULT 0,
+                    LastModified TEXT,
+                    Duration REAL DeFAULT 0.0
                 );
                 
                 CREATE TABLE IF NOT EXISTS Tags (

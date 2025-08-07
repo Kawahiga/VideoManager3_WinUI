@@ -331,6 +331,7 @@ namespace VideoManager3_WinUI {
 
                         bool exists = Videos.Any(v => v.FilePath == subFolder.Path);
                         if ( !exists ) {
+                            // フォルダの基本プロパティを設定
                             var basicProperties = await subFolder.GetBasicPropertiesAsync();
                             var videoItem = new VideoItem(
                                 id: 0,
@@ -344,6 +345,7 @@ namespace VideoManager3_WinUI {
                             Videos.Add( videoItem );
                         }
                     } else if ( item.IsOfType( StorageItemTypes.File ) ) {
+                        // 動画ファイルの場合
                         var file = item as StorageFile;
                         if ( file != null && file.FileType.ToLower() == ".mp4" ) {
                             bool exists = Videos.Any(v => v.FilePath == file.Path);

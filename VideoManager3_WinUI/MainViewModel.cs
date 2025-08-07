@@ -187,6 +187,12 @@ namespace VideoManager3_WinUI {
 
         // 動画のサムネイルを非同期で読み込み、UIスレッドで設定する
         private async Task LoadThumbnailAsync( VideoItem videoItem ) {
+            
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) {
+                // ファイルパスが無効な場合は無効アイコンを表示（未実装）
+                return;
+            }
+
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
             if ( imageBytes != null && imageBytes.Length > 0 ) {

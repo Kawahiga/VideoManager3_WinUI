@@ -115,7 +115,8 @@ namespace VideoManager3_WinUI {
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
         }
 
-        // ★追加：タグのチェック状態が変更されたときに呼び出されるメソッド
+        // ファイルに対するタグ設定ボタン
+        // タグのチェック状態が変更されたときに呼び出されるメソッド
         private async Task UpdateVideoTagSelection( TagItem? tag ) {
             if ( SelectedItem == null || tag == null )
                 return;
@@ -137,7 +138,8 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ★追加：フライアウトが開かれる直前に、選択中の動画に合わせてタグのチェック状態を更新する
+        // ファイルに対するタグ設定ボタン
+        // フライアウトが開かれる直前に、選択中の動画に合わせてタグのチェック状態を更新する
         public void PrepareTagsForEditing() {
             if ( SelectedItem == null )
                 return;
@@ -163,8 +165,8 @@ namespace VideoManager3_WinUI {
 
         // タグ編集コマンド
         public async Task EditTagAsync() {
-            if ( SelectedTag == null )
-                return;
+            if ( SelectedTag == null )return;
+            if ( App.MainWindow == null ) return;
 
             // 編集用のTextBoxを作成
             var inputTextBox = new TextBox

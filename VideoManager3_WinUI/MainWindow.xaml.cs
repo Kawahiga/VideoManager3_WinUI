@@ -22,19 +22,16 @@ namespace VideoManager3_WinUI {
         // ファイルをダブルクリックしたときのイベントハンドラー
         private void GridView_DoubleTapped( object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e ) {
             if ( e.OriginalSource is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
-                // 選択されたファイルを実行
-                // ・動画：再生を開始
-                // ・フォルダ：フォルダを開く
                 ViewModel.DoubleTappedCommand.Execute( null );
             }
         }
 
-        // タグを編集を実行するイベントハンドラー（ツリー選択時とファイル選択時で共用できる？）
+        // タグの右クリック編集を実行するイベントハンドラー（ツリー選択時とファイル選択時で共用できる？）
         private void TagEdit( object sender, RoutedEventArgs e ) {
             ViewModel.EditTagCommand.Execute( null );
         }
 
-        // ★追加：タグ編集フライアウトが開かれる直前のイベントハンドラ
+        // 動画に対するタグ設定フライアウトが開かれる直前のイベントハンドラ
         private void TagEditFlyout_Opening( object sender, object e ) {
             // ViewModelに、現在選択中の動画に合わせてタグのチェック状態を更新させる
             ViewModel.PrepareTagsForEditing();

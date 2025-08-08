@@ -118,6 +118,8 @@ namespace VideoManager3_WinUI {
 
         /// <summary>
         /// 選択されたファイル（動画またはフォルダ）を開きます。
+        /// ・動画：再生を開始
+        /// ・フォルダ：フォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
             if ( videoItem != null ) {

@@ -6,88 +6,103 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
-    xmlns:xaml="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
+    <!-- ウィンドウ全体のレイアウトを定義するGrid -->
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>    <!-- 上部ツールバー -->
-            <RowDefinition Height="*"/>       <!-- メインコンテンツエリア -->
+            <RowDefinition Height="Auto"/>
+            <!-- 上部ツールバー用の行 -->
+            <RowDefinition Height="*"/>
+            <!-- メインコンテンツエリア用の行（残りの領域すべて） -->
         </Grid.RowDefinitions>
 
-        <!-- (CommandBarなどの他のUI要素は変更なしのため省略) -->
+        <!-- 上部ツールバー -->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+            <!-- フォルダ追加ボタン -->
             <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
+            <!-- 削除ボタン -->
             <AppBarButton Icon="Delete" Label="削除" Command="{Binding DeleteCommand}"/>
-
+            <!-- タグ編集ボタン（フライアウト付き） -->
             <AppBarButton Icon="Tag" Label="タグを編集">
                 <AppBarButton.Flyout>
                     <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
                 </AppBarButton.Flyout>
             </AppBarButton>
             <AppBarSeparator/>
+            <!-- 検索ボックス -->
             <AppBarElementContainer>
-
                 <AutoSuggestBox QueryIcon="Find" PlaceholderText="検索" Width="200" Margin="0,8,10,0"/>
             </AppBarElementContainer>
+            <!-- ソートボタン（フライアウト付き） -->
             <AppBarButton Icon="Sort" Label="ソート">
                 <AppBarButton.Flyout>
                     <MenuFlyout>
-
                         <MenuFlyoutItem Text="ファイル名 (昇順)" />
                         <MenuFlyoutItem Text="ファイル名 (降順)" />
                         <MenuFlyoutItem Text="更新日時 (昇順)" />
                         <MenuFlyoutItem Text="更新日時 (降順)" />
-
                     </MenuFlyout>
                 </AppBarButton.Flyout>
             </AppBarButton>
             <AppBarSeparator/>
+            <!-- 表示切替ボタン（詳細表示） -->
             <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}">
                 <AppBarButton.Icon>
-
                     <SymbolIcon Symbol="List"/>
                 </AppBarButton.Icon>
             </AppBarButton>
+            <!-- 表示切替ボタン（サムネイル表示） -->
             <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="ViewAll"/>
-
                 </AppBarButton.Icon>
             </AppBarButton>
+            <!-- サムネイルサイズ調整スライダー -->
             <AppBarElementContainer>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,10,0,0">
                     <TextBlock Text="サムネイルサイズ" Margin="10,5,10,0"/>
                     <Slider Minimum="100" Maximum="400" Width="150" Value="200"/>
-
                 </StackPanel>
             </AppBarElementContainer>
         </CommandBar>
-        
-        <!-- メインコンテンツエリア -->
+
+        <!-- メインコンテンツエリア (左ペイン + 右ペイン) -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220" MinWidth="100"/>
+                <!-- 左ペイン: タグツリー -->
                 <ColumnDefinition Width="5"/>
+                <!-- 縦方向のグリッドスプリッター -->
                 <ColumnDefinition Width="*" MinWidth="200"/>
+                <!-- 右ペイン: 動画リストと詳細情報 -->
             </Grid.ColumnDefinitions>
 
-            <!-- (左ペインは変更なしのため省略) -->
+            <!-- 左ペイン: タグツリー -->
             <Grid Grid.Column="0" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
+
                     <TextBlock Grid.Row="0" Text="タグツリー" TextAlignment="Center" FontWeight="Bold" Margin="3"/>
-                    <TreeView Grid.Row="1" x:Name="TagsTreeView" ItemsSource="{Binding TagItems, Mode=TwoWay}" SelectedItem="{Binding SelectedTag, Mode=TwoWay}" Margin="5,0,5,5">
+
+                    <!-- タグを表示するTreeView -->
+                    <TreeView Grid.Row="1" x:Name="TagsTreeView"
+                        ItemsSource="{Binding TagItems, Mode=TwoWay}"
+                        SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
+                        Margin="5,0,5,5">
                         <TreeView.ItemTemplate>
+                            <!-- 各タグアイテムの表示形式を定義 -->
                             <DataTemplate x:DataType="local:TagItem">
                                 <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
+                                    <!-- タグの色と名前を表示するパネル -->
                                     <StackPanel Orientation="Horizontal" Height="14">
                                         <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                         <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
                                     </StackPanel>
+                                    <!-- 右クリックメニュー -->
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem Text="名前の変更" Click="TagEdit"/>
@@ -99,20 +114,28 @@
                     </TreeView>
                 </Grid>
             </Grid>
-            
+
+            <!-- 縦方向のグリッドスプリッター -->
             <controls:GridSplitter Grid.Column="1" Width="5" ResizeBehavior="BasedOnAlignment" ResizeDirection="Auto" Background="Transparent"/>
-            
-            <!-- 右ペイン -->
+
+            <!-- 右ペイン: 上下に分割 -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
+                    <!-- 動画リスト -->
                     <RowDefinition Height="5"/>
+                    <!-- 横方向のグリッドスプリッター -->
                     <RowDefinition Height="Auto" MinHeight="130"/>
+                    <!-- 詳細情報 -->
                 </Grid.RowDefinitions>
 
+                <!-- 右ペイン上部: 動画リスト -->
                 <Grid Grid.Row="0">
-                    <!-- (ListViewは変更なしのため省略) -->
-                    <ListView ItemsSource="{Binding Videos}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
+                    <!-- 詳細表示 (リスト形式) -->
+                    <ListView 
+                        ItemsSource="{Binding Videos}" 
+                        Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:VideoItem">
                                 <TextBlock Text="{Binding FileName}"/>
@@ -120,7 +143,7 @@
                         </ListView.ItemTemplate>
                     </ListView>
 
-                    <!-- サムネイル表示 -->
+                    <!-- サムネイル表示 (グリッド形式) -->
                     <GridView 
                         ItemsSource="{Binding Videos}" 
                         SelectionMode="Single" 
@@ -128,37 +151,54 @@
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                         Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"
                         DoubleTapped="GridView_DoubleTapped"
-                        ContainerContentChanging="GridView_ContainerContentChanging"> <!-- イベントハンドラを追加 -->
+                        ContainerContentChanging="GridView_ContainerContentChanging">
+                        <!-- UI仮想化のためのイベントハンドラ -->
                         <GridView.ItemTemplate>
-                             <DataTemplate x:DataType="local:VideoItem">
+                            <!-- 各動画アイテムの表示形式を定義 -->
+                            <DataTemplate x:DataType="local:VideoItem">
                                 <Grid Width="200" Height="150" Margin="5">
                                     <Grid.RowDefinitions>
-                                         <RowDefinition Height="*"/>
+                                        <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
-                                   </Grid.RowDefinitions>
+                                    </Grid.RowDefinitions>
+                                    <!-- サムネイル画像 -->
                                     <Image Grid.Row="0" Stretch="UniformToFill">
                                         <Image.Source>
-                                           <!-- バインディング先をThumbnailImageに変更 -->
-                                           <Binding Path="ThumbnailImage" Mode="OneWay">
+                                            <!-- 表示用のThumbnailImageプロパティにバインド -->
+                                            <Binding Path="ThumbnailImage" Mode="OneWay">
+                                                <!-- 画像がnullの場合の代替画像 -->
                                                 <Binding.TargetNullValue>
-                                                   <BitmapImage UriSource="ms-appx:///Assets/SplashScreen.scale-200.png"/>
+                                                    <BitmapImage UriSource="ms-appx:///Assets/SplashScreen.scale-200.png"/>
                                                 </Binding.TargetNullValue>
-                                           </Binding>
+                                            </Binding>
                                         </Image.Source>
                                     </Image>
+                                    <!-- ファイル名 -->
                                     <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="5,2"/>
-                               </Grid>
+                                </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>
                     </GridView>
                 </Grid>
-                
+
+                <!-- 横方向のグリッドスプリッター -->
                 <controls:GridSplitter Grid.Row="1" Height="5" ResizeDirection="Rows" ResizeBehavior="BasedOnAlignment" Background="Transparent" HorizontalAlignment="Stretch" />
 
-                <!-- (下部ペインは変更なしのため省略) -->
+                <!-- 右ペイン下部: 詳細情報 -->
                 <Grid Grid.Row="2" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" Padding="15">
+                    <!-- 選択されたアイテム(SelectedItem)の情報を表示するパネル -->
                     <StackPanel DataContext="{Binding SelectedItem}">
-                        <TextBlock Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" FontWeight="Bold" IsTextSelectionEnabled="True" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                        <!-- ファイル名 -->
+                        <TextBlock 
+                            Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" 
+                            FontWeight="Bold" 
+                            IsTextSelectionEnabled="True"
+                            FontSize="16" 
+                            TextWrapping="Wrap" 
+                            Margin="0,0,0,10"/>
+
+                        <!-- 更新日時、サイズ、長さ -->
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -168,6 +208,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto" MinWidth="20"/>
                             </Grid.ColumnDefinitions>
+
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="更新日時:" FontWeight="SemiBold" Margin="0,0,10,5" />
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LastModified}" Margin="0,0,20,5"/>
                             <TextBlock Grid.Row="0" Grid.Column="2" Text="サイズ:" FontWeight="SemiBold" Margin="0,0,10,5"/>
@@ -175,12 +216,15 @@
                             <TextBlock Grid.Row="0" Grid.Column="4" Text="長さ:" FontWeight="SemiBold" Margin="0,0,10,0"/>
                             <TextBlock Grid.Row="0" Grid.Column="5" Text="{Binding Duration, Converter={StaticResource DurationConverter}}" Margin="0,0,0,0"/>
                         </Grid>
+
+                        <!-- ファイルに設定されたタグ一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="タグ:" FontWeight="SemiBold" Margin="0,5,10,5" VerticalAlignment="Top"/>
+                            <!-- タグを横に並べるためのItemsControl -->
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding VideoTagItems}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -188,6 +232,7 @@
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
+                                    <!-- 各タグの表示形式 -->
                                     <DataTemplate x:DataType="local:TagItem">
                                         <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
                                             <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" />

@@ -53,38 +53,38 @@
 
             <!-- 左ペイン: タグツリー -->
             <Grid Grid.Column="0" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                    <TextBlock Text="タグツリー" TextAlignment="Left" Margin="10"/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-                    <TreeView x:Name="TagsTreeView"
+                    <TextBlock Grid.Row="0" Text="タグツリー" TextAlignment="Left" Margin="10"/>
+
+                    <TreeView Grid.Row="1" x:Name="TagsTreeView"
                         ItemsSource="{Binding TagItems, Mode=TwoWay}"
                         SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
-                        Margin="5">
+                        Margin="5,0,5,5">
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="local:TagItem">
                                 <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
 
-                                    <!-- ツリーの項目定義 -->
                                     <StackPanel Orientation="Horizontal" Height="24">
-                                        <!-- 色付きの矩形 -->
                                         <Rectangle Width="16" Height="16" Fill="{x:Bind (local:TagItem).Color}" Margin="0,0,8,0"/>
-                                        <!-- アイテム名 -->
                                         <TextBlock Text="{x:Bind (local:TagItem).Name}" VerticalAlignment="Center"/>
-                                        <!-- 関連づいたファイルの数（未実装） -->
                                     </StackPanel>
 
-                                    <!-- 右クリックメニュー定義 最終的には「変更」「削除」「タグ追加」「グループ追加」にしたい -->
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem Text="名前の変更" Click="TagEdit"/>
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>
-                                    
+
                                 </TreeViewItem>
                             </DataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
-                </StackPanel>
+                </Grid>
             </Grid>
 
 
@@ -137,7 +137,7 @@
                                             </Binding>
                                         </Image.Source>
                                     </Image>
-                                    <!-- 動画に設定されたタグ一覧をファイル名とは別に表示（未実装） -->
+                                    <!-- 動画に設定されたタグ一覧をファイル名の前に表示（未実装） -->
                                     <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>

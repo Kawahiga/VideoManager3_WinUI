@@ -34,6 +34,7 @@ namespace VideoManager3_WinUI {
                     FileID INTEGER PRIMARY KEY AUTOINCREMENT,
                     FilePath TEXT NOT NULL UNIQUE,
                     FileName TEXT NOT NULL,
+                    Extension TEXT DEFAULT '',
                     FileSize INTEGER DEFAULT 0,
                     LastModified TEXT,
                     Duration REAL DeFAULT 0.0
@@ -46,6 +47,7 @@ namespace VideoManager3_WinUI {
                     Parent INTEGER,
                     OrderInGroup INTEGER DEFAULT 0,
                     IsGroup BOOLEAN DEFAULT 0,
+                    IsExpand BOOLEAN DEFAULT 1,
                     FOREIGN KEY (Parent) REFERENCES Tags(TagID)
                 );
                 
@@ -83,6 +85,7 @@ namespace VideoManager3_WinUI {
             // 日付は環境に依存しないISO 8601形式("o")で保存する
             command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) );
             command.Parameters.AddWithValue( "$duration", video.Duration );
+            command.Parameters.AddWithValue( "$dummy", "b" ); // ダミーの値を設定
 
             // IDを設定
             var rowsAffected = await command.ExecuteNonQueryAsync();

@@ -125,6 +125,7 @@ namespace VideoManager3_WinUI {
             FilterVideos();
         }
 
+        // タグのフィルタリングを行い、FilteredVideosに結果を格納する
         private void FilterVideos() {
             FilteredVideos.Clear();
             if ( SelectedTag == null ) {

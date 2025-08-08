@@ -28,7 +28,7 @@ namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
 
-        public ObservableCollection<TagItem> TagItems { get; } = new();
+        public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
 
         public ICommand AddFolderCommand { get; }   // フォルダを指定してファイルを読み込むコマンド
         public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
@@ -82,6 +82,7 @@ namespace VideoManager3_WinUI {
         private readonly DispatcherQueue _dispatcherQueue;
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
+        private readonly TagService _tagService;
 
         // コンストラクタ
         public MainViewModel( DispatcherQueue dispatcherQueue ) {
@@ -91,6 +92,7 @@ namespace VideoManager3_WinUI {
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
             _databaseService = new DatabaseService( dbPath );
+            _tagService = new TagService( _databaseService );
 
             // コマンドの初期化
             AddFolderCommand = new RelayCommand( async () => await AddFolder() );
@@ -100,8 +102,14 @@ namespace VideoManager3_WinUI {
             DoubleTappedCommand = new RelayCommand( OpenFile, () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
-            _ = LoadTagsAsync();    // タグの読み込みを非同期で開始
-            _ = LoadVideosFromDbAsync();    // 動画の読み込みを非同期で開始
+            _ = LoadInitialDataAsync();
+        }
+
+        // 初期データのロード
+        public async Task LoadInitialDataAsync() {
+            // タグと動画の初期データをロード
+            await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
+            await LoadVideosFromDbAsync();    // 動画の読み込みを非同期で開始
         }
 
         // ★追加：タグのチェック状態が変更されたときに呼び出されるメソッド
@@ -162,16 +170,8 @@ namespace VideoManager3_WinUI {
                 // 動画のタグをデータベースから取得
                 var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
 
-                // 親子関係にあるタグをすべてフラットなリストにし、IDで検索できるよう辞書に変換
-                var allTags = new List<TagItem>();
-                void FlattenTags( IEnumerable<TagItem> tags ) {
-                    foreach ( var tag in tags ) {
-                        allTags.Add( tag );
-                        FlattenTags( tag.Children );
-                    }
-                }
-                FlattenTags( TagItems );
-                var allTagsLookup = allTags.ToDictionary(t => t.Id);
+                // ★変更：TagServiceからタグの参照を取得
+                var allTagsLookup = _tagService.GetAllTagsAsDictionary();
 
                 // データベースから取得したタグに対応するViewModelのTagItemインスタンスを動画に追加
                 foreach ( var tagFromDb in tagsFromVideo ) {
@@ -215,57 +215,57 @@ namespace VideoManager3_WinUI {
         }
 
         // データベースからタグを読み込み、階層を構築する
-        private async Task LoadTagsAsync() {
-            try {
+        //private async Task LoadTagsAsync() {
+        //    try {
 
-                // データベースからすべてのタグを取得
-                var allTags = await _databaseService.GetTagsAsync();
-                var tagDict = allTags.ToDictionary(t => t.Id);
+        //        // データベースからすべてのタグを取得
+        //        var allTags = await _databaseService.GetTagsAsync();
+        //        var tagDict = allTags.ToDictionary(t => t.Id);
 
-                var rootTags = new List<TagItem>();
+        //        var rootTags = new List<TagItem>();
 
-                // 1. タグの階層を構築
-                foreach ( var tag in allTags ) {
-                    if ( tag.ParentId.HasValue && tag.ParentId != 0
-                        && tagDict.TryGetValue( tag.ParentId.Value, out var parentTag ) ) {
-                        parentTag.Children.Add( tag );
-                    } else {
-                        rootTags.Add( tag );
-                    }
-                }
+        //        // 1. タグの階層を構築
+        //        foreach ( var tag in allTags ) {
+        //            if ( tag.ParentId.HasValue && tag.ParentId != 0
+        //                && tagDict.TryGetValue( tag.ParentId.Value, out var parentTag ) ) {
+        //                parentTag.Children.Add( tag );
+        //            } else {
+        //                rootTags.Add( tag );
+        //            }
+        //        }
 
-                // 2. 子タグとルートタグを順序でソート
-                foreach ( var tag in allTags.Where( t => t.Children.Any() ) ) {
-                    var sortedChildren = tag.Children.OrderBy(c => c.OrderInGroup).ToList();
-                    tag.Children.Clear();
-                    sortedChildren.ForEach( tag.Children.Add );
-                }
-                var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
+        //        // 2. 子タグとルートタグを順序でソート
+        //        foreach ( var tag in allTags.Where( t => t.Children.Any() ) ) {
+        //            var sortedChildren = tag.Children.OrderBy(c => c.OrderInGroup).ToList();
+        //            tag.Children.Clear();
+        //            sortedChildren.ForEach( tag.Children.Add );
+        //        }
+        //        var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
 
-                // 3. UIのタグツリーを更新
-                TagItems.Clear();
-                sortedRootTags.ForEach( TagItems.Add );
+        //        // 3. UIのタグツリーを更新
+        //        TagItems.Clear();
+        //        sortedRootTags.ForEach( TagItems.Add );
 
-                // すべてのタグを展開状態にする
-                foreach ( var tag in allTags ) {
-                    tag.IsExpanded = true;
-                }
+        //        // すべてのタグを展開状態にする
+        //        foreach ( var tag in allTags ) {
+        //            tag.IsExpanded = true;
+        //        }
 
-                // 各動画アイテムが持つタグのインスタンスを最新のものに更新
-                foreach ( var video in Videos ) {
-                    var currentTagIds = video.VideoTagItems.Select(t => t.Id).ToList();
-                    video.VideoTagItems.Clear();
-                    foreach ( var tagId in currentTagIds ) {
-                        if ( tagDict.TryGetValue( tagId, out var updatedTag ) ) {
-                            video.VideoTagItems.Add( updatedTag );
-                        }
-                    }
-                }
-            }
-            catch ( Exception ex ) {
-                System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
-            }
-        }
+        //        // 各動画アイテムが持つタグのインスタンスを最新のものに更新
+        //        foreach ( var video in Videos ) {
+        //            var currentTagIds = video.VideoTagItems.Select(t => t.Id).ToList();
+        //            video.VideoTagItems.Clear();
+        //            foreach ( var tagId in currentTagIds ) {
+        //                if ( tagDict.TryGetValue( tagId, out var updatedTag ) ) {
+        //                    video.VideoTagItems.Add( updatedTag );
+        //                }
+        //            }
+        //        }
+        //    }
+        //    catch ( Exception ex ) {
+        //        System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
+        //    }
+        //}
 
         // タグ編集コマンド
         public async Task EditTagAsync() {
@@ -299,8 +299,9 @@ namespace VideoManager3_WinUI {
                 && !string.IsNullOrWhiteSpace( inputTextBox.Text )
                 && SelectedTag.Name != inputTextBox.Text ) {
                 SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
-                await _databaseService.AddOrUpdateTagAsync( SelectedTag ); // データベースを更新
-                await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
+                //await _databaseService.AddOrUpdateTagAsync( SelectedTag ); // データベースを更新
+                //await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
+                await _tagService.AddOrUpdateTagAsync( SelectedTag );
             }
         }
 

@@ -26,10 +26,12 @@ using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
-        public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
 
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
+
+        // 表示用のコレクション
+        public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
         public ICommand AddFolderCommand { get; }   // フォルダを指定してファイルを読み込むコマンド
         public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）

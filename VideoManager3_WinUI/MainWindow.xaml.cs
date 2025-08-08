@@ -14,9 +14,36 @@ namespace VideoManager3_WinUI {
             this.Title = "動画管理くん";
 
             ViewModel = new MainViewModel( DispatcherQueue.GetForCurrentThread() );
-            // Window.ContentをFrameworkElementにキャストしてDataContextを設定
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
+        }
+
+        // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
+        private void GridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+            {
+                if (args.Item is VideoItem itemToUnload)
+                {
+                    // メモリを解放するためにBitmapImageをクリア
+                    itemToUnload.UnloadThumbnailImage();
+                }
+                return;
+            }
+
+            if (args.Item is VideoItem itemToLoad)
+            {
+                // まだBitmapImageが読み込まれていない、かつ元データが存在する場合のみ、非同期読み込みを開始
+                if (itemToLoad.ThumbnailImage == null && itemToLoad.Thumbnail != null)
+                {
+                    // RegisterUpdateCallbackはUIスレッドでコールバックを実行する
+                    args.RegisterUpdateCallback(async (s, e) =>
+                    {
+                        // UIスレッドで非同期に画像を読み込んで設定する
+                        await itemToLoad.LoadThumbnailImageAsync();
+                    });
+                }
+            }
         }
 
         // ファイルをダブルクリックしたときのイベントハンドラー

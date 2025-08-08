@@ -1,14 +1,11 @@
-using MediaToolkit;
-using MediaToolkit.Model;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
-using Windows.Media.Playback;
-using Windows.Storage;
-using Windows.Storage.FileProperties;
-using Windows.UI.StartScreen;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
+using Windows.Storage.Streams;
 
 // エンハンス案
 // 1.拡張子をDBに登録して、動画の種類を識別(動画の種類、ファイル/フォルダの区別)
@@ -24,19 +21,23 @@ namespace VideoManager3_WinUI {
         public DateTime LastModified { get; set; }  // 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
         public double Duration { get; set; }    // 動画の再生時間（秒）
 
-        // サムネイル（非同期で読み込まれるため、null許容にする）
-        private BitmapImage? _thumbnail;
-        public BitmapImage? Thumbnail {
-            get => _thumbnail;
-            set
+        // サムネイルの元データ（軽量なbyte配列）
+        public byte[]? Thumbnail { get; set; }
+
+        // UI表示用のサムネイル画像（BitmapImage）
+        private BitmapImage? _thumbnailImage;
+        public BitmapImage? ThumbnailImage {
+            get => _thumbnailImage;
+            private set // Viewからの直接の変更は禁止
             {
-                if ( _thumbnail != value ) {
-                    _thumbnail = value;
-                    OnPropertyChanged( nameof( Thumbnail ) );
+                if (_thumbnailImage != value)
+                {
+                    _thumbnailImage = value;
+                    OnPropertyChanged(nameof(ThumbnailImage));
                 }
             }
         }
-
+        
         // ファイルに設定されたタグ情報
         private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
         public ObservableCollection<TagItem> VideoTagItems {
@@ -57,6 +58,38 @@ namespace VideoManager3_WinUI {
             FileSize = fileSize;
             LastModified = lastModified;
             Duration = duration;
+        }
+
+        // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド
+        public async Task LoadThumbnailImageAsync()
+        {
+            // 既に画像がある、または元データがない場合は何もしない
+            if (ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var bitmapImage = new BitmapImage();
+                using var stream = new InMemoryRandomAccessStream();
+                await stream.WriteAsync(Thumbnail.AsBuffer());
+                stream.Seek(0);
+                
+                // このメソッドはUIスレッドで実行されるため、直接ソースを設定できる
+                await bitmapImage.SetSourceAsync(stream);
+                ThumbnailImage = bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to create BitmapImage for {FileName}: {ex.Message}");
+            }
+        }
+        
+        // 表示されなくなったアイテムのメモリを解放する
+        public void UnloadThumbnailImage()
+        {
+            ThumbnailImage = null;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

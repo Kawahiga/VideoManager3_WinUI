@@ -9,7 +9,8 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- BooleanToVisibilityConverterをアプリケーションリソースとして追加 -->
+         
+           <!-- Converters -->
             <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <local:FileSizeConverter x:Key="FileSizeConverter"/>
             <local:DurationConverter x:Key="DurationConverter"/>

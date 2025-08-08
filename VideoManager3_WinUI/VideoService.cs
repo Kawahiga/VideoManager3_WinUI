@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Dispatching;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.ObjectModel;
@@ -48,7 +48,8 @@ namespace VideoManager3_WinUI {
                     }
                 }
 
-                _ = Task.Run( () => LoadThumbnailAsync( video ) );
+                // サムネイルのbyte[]の読み込みをバックグラウンドで実行
+                _ = Task.Run( () => LoadThumbnailBytesAsync( video ) );
             }
         }
 
@@ -85,7 +86,7 @@ namespace VideoManager3_WinUI {
                             var videoItem = new VideoItem(0, file.Path, file.Name, (long)props.Size, props.DateModified.DateTime, videoProps.Duration.TotalSeconds);
                             await _databaseService.AddVideoAsync( videoItem );
                             Videos.Add( videoItem );
-                            _ = Task.Run( () => LoadThumbnailAsync( videoItem ) );
+                            _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
                         }
                     }
                 }
@@ -93,28 +94,16 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// 動画のサムネイルを非同期で読み込み、UIスレッドで設定します。
+        /// 動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
         /// </summary>
-        private async Task LoadThumbnailAsync( VideoItem videoItem ) {
+        private async Task LoadThumbnailBytesAsync( VideoItem videoItem ) {
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
             if ( imageBytes != null && imageBytes.Length > 0 ) {
-                _dispatcherQueue.TryEnqueue( async () =>
-                {
-                    try {
-                        var bitmapImage = new BitmapImage();
-                        using var stream = new InMemoryRandomAccessStream();
-                        await stream.WriteAsync( imageBytes.AsBuffer() );
-                        stream.Seek( 0 );
-                        await bitmapImage.SetSourceAsync( stream );
-                        videoItem.Thumbnail = bitmapImage;
-                    }
-                    catch ( Exception ex ) {
-                        Debug.WriteLine( $"Failed to set thumbnail source for {videoItem.FileName}: {ex.Message}" );
-                    }
-                } );
+                videoItem.Thumbnail = imageBytes;
             }
         }
+
 
         /// <summary>
         /// 選択されたファイル（動画またはフォルダ）を開きます。
@@ -148,5 +137,5 @@ namespace VideoManager3_WinUI {
             }
         }
     }
-
 }
+

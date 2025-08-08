@@ -26,7 +26,8 @@ using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
-        public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
+        //public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
+        public ObservableCollection<VideoItem> Videos => _videoService.Videos;
 
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
 
@@ -82,8 +83,9 @@ namespace VideoManager3_WinUI {
         private readonly DispatcherQueue _dispatcherQueue;
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
+        private readonly VideoService _videoService;
         private readonly TagService _tagService;
-
+        
         // コンストラクタ
         public MainViewModel( DispatcherQueue dispatcherQueue ) {
             _dispatcherQueue = dispatcherQueue;
@@ -93,13 +95,14 @@ namespace VideoManager3_WinUI {
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
+            _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService(), dispatcherQueue );
 
             // コマンドの初期化
-            AddFolderCommand = new RelayCommand( async () => await AddFolder() );
+            AddFolderCommand = new RelayCommand( async () => await _videoService.AddVideosFromFolderAsync() );
             ToggleViewCommand = new RelayCommand( ToggleView );
             EditTagCommand = new RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
-            DoubleTappedCommand = new RelayCommand( OpenFile, () => SelectedItem != null );
+            DoubleTappedCommand = new RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -109,7 +112,7 @@ namespace VideoManager3_WinUI {
         public async Task LoadInitialDataAsync() {
             // タグと動画の初期データをロード
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
-            await LoadVideosFromDbAsync();    // 動画の読み込みを非同期で開始
+            await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
         }
 
         // ★追加：タグのチェック状態が変更されたときに呼び出されるメソッド
@@ -158,115 +161,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // 動画データをデータベースから読み込み、サムネイルを非同期で取得する
-        private async Task LoadVideosFromDbAsync() {
-            Videos.Clear();
-
-            var videosFromDb = await _databaseService.GetAllVideosAsync();
-            foreach ( VideoItem video in videosFromDb ) {
-                // 動画アイテムをコレクションに追加
-                Videos.Add( video );
-
-                // 動画のタグをデータベースから取得
-                var tagsFromVideo = await _databaseService.GetTagsForVideoAsync( video );
-
-                // ★変更：TagServiceからタグの参照を取得
-                var allTagsLookup = _tagService.GetAllTagsAsDictionary();
-
-                // データベースから取得したタグに対応するViewModelのTagItemインスタンスを動画に追加
-                foreach ( var tagFromDb in tagsFromVideo ) {
-                    if ( allTagsLookup.TryGetValue( tagFromDb.Id, out var existingTag ) ) {
-                        video.VideoTagItems.Add( existingTag );
-                    }
-                }
-
-                // サムネイルを非同期で読み込み、UIスレッドで設定する
-                _ = Task.Run( () => LoadThumbnailAsync( video ) );
-            }
-        }
-
-        // 動画のサムネイルを非同期で読み込み、UIスレッドで設定する
-        private async Task LoadThumbnailAsync( VideoItem videoItem ) {
-            
-            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) {
-                // ファイルパスが無効な場合は無効アイコンを表示（未実装）
-                return;
-            }
-
-            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
-
-            if ( imageBytes != null && imageBytes.Length > 0 ) {
-                _dispatcherQueue.TryEnqueue( async () =>
-                {
-                    try {
-                        var bitmapImage = new BitmapImage();
-                        using var stream = new InMemoryRandomAccessStream();
-                        await stream.WriteAsync( imageBytes.AsBuffer() );
-                        stream.Seek( 0 );
-                        await bitmapImage.SetSourceAsync( stream );
-
-                        videoItem.Thumbnail = bitmapImage;
-                    }
-                    catch ( Exception ex ) {
-                        System.Diagnostics.Debug.WriteLine( $"Failed to set thumbnail source on UI thread for {videoItem.FileName}: {ex.Message}" );
-                    }
-                } );
-            }
-        }
-
-        // データベースからタグを読み込み、階層を構築する
-        //private async Task LoadTagsAsync() {
-        //    try {
-
-        //        // データベースからすべてのタグを取得
-        //        var allTags = await _databaseService.GetTagsAsync();
-        //        var tagDict = allTags.ToDictionary(t => t.Id);
-
-        //        var rootTags = new List<TagItem>();
-
-        //        // 1. タグの階層を構築
-        //        foreach ( var tag in allTags ) {
-        //            if ( tag.ParentId.HasValue && tag.ParentId != 0
-        //                && tagDict.TryGetValue( tag.ParentId.Value, out var parentTag ) ) {
-        //                parentTag.Children.Add( tag );
-        //            } else {
-        //                rootTags.Add( tag );
-        //            }
-        //        }
-
-        //        // 2. 子タグとルートタグを順序でソート
-        //        foreach ( var tag in allTags.Where( t => t.Children.Any() ) ) {
-        //            var sortedChildren = tag.Children.OrderBy(c => c.OrderInGroup).ToList();
-        //            tag.Children.Clear();
-        //            sortedChildren.ForEach( tag.Children.Add );
-        //        }
-        //        var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
-
-        //        // 3. UIのタグツリーを更新
-        //        TagItems.Clear();
-        //        sortedRootTags.ForEach( TagItems.Add );
-
-        //        // すべてのタグを展開状態にする
-        //        foreach ( var tag in allTags ) {
-        //            tag.IsExpanded = true;
-        //        }
-
-        //        // 各動画アイテムが持つタグのインスタンスを最新のものに更新
-        //        foreach ( var video in Videos ) {
-        //            var currentTagIds = video.VideoTagItems.Select(t => t.Id).ToList();
-        //            video.VideoTagItems.Clear();
-        //            foreach ( var tagId in currentTagIds ) {
-        //                if ( tagDict.TryGetValue( tagId, out var updatedTag ) ) {
-        //                    video.VideoTagItems.Add( updatedTag );
-        //                }
-        //            }
-        //        }
-        //    }
-        //    catch ( Exception ex ) {
-        //        System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
-        //    }
-        //}
-
         // タグ編集コマンド
         public async Task EditTagAsync() {
             if ( SelectedTag == null )
@@ -302,84 +196,6 @@ namespace VideoManager3_WinUI {
                 //await _databaseService.AddOrUpdateTagAsync( SelectedTag ); // データベースを更新
                 //await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
                 await _tagService.AddOrUpdateTagAsync( SelectedTag );
-            }
-        }
-
-        // フォルダを選択してファイルを追加するコマンド
-        // 対象：
-        // ・動画ファイル（.mp4）
-        // ・フォルダ
-        private async Task AddFolder() {
-            var folderPicker = new FolderPicker
-            {
-                SuggestedStartLocation = PickerLocationId.VideosLibrary
-            };
-            folderPicker.FileTypeFilter.Add( "*" );
-
-            if ( App.m_window == null )
-                return;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
-            WinRT.Interop.InitializeWithWindow.Initialize( folderPicker, hwnd );
-
-            StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-            if ( folder != null ) {
-                var items = await folder.GetItemsAsync();
-                foreach ( var item in items ) {
-                    if ( item.IsOfType( StorageItemTypes.Folder ) ) {
-                        var subFolder = item as StorageFolder;
-                        if ( subFolder == null )
-                            continue;
-
-                        bool exists = Videos.Any(v => v.FilePath == subFolder.Path);
-                        if ( !exists ) {
-                            // フォルダの基本プロパティを設定
-                            var basicProperties = await subFolder.GetBasicPropertiesAsync();
-                            var videoItem = new VideoItem(
-                                id: 0,
-                                filePath: subFolder.Path,
-                                fileName: subFolder.Name,
-                                fileSize: 0,
-                                lastModified: basicProperties.DateModified.DateTime,
-                                duration: 0
-                            );
-                            await _databaseService.AddVideoAsync( videoItem );
-                            Videos.Add( videoItem );
-                        }
-                    } else if ( item.IsOfType( StorageItemTypes.File ) ) {
-                        // 動画ファイルの場合
-                        var file = item as StorageFile;
-                        if ( file != null && file.FileType.ToLower() == ".mp4" ) {
-                            bool exists = Videos.Any(v => v.FilePath == file.Path);
-
-                            if ( !exists ) {
-                                int id = 0;
-                                string filePath = file.Path;
-                                string fileName = file.Name;
-                                long fileSize = (long)(await file.GetBasicPropertiesAsync()).Size;
-                                DateTime lastMod = (await file.GetBasicPropertiesAsync()).DateModified.DateTime;
-                                double duration = (await file.Properties.GetVideoPropertiesAsync()).Duration.TotalSeconds;
-
-                                var videoItem = new VideoItem(id, filePath, fileName, fileSize, lastMod, duration);
-                                await _databaseService.AddVideoAsync( videoItem );
-                                Videos.Add( videoItem );
-                                _ = Task.Run( () => LoadThumbnailAsync( videoItem ) );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // ファイルをダブルクリックしたときのコマンド
-        // 動画ファイルなら再生、フォルダなら開く
-        private void OpenFile() {
-            if ( SelectedItem != null ) {
-                try {
-                    Process.Start( new ProcessStartInfo( SelectedItem.FilePath ) { UseShellExecute = true } );
-                }
-                catch ( Exception ex ) {
-                    Debug.WriteLine( $"Error opening file: {ex.Message}" );
-                }
             }
         }
 

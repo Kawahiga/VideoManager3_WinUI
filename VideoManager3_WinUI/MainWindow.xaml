@@ -95,6 +95,7 @@
 
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
+                                            <!-- エンハンス案：タグ/グループの追加  -->
                                             <MenuFlyoutItem Text="名前の変更" Click="TagEdit"/>
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>

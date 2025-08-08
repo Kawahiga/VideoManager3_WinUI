@@ -44,7 +44,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ★追加：タグ情報から動的にメニュー項目を生成する再帰メソッド
+        // タグ情報から動的にメニュー項目を生成する再帰メソッド
         private void CreateTagMenuItems( IList<MenuFlyoutItemBase> menuItems, IEnumerable<TagItem> tagItems ) {
             foreach ( var tag in tagItems ) {
                 if ( tag.IsGroup ) {
@@ -68,7 +68,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ★追加：チェックボックス付きメニュー項目がクリックされたときのイベントハンドラ
+        // チェックボックス付きメニュー項目がクリックされたときのイベントハンドラ
         private void ToggleTag_Click( object sender, RoutedEventArgs e ) {
             if ( sender is ToggleMenuFlyoutItem toggleItem && toggleItem.Tag is TagItem tagItem ) {
                 // IsCheckedプロパティはクリック後に更新されるため、現在の値を反転させた値をViewModelに伝える

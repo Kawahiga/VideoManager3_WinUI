@@ -1,10 +1,11 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
-using System;
 
 
 // エンハンス案
@@ -109,7 +110,11 @@ namespace VideoManager3_WinUI {
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
 
-        // 子要素まで探索して、指定したIDのタグを取得する
+        /// <summary>
+        /// 子要素まで探索して、指定したIDのタグを取得する
+        /// </summary>
+        /// <param name="id">検索するタグのID</param>
+        /// <returns>見つかったタグ。存在しない場合はnull</returns>
         public TagItem? FindTagById( int id ) {
             if ( Id == id )
                 return this;
@@ -120,6 +125,19 @@ namespace VideoManager3_WinUI {
             }
             return null;
         }
+
+        /// <summary>
+        /// 子要素まで探索して、すべてのIDを取得する
+        /// </summary>
+        /// <returns>このタグとそのすべての子タグのIDのリスト</returns>
+        public List<int> GetAllDescendantIds() {
+            var ids = new List<int> { Id };
+            foreach ( var child in Children ) {
+                ids.AddRange( child.GetAllDescendantIds() );
+            }
+            return ids;
+        }
+
 
         // DB用のカラーコードを表示用Brushに変換する
         private static Brush? ConvertStringToBrush( string? colorString ) {

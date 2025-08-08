@@ -26,7 +26,7 @@ using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
-        //public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
+        public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
 
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
@@ -73,10 +73,12 @@ namespace VideoManager3_WinUI {
             get => _selectedTag;
             set
             {
-                _selectedTag = value;
-                OnPropertyChanged( nameof( SelectedTag ) );
-                // 選択状態が変わったら、コマンドの実行可能性を再評価するよう通知
-                ((RelayCommand)EditTagCommand).RaiseCanExecuteChanged();
+                if ( _selectedTag != value ) {
+                    _selectedTag = value;
+                    OnPropertyChanged( nameof( SelectedTag ) );
+                    ((RelayCommand)EditTagCommand).RaiseCanExecuteChanged();
+                    FilterVideos();
+                }
             }
         }
 
@@ -85,7 +87,7 @@ namespace VideoManager3_WinUI {
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
-        
+
         // コンストラクタ
         public MainViewModel( DispatcherQueue dispatcherQueue ) {
             _dispatcherQueue = dispatcherQueue;
@@ -98,7 +100,11 @@ namespace VideoManager3_WinUI {
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService(), dispatcherQueue );
 
             // コマンドの初期化
-            AddFolderCommand = new RelayCommand( async () => await _videoService.AddVideosFromFolderAsync() );
+            AddFolderCommand = new RelayCommand( async () =>
+            {
+                await _videoService.AddVideosFromFolderAsync();
+                FilterVideos();
+            } );
             ToggleViewCommand = new RelayCommand( ToggleView );
             EditTagCommand = new RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
@@ -116,6 +122,21 @@ namespace VideoManager3_WinUI {
 
             // 【暫定】ファイルを更新日時降順にソート
             _videoService.SortVideosByLastModified( true );
+            FilterVideos();
+        }
+
+        private void FilterVideos() {
+            FilteredVideos.Clear();
+            if ( SelectedTag == null ) {
+                foreach ( var video in Videos ) {
+                    FilteredVideos.Add( video );
+                }
+            } else {
+                var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
+                var filtered = Videos.Where(v => v.VideoTagItems.Any(t => tagIds.Contains(t.Id)));
+                foreach ( var video in filtered )
+                    FilteredVideos.Add( video );
+            }
         }
 
         // ファイルに対するタグ設定ボタン
@@ -139,6 +160,7 @@ namespace VideoManager3_WinUI {
                     SelectedItem.VideoTagItems.Remove( tagToRemove );
                 }
             }
+            FilterVideos();
         }
 
         // ファイルに対するタグ設定ボタン
@@ -168,8 +190,10 @@ namespace VideoManager3_WinUI {
 
         // タグ編集コマンド
         public async Task EditTagAsync() {
-            if ( SelectedTag == null )return;
-            if ( App.MainWindow == null ) return;
+            if ( SelectedTag == null )
+                return;
+            if ( App.MainWindow == null )
+                return;
 
             // 編集用のTextBoxを作成
             var inputTextBox = new TextBox

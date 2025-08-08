@@ -59,10 +59,14 @@
                 </AppBarButton.Icon>
             </AppBarButton>
             <!-- サムネイルサイズ調整スライダー -->
-            <AppBarElementContainer>
+            <AppBarElementContainer Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,10,0,0">
                     <TextBlock Text="サムネイルサイズ" Margin="10,5,10,0"/>
-                    <Slider Minimum="100" Maximum="400" Width="150" Value="200"/>
+                    <Slider x:Name="ThumbnailSizeSlider"
+                                    Minimum="100"
+                                    Maximum="300"
+                                    Width="200"
+                                    Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
                 </StackPanel>
             </AppBarElementContainer>
         </CommandBar>
@@ -156,13 +160,19 @@
                         <GridView.ItemTemplate>
                             <!-- 各動画アイテムの表示形式を定義 -->
                             <DataTemplate x:DataType="local:VideoItem">
-                                <Grid Width="200" Height="150" Margin="5">
+                                <Grid
+                                    Width="{Binding DataContext.ThumbnailSize, ElementName=RootGrid}"
+                                    Margin="5"
+                                    Padding="5"
+                                    Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <!-- サムネイル画像 -->
-                                    <Image Grid.Row="0" Stretch="UniformToFill">
+                                    <Image Grid.Row="0" Stretch="UniformToFill"
+                                           Width="{Binding DataContext.ThumbnailSize, ElementName=RootGrid}"
+                                           Height="{Binding DataContext.ThumbnailHeight, ElementName=RootGrid}">
                                         <Image.Source>
                                             <!-- 表示用のThumbnailImageプロパティにバインド -->
                                             <Binding Path="ThumbnailImage" Mode="OneWay">

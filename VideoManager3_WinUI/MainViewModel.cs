@@ -39,20 +39,6 @@ namespace VideoManager3_WinUI {
         public ICommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
         public ICommand DoubleTappedCommand { get; }    // ファイルをダブルクリックしたときのコマンド
 
-        private bool _isGridView = true;
-        public bool IsGridView {
-            get => _isGridView;
-            set
-            {
-                if ( _isGridView != value ) {
-                    _isGridView = value;
-                    OnPropertyChanged( nameof( IsGridView ) );
-                    OnPropertyChanged( nameof( IsListView ) );
-                }
-            }
-        }
-        public bool IsListView => !_isGridView;
-
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
         public VideoItem? SelectedItem {
@@ -83,6 +69,36 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        // ビューの切り替え状態を保持するプロパティ
+        private bool _isGridView = true;
+        public bool IsGridView {
+            get => _isGridView;
+            set
+            {
+                if ( _isGridView != value ) {
+                    _isGridView = value;
+                    OnPropertyChanged( nameof( IsGridView ) );
+                    OnPropertyChanged( nameof( IsListView ) );
+                }
+            }
+        }
+        public bool IsListView => !_isGridView;
+
+        // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ
+        private double _thumbnailSize = 260.0;
+        public double ThumbnailSize {
+            get => _thumbnailSize;
+            set
+            {
+                if ( _thumbnailSize != value ) {
+                    _thumbnailSize = value;
+                    OnPropertyChanged( nameof( ThumbnailSize ) );
+                    OnPropertyChanged( nameof( ThumbnailHeight ) );
+                }
+            }
+        }
+        public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;
 
         private readonly DispatcherQueue _dispatcherQueue;
         private readonly ThumbnailService _thumbnailService;

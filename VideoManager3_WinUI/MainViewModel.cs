@@ -113,6 +113,9 @@ namespace VideoManager3_WinUI {
             // タグと動画の初期データをロード
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
+
+            // 【暫定】ファイルを更新日時降順にソート
+            _videoService.SortVideosByLastModified( true );
         }
 
         // ファイルに対するタグ設定ボタン

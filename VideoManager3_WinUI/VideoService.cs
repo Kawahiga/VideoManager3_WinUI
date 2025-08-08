@@ -131,6 +131,22 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        /// <summary>
+        /// ファイルを更新日時でソートします。
+        /// 降順：新しいのが先  昇順：古いのが先
+        /// </summary>
+        /// <param name="descending">降順の場合は true、昇順の場合は false を指定します。</param>
+        public void SortVideosByLastModified( bool descending = false ) {
+            var sortedVideos = descending
+                ? Videos.OrderByDescending(v => v.LastModified).ToList()
+                : Videos.OrderBy(v => v.LastModified).ToList();
+
+            Videos.Clear();
+            foreach ( var video in sortedVideos ) {
+                Videos.Add( video );
+            }
+        }
     }
 
 }

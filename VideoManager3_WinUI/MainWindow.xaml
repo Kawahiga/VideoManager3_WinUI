@@ -184,7 +184,7 @@
                                         </Image.Source>
                                     </Image>
                                     <!-- ファイル名 -->
-                                    <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" Margin="5,2"/>
+                                    <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="40"  Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>

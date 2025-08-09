@@ -64,7 +64,7 @@
                     <TextBlock Text="サムネイルサイズ" Margin="10,5,10,0"/>
                     <Slider x:Name="ThumbnailSizeSlider"
                                     Minimum="100"
-                                    Maximum="300"
+                                    Maximum="400"
                                     Width="200"
                                     Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
                 </StackPanel>
@@ -168,6 +168,7 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <!-- サムネイル画像 -->
                                     <Image Grid.Row="0" Stretch="UniformToFill"
@@ -183,8 +184,25 @@
                                             </Binding>
                                         </Image.Source>
                                     </Image>
+
+                                    <!-- タグ一覧 -->
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding VideoTagItems}" Margin="5,2">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <controls:WrapPanel Orientation="Horizontal" Height="{Binding DataContext.ThumbnailTagListHeight, ElementName=RootGrid}"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:TagItem">
+                                                <Border Background="{Binding Color}" Height="{Binding DataContext.ThumbnailTextHeight, ElementName=RootGrid}" CornerRadius="4" Margin="0">
+                                                    <TextBlock Text="{Binding Name}" Foreground="White" Padding="6,2" FontSize="10"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    
                                     <!-- ファイル名 -->
-                                    <TextBlock Grid.Row="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="40"  Margin="5,2"/>
+                                    <TextBlock Grid.Row="2" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>

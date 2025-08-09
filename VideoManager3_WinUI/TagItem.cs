@@ -107,6 +107,11 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        /// <summary>
+        ///  タグに関連付けられた動画アイテムのリスト
+        /// </summary>
+        public ObservableCollection<VideoItem> TagVideoItem { get; set; }
+
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
 

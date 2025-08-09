@@ -85,7 +85,7 @@ namespace VideoManager3_WinUI {
         }
         public bool IsListView => !_isGridView;
 
-        // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ
+        // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ（サムネイルの横幅）
         private double _thumbnailSize = 260.0;
         public double ThumbnailSize {
             get => _thumbnailSize;
@@ -98,7 +98,9 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
-        public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;
+        public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
+        public double ThumbnailTagListHeight => ThumbnailHeight;
+        public double ThumbnailTextHeight => ThumbnailHeight;
 
         private readonly DispatcherQueue _dispatcherQueue;
         private readonly ThumbnailService _thumbnailService;

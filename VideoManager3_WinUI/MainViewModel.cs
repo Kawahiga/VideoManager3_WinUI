@@ -99,7 +99,7 @@ namespace VideoManager3_WinUI {
             }
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
-        public double ThumbnailTagListHeight => ThumbnailHeight;
+        public double ThumbnailTagListHeight => ThumbnailHeight * 0.2;
         public double ThumbnailTextHeight => ThumbnailHeight;
 
         private readonly DispatcherQueue _dispatcherQueue;

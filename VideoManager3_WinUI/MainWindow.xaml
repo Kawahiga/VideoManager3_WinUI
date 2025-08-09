@@ -186,23 +186,23 @@
                                     </Image>
 
                                     <!-- タグ一覧 -->
-                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding VideoTagItems}" Margin="5,2">
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding VideoTagItems}" Margin="0">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
-                                                <controls:WrapPanel Orientation="Horizontal" Height="{Binding DataContext.ThumbnailTagListHeight, ElementName=RootGrid}"/>
+                                                <controls:WrapPanel  Height="16" Orientation="Horizontal"/>
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="local:TagItem">
-                                                <Border Background="{Binding Color}" Height="{Binding DataContext.ThumbnailTextHeight, ElementName=RootGrid}" CornerRadius="4" Margin="0">
-                                                    <TextBlock Text="{Binding Name}" Foreground="White" Padding="6,2" FontSize="10"/>
+                                                <Border Background="{Binding Color}" CornerRadius="4" Margin="0">
+                                                    <TextBlock Text="{Binding Name}" Foreground="White" Padding="3,1" FontSize="10"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                     
                                     <!-- ファイル名 -->
-                                    <TextBlock Grid.Row="2" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Margin="5,2"/>
+                                    <TextBlock Grid.Row="2" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>

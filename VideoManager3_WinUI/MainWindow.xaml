@@ -136,7 +136,7 @@
                 <!-- 右ペイン上部: 動画リスト -->
                 <Grid Grid.Row="0">
                     <!-- 詳細表示 (リスト形式) -->
-                    <ListView 
+                    <ListView
                         ItemsSource="{Binding FilteredVideos}"
                         Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
@@ -148,9 +148,9 @@
                     </ListView>
 
                     <!-- サムネイル表示 (グリッド形式) -->
-                    <GridView 
-                        ItemsSource="{Binding FilteredVideos}" 
-                        SelectionMode="Single" 
+                    <GridView
+                        ItemsSource="{Binding FilteredVideos}"
+                        SelectionMode="Single"
                         IsItemClickEnabled="True"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                         Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -171,9 +171,10 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <!-- サムネイル画像 -->
-                                    <Image Grid.Row="0" Stretch="UniformToFill"
-                                           Width="{Binding DataContext.ThumbnailSize, ElementName=RootGrid}"
-                                           Height="{Binding DataContext.ThumbnailHeight, ElementName=RootGrid}">
+                                    <Image
+                                        Grid.Row="0" Stretch="UniformToFill"
+                                        Width="{Binding DataContext.ThumbnailSize, ElementName=RootGrid}"
+                                        Height="{Binding DataContext.ThumbnailHeight, ElementName=RootGrid}">
                                         <Image.Source>
                                             <!-- 表示用のThumbnailImageプロパティにバインド -->
                                             <Binding Path="ThumbnailImage" Mode="OneWay">
@@ -200,7 +201,7 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    
+
                                     <!-- ファイル名 -->
                                     <TextBlock Grid.Row="2" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
                                 </Grid>
@@ -218,12 +219,12 @@
                     <StackPanel DataContext="{Binding SelectedItem}">
 
                         <!-- ファイル名 -->
-                        <TextBlock 
-                            Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}" 
-                            FontWeight="Bold" 
+                        <TextBlock
+                            Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}"
+                            FontWeight="Bold"
                             IsTextSelectionEnabled="True"
-                            FontSize="16" 
-                            TextWrapping="Wrap" 
+                            FontSize="16"
+                            TextWrapping="Wrap"
                             Margin="0,0,0,10"/>
 
                         <!-- 更新日時、サイズ、長さ -->

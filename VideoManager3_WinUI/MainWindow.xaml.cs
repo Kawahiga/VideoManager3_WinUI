@@ -13,7 +13,7 @@ namespace VideoManager3_WinUI {
             this.InitializeComponent();
             this.Title = "動画管理くん";
 
-            ViewModel = new MainViewModel( DispatcherQueue.GetForCurrentThread() );
+            ViewModel = new MainViewModel( );
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
         }

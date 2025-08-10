@@ -99,25 +99,21 @@ namespace VideoManager3_WinUI {
             }
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
-        public double ThumbnailTagListHeight => ThumbnailHeight * 0.2;
-        public double ThumbnailTextHeight => ThumbnailHeight;
 
-        private readonly DispatcherQueue _dispatcherQueue;
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
 
         // コンストラクタ
-        public MainViewModel( DispatcherQueue dispatcherQueue ) {
-            _dispatcherQueue = dispatcherQueue;
+        public MainViewModel( ) {
             _thumbnailService = new ThumbnailService();
 
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
-            _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService(), dispatcherQueue );
+            _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
 
             // コマンドの初期化
             AddFolderCommand = new RelayCommand( async () =>

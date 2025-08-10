@@ -60,16 +60,19 @@ namespace VideoManager3_WinUI {
                 // 3. UIのタグツリーを更新
                 TagItems.Clear();
                 sortedRootTags.ForEach( TagItems.Add );
-
-                // 4. すべてのタグを展開状態にする（UIの都合に合わせる）
-                foreach ( var tag in _allTags ) {
-                    tag.IsExpanded = true;
-                }
                 OnPropertyChanged( nameof( TagItems ) );
             }
             catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
             }
+        }
+
+        /// <summary>
+        /// タグに紐づく動画を非同期にロードします。
+        /// </summary>
+        /// <returns></returns>
+        public async Task LoadTagVideosAsync(  ) {
+
         }
 
         /// <summary>

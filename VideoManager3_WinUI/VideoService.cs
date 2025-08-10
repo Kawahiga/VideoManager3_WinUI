@@ -23,11 +23,10 @@ namespace VideoManager3_WinUI {
         private readonly ThumbnailService _thumbnailService;
         private readonly DispatcherQueue _dispatcherQueue;
 
-        public VideoService( DatabaseService databaseService, TagService tagService, ThumbnailService thumbnailService, DispatcherQueue dispatcherQueue ) {
+        public VideoService( DatabaseService databaseService, TagService tagService, ThumbnailService thumbnailService ) {
             _databaseService = databaseService;
             _tagService = tagService;
             _thumbnailService = thumbnailService;
-            _dispatcherQueue = dispatcherQueue;
         }
 
         /// <summary>
@@ -40,8 +39,9 @@ namespace VideoManager3_WinUI {
 
             foreach ( var video in videosFromDb ) {
                 Videos.Add( video );
-                var tagsForVideo = await _databaseService.GetTagsForVideoAsync(video);
 
+                // 動画に紐づくタグを取得
+                var tagsForVideo = await _databaseService.GetTagsForVideoAsync(video);
                 foreach ( var tagFromDb in tagsForVideo ) {
                     if ( allTagsLookup.TryGetValue( tagFromDb.Id, out var existingTag ) ) {
                         video.VideoTagItems.Add( existingTag );

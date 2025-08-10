@@ -107,29 +107,21 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        /// <summary>
-        ///  タグに関連付けられた動画アイテムのリスト
-        /// </summary>
-        public ObservableCollection<VideoItem> TagVideoItem { get; set; }
+        //  タグに関連付けられた動画アイテムのリスト
+        private ObservableCollection<VideoItem> _tagVideoItem = new ObservableCollection<VideoItem>();
+        public ObservableCollection<VideoItem> TagVideoItem {
+            get => _tagVideoItem;
+            set
+            {
+                if ( _tagVideoItem != value ) {
+                    _tagVideoItem = value;
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoItem ) ) );
+                }
+            }
+        }
 
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
-
-        /// <summary>
-        /// 子要素まで探索して、指定したIDのタグを取得する
-        /// </summary>
-        /// <param name="id">検索するタグのID</param>
-        /// <returns>見つかったタグ。存在しない場合はnull</returns>
-        public TagItem? FindTagById( int id ) {
-            if ( Id == id )
-                return this;
-            foreach ( var child in Children ) {
-                var found = child.FindTagById(id);
-                if ( found != null )
-                    return found;
-            }
-            return null;
-        }
 
         /// <summary>
         /// 子要素まで探索して、すべてのIDを取得する
@@ -142,6 +134,22 @@ namespace VideoManager3_WinUI {
             }
             return ids;
         }
+
+        ///// <summary>
+        ///// 子要素まで探索して、指定したIDのタグを取得する
+        ///// </summary>
+        ///// <param name="id">検索するタグのID</param>
+        ///// <returns>見つかったタグ。存在しない場合はnull</returns>
+        //public TagItem? FindTagById( int id ) {
+        //    if ( Id == id )
+        //        return this;
+        //    foreach ( var child in Children ) {
+        //        var found = child.FindTagById(id);
+        //        if ( found != null )
+        //            return found;
+        //    }
+        //    return null;
+        //}
 
 
         // DB用のカラーコードを表示用Brushに変換する

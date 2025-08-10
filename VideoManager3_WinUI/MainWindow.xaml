@@ -101,11 +101,21 @@
                             <!-- 各タグアイテムの表示形式を定義 -->
                             <DataTemplate x:DataType="local:TagItem">
                                 <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
-                                    <!-- タグの色と名前を表示するパネル -->
-                                    <StackPanel Orientation="Horizontal" Height="14">
-                                        <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                    <Grid Height="14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- タグの色と名前を表示するパネル -->
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <!-- タグの動画数を表示するボーダー -->
+                                        <Border Grid.Column="1" Background="LightSlateGray  "  CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
+                                            <TextBlock Text="{x:Bind TagVideoItem.Count}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Border>
+                                    </Grid>
                                     <!-- 右クリックメニュー -->
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>

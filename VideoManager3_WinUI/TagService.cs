@@ -68,11 +68,41 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// タグに紐づく動画を非同期にロードします。
+        /// タグに紐づく動画情報を取得
         /// </summary>
-        /// <returns></returns>
-        public async Task LoadTagVideosAsync(  ) {
+        public void LoadTagVideos(VideoService videoService)
+        {
+            // 最初に全タグの動画リストをクリア
+            foreach (var tag in _allTags)
+            {
+                tag.TagVideoItem.Clear();
+            }
 
+            var allVideos = videoService.Videos;
+            if (allVideos == null || !allVideos.Any())
+            {
+                return;
+            }
+
+            var tagDictionary = GetAllTagsAsDictionary();
+
+            // 動画リストを一度だけループする
+            foreach (var video in allVideos)
+            {
+                if (video.VideoTagItems == null || !video.VideoTagItems.Any())
+                {
+                    continue;
+                }
+
+                foreach (var videoTag in video.VideoTagItems)
+                {
+                    // TagServiceが管理するTagItemインスタンスに動画を追加する
+                    if (tagDictionary.TryGetValue(videoTag.Id, out var targetTag))
+                    {
+                        targetTag.TagVideoItem.Add(video);
+                    }
+                }
+            }
         }
 
         /// <summary>

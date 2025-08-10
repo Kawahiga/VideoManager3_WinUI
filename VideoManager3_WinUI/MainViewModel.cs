@@ -135,6 +135,7 @@ namespace VideoManager3_WinUI {
             // タグと動画の初期データをロード
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
+            _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
 
             // 【暫定】ファイルを更新日時降順にソート
             _videoService.SortVideosByLastModified( true );
@@ -177,6 +178,7 @@ namespace VideoManager3_WinUI {
                     SelectedItem.VideoTagItems.Remove( tagToRemove );
                 }
             }
+            _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
             FilterVideos();
         }
 
@@ -239,8 +241,7 @@ namespace VideoManager3_WinUI {
                 && !string.IsNullOrWhiteSpace( inputTextBox.Text )
                 && SelectedTag.Name != inputTextBox.Text ) {
                 SelectedTag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
-                //await _databaseService.AddOrUpdateTagAsync( SelectedTag ); // データベースを更新
-                //await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
+                // タグツリーを再読み込みしてUIを更新
                 await _tagService.AddOrUpdateTagAsync( SelectedTag );
             }
         }
@@ -256,3 +257,4 @@ namespace VideoManager3_WinUI {
         }
     }
 }
+

@@ -278,5 +278,36 @@ namespace VideoManager3_WinUI {
             }
             return tags;
         }
+
+        //// タグに関連付けられた動画を取得する
+        //public async Task<List<VideoItem>> GetVideosForTagAsync(TagItem tag)
+        //{
+        //    var videos = new List<VideoItem>();
+        //    using var connection = new SqliteConnection($"Data Source={_dbPath}");
+        //    await connection.OpenAsync();
+
+        //    var command = connection.CreateCommand();
+        //    command.CommandText = @"
+        //        SELECT v.FileID, v.FilePath, v.FileName, v.FileSize, v.LastModified, v.Duration
+        //        FROM Videos v
+        //        JOIN VideoTags vt ON vt.VideoId = v.FileID
+        //        WHERE vt.TagId = $tagId";
+        //    command.Parameters.AddWithValue("$tagId", tag.Id);
+
+        //    using var reader = await command.ExecuteReaderAsync();
+        //    while (await reader.ReadAsync())
+        //    {
+        //        var id = reader.GetInt32(0);
+        //        var filePath = reader.GetString(1);
+        //        var fileName = reader.GetString(2);
+        //        var fileSize = reader.GetInt64(3);
+        //        var lastModified = DateTime.Parse(reader.GetString(4), null, System.Globalization.DateTimeStyles.RoundtripKind);
+        //        var duration = reader.GetDouble(5);
+
+        //        var video = new VideoItem(id, filePath, fileName, fileSize, lastModified, duration);
+        //        videos.Add(video);
+        //    }
+        //    return videos;
+        //}
     }
 }

@@ -138,7 +138,7 @@ namespace VideoManager3_WinUI {
             _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
 
             // 【暫定】ファイルを更新日時降順にソート
-            _videoService.SortVideosByLastModified( true );
+            _videoService.SortVideos(VideoService.VideoSortType.LastModifiedDescending);
             FilterVideos();
         }
 

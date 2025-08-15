@@ -19,6 +19,8 @@
 
         <!-- 上部ツールバー -->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+            <!-- 作業フォルダ設定ボタン（未実装） -->
+            <AppBarButton Icon="Folder" Label="ホームフォルダを設定"/>
             <!-- フォルダ追加ボタン -->
             <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
             <!-- 削除ボタン -->
@@ -29,6 +31,8 @@
                     <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
                 </AppBarButton.Flyout>
             </AppBarButton>
+            <!-- いいねボタン（未実装） -->
+            <AppBarButton Icon="Like" Label="いいね" IsEnabled="{Binding IsItemSelected}"/>
             <AppBarSeparator/>
             <!-- 検索ボックス -->
             <AppBarElementContainer>

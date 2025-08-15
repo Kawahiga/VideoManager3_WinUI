@@ -20,6 +20,8 @@ namespace VideoManager3_WinUI {
     public class VideoService {
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
 
+        public string? HomeFolder = null;
+
         public enum VideoSortType {
             LastModifiedDescending, // 更新日時降順
             LastModifiedAscending,  // 更新日時昇順

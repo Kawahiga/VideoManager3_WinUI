@@ -109,6 +109,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ドラッグ＆ドロップでファイルを追加するためのプレビューイベントハンドラ
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             e.AcceptedOperation = DataPackageOperation.Copy;
@@ -120,6 +121,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
         private async void Window_Drop(object sender, DragEventArgs e)
         {
             if (e.DataView.Contains(StandardDataFormats.StorageItems))

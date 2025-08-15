@@ -33,12 +33,13 @@ namespace VideoManager3_WinUI {
         // 表示用のコレクション
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
-        public ICommand AddFolderCommand { get; }
-        public ICommand AddFilesCommand { get; }
-        public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
-        public IRelayCommand EditTagCommand { get; }     // タグ編集コマンド
-        public IRelayCommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
-        public IRelayCommand DoubleTappedCommand { get; }    // ファイルをダブルクリックしたときのコマンド
+        public ICommand AddFolderCommand { get; private set; }
+        public ICommand AddFilesCommand { get; private set; }
+        public ICommand ToggleViewCommand { get; private set; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
+        public IRelayCommand EditTagCommand { get; private set; }     // タグ編集コマンド
+        public IRelayCommand UpdateVideoTagsCommand { get; private set; } // 動画のタグ情報を更新するコマンド
+        public IRelayCommand DoubleTappedCommand { get; private set; }    // ファイルをダブルクリックしたときのコマンド
+        public ICommand SetHomeFolderCommand { get; private set; } // ホームフォルダを設定するコマンド
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -81,13 +82,14 @@ namespace VideoManager3_WinUI {
                     _isGridView = value;
                     OnPropertyChanged( nameof( IsGridView ) );
                     OnPropertyChanged( nameof( IsListView ) );
+                    SaveSettings();
                 }
             }
         }
         public bool IsListView => !_isGridView;
 
         // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ（サムネイルの横幅）
-        private double _thumbnailSize = 260.0;
+        private double _thumbnailSize;
         public double ThumbnailSize {
             get => _thumbnailSize;
             set
@@ -96,21 +98,47 @@ namespace VideoManager3_WinUI {
                     _thumbnailSize = value;
                     OnPropertyChanged( nameof( ThumbnailSize ) );
                     OnPropertyChanged( nameof( ThumbnailHeight ) );
+                    SaveSettings();
                 }
             }
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
-        // 動画のソート方法     【暫定】ファイルを更新日時降順にソート
-        public VideoService.VideoSortType SortType = VideoService.VideoSortType.LastModifiedDescending;
+        private string _homeFolderPath;
+        public string HomeFolderPath
+        {
+            get => _homeFolderPath;
+            set
+            {
+                if (_homeFolderPath != value)
+                {
+                    _homeFolderPath = value;
+                    OnPropertyChanged(nameof(HomeFolderPath));
+                }
+            }
+        }
+
+        // 動画のソート方法
+        private VideoService.VideoSortType _sortType;
+        public VideoService.VideoSortType SortType {
+            get => _sortType;
+            set {
+                if ( _sortType != value ) {
+                    _sortType = value;
+                    OnPropertyChanged( nameof( SortType ) );
+                    SaveSettings();
+                }
+            }
+        }
 
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
+        private readonly SettingService _settingService;
 
         // コンストラクタ
-        public MainViewModel( ) {
+        public MainViewModel() {
             _thumbnailService = new ThumbnailService();
 
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
@@ -118,38 +146,49 @@ namespace VideoManager3_WinUI {
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
+            _settingService = new SettingService();
+
+            // 画面状態を復元
+            var setting = _settingService.LoadSettings();
+            if ( setting != null ) {
+                SortType = VideoService.VideoSortType.LastModifiedDescending; // 【暫定】ファイルを更新日時降順にソート
+                IsGridView = setting.IsGridView;
+                ThumbnailSize = setting.ThumbnailSize;
+                HomeFolderPath = setting.HomeFolderPath;
+            }
+            //setting = _settingService.LoadSettings();
+            //setting = _settingService.LoadSettings();
+            //var homeFolderName = Path.GetFileName( HomeFolderPath );
 
             // コマンドの初期化
-            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () =>
-            {
+            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => {
                 await _videoService.AddVideosFromFolderAsync();
                 FilterVideos();
             } );
-            AddFilesCommand = new RelayCommand<IEnumerable<string>>(async (files) =>
-            {
-                if (files != null)
-                {
-                    await _videoService.AddVideosFromPathsAsync(files);
+            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => {
+                if ( files != null ) {
+                    await _videoService.AddVideosFromPathsAsync( files );
                     _videoService.SortVideos( SortType );
                     FilterVideos();
                 }
-            });
+            } );
             ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
+            SetHomeFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await SetHomeFolderAsync() );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
         }
 
         // 初期データのロード
-        public async Task LoadInitialDataAsync() {
+        private async Task LoadInitialDataAsync() {
             // タグと動画の初期データをロード
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
-            await _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
+            await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
 
             // 【暫定】ファイルを更新日時降順にソート
             _videoService.SortVideos( SortType );
@@ -165,7 +204,7 @@ namespace VideoManager3_WinUI {
                 }
             } else {
                 // 「タグなし」だった場合は、タグが紐づいていない動画を全て表示
-                if ( SelectedTag.Name.Equals("タグなし") ) {
+                if ( SelectedTag.Name.Equals( "タグなし" ) ) {
                     var filtereds = Videos.Where(v => !v.VideoTagItems.Any());
                     foreach ( var video in filtereds )
                         FilteredVideos.Add( video );
@@ -265,6 +304,36 @@ namespace VideoManager3_WinUI {
                 // タグツリーを再読み込みしてUIを更新
                 await _tagService.AddOrUpdateTagAsync( SelectedTag );
             }
+        }
+
+        // ホームフォルダを設定するコマンド
+        private async Task SetHomeFolderAsync() {
+            var folderPicker = new FolderPicker {
+                CommitButtonText = "選択"
+            };
+            folderPicker.FileTypeFilter.Add( "*" ); // すべてのファイルを表示
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
+            WinRT.Interop.InitializeWithWindow.Initialize( folderPicker, hwnd );
+
+            // フォルダを選択
+            var folder = await folderPicker.PickSingleFolderAsync();
+            if ( folder != null ) {
+                System.Diagnostics.Debug.WriteLine($"Selected folder path: {folder.Path}");
+                HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
+                SaveSettings(); // 設定を保存
+            }
+        }
+
+        private void SaveSettings() {
+            var settings = new SettingItem
+            {
+                VideoSortType = (int)_sortType,
+                IsGridView = _isGridView,
+                ThumbnailSize = _thumbnailSize,
+                HomeFolderPath = _homeFolderPath,
+                // PaneWidths や HomeFolderPath など、他の設定項目もここに追加
+            };
+            _settingService.SaveSettings( settings );
         }
 
         // ファイルの表示方法を切り替える（一覧表示 ←→ サムネイル ）

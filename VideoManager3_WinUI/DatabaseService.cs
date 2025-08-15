@@ -37,7 +37,9 @@ namespace VideoManager3_WinUI {
                     Extension TEXT DEFAULT '',
                     FileSize INTEGER DEFAULT 0,
                     LastModified TEXT,
-                    Duration REAL DeFAULT 0.0
+                    Duration REAL DeFAULT 0.0,
+                    LikeCount INTEGER DEFAULT 0,
+                    ViewCount INTEGER DEFAULT 0
                 );
                 
                 CREATE TABLE IF NOT EXISTS Tags (
@@ -75,17 +77,17 @@ namespace VideoManager3_WinUI {
             // 既に存在する場合は無視する
             command.CommandText = @"
                 INSERT OR IGNORE INTO Videos 
-                (FilePath, FileName, FileSize, LastModified, Duration) 
+                (FilePath, FileName, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount) 
                 VALUES 
-                ($filePath, $fileName, $fileSize, $lastModified, $duration)";
+                ($filePath, $fileName, $extension, $fileSize, $lastModified, $duration, $like, $view)";
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
+            command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty ); // 拡張子がnullの場合は空文字列を設定
             command.Parameters.AddWithValue( "$fileSize", video.FileSize );
-            //command.Parameters.AddWithValue("$lastModified", video.LastModified);
-            // 日付は環境に依存しないISO 8601形式("o")で保存する
-            command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) );
+            command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) ); // 日付は環境に依存しないISO 8601形式("o")で保存する
             command.Parameters.AddWithValue( "$duration", video.Duration );
-            command.Parameters.AddWithValue( "$dummy", "b" ); // ダミーの値を設定
+            command.Parameters.AddWithValue( "$like", video.LikeCount );
+            command.Parameters.AddWithValue( "$view", video.ViewCount );
 
             // IDを設定
             var rowsAffected = await command.ExecuteNonQueryAsync();
@@ -113,7 +115,7 @@ namespace VideoManager3_WinUI {
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT FileID, FilePath, FileName, FileSize, LastModified, Duration
+                SELECT FileID, FilePath, FileName, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
                 FROM Videos";
 
             using var reader = await command.ExecuteReaderAsync();
@@ -121,12 +123,25 @@ namespace VideoManager3_WinUI {
                 var id = reader.GetInt32(0);
                 var filePath = reader.GetString(1);
                 var fileName = reader.GetString(2);
-                var fileSize = reader.GetInt64(3);
+                var extension = reader.IsDBNull(3) ? string.Empty : reader.GetString(3); // 拡張子がNULLの場合は空文字列を設定
+                var fileSize = reader.GetInt64(4);
                 // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
-                var lastModified = DateTime.Parse(reader.GetString(4), null, System.Globalization.DateTimeStyles.RoundtripKind);
-                var duration = reader.GetDouble(5);
+                var lastModified = DateTime.Parse(reader.GetString(5), null, System.Globalization.DateTimeStyles.RoundtripKind);
+                var duration = reader.GetDouble(6);
+                var likeCount = reader.GetInt32(7);
+                var viewCount = reader.GetInt32(8);
 
-                var video = new VideoItem(id, filePath, fileName, fileSize, lastModified, duration);
+                var video = new VideoItem {
+                    Id = id,
+                    FilePath = filePath,
+                    FileName = fileName,
+                    Extension = extension,
+                    FileSize = fileSize,
+                    LastModified = lastModified,
+                    Duration = duration,
+                    LikeCount = likeCount,
+                    ViewCount = viewCount
+                 };
                 videos.Add( video );
             }
             return videos;
@@ -145,14 +160,15 @@ namespace VideoManager3_WinUI {
             if ( tag.Id == 0 ) {
                 // 新規追加
                 command.CommandText = @"
-                    INSERT INTO Tags (TagName, TagColor, Parent, OrderInGroup, IsGroup)
-                    VALUES ($name, $color, $parent, $order, $isGroup);
+                    INSERT INTO Tags (TagName, TagColor, Parent, OrderInGroup, IsGroup, IsExpand)
+                    VALUES ($name, $color, $parent, $order, $isGroup, $isExpand);
                 ";
                 command.Parameters.AddWithValue( "$name", tag.Name );
                 command.Parameters.AddWithValue( "$color", tag.ColorCode ?? (object)DBNull.Value );
                 command.Parameters.AddWithValue( "$parent", tag.ParentId ?? (object)DBNull.Value );
                 command.Parameters.AddWithValue( "$order", tag.OrderInGroup );
                 command.Parameters.AddWithValue( "$isGroup", tag.IsGroup ? 1 : 0 );
+                command.Parameters.AddWithValue( "$isExpand", tag.IsExpanded ? 1 : 0 );
                 await command.ExecuteNonQueryAsync();
 
                 // 新しく生成されたIDを取得してセット
@@ -188,7 +204,7 @@ namespace VideoManager3_WinUI {
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT TagID, TagName, TagColor, Parent, OrderInGroup, IsGroup
+                SELECT TagID, TagName, TagColor, Parent, OrderInGroup, IsGroup, IsExpand
                 FROM Tags";
 
             using var reader = await command.ExecuteReaderAsync();
@@ -199,6 +215,7 @@ namespace VideoManager3_WinUI {
                 var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);   // DBのParentIdがNULLの場合、0をデフォルト値とする
                 var orderInGroup = reader.GetInt32(4);
                 var isGroup = reader.GetBoolean(5);
+                var isExpanded = reader.GetBoolean(6);
 
                 var tag = new TagItem
                 {
@@ -207,7 +224,8 @@ namespace VideoManager3_WinUI {
                     ColorCode = color,
                     ParentId = parent,
                     OrderInGroup = orderInGroup,
-                    IsGroup = isGroup
+                    IsGroup = isGroup,
+                    IsExpanded = isExpanded
                 };
                 tags.Add( tag );
 
@@ -251,7 +269,7 @@ namespace VideoManager3_WinUI {
             await connection.OpenAsync();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT t.TagID, t.TagName, t.TagColor, t.Parent, t.OrderInGroup, t.IsGroup
+                SELECT t.TagID, t.TagName, t.TagColor, t.Parent, t.OrderInGroup, t.IsGroup, t.IsExpand
                 FROM Tags t
                 JOIN VideoTags vt ON vt.TagId = t.TagID
                 WHERE vt.VideoId = $videoId;
@@ -265,6 +283,7 @@ namespace VideoManager3_WinUI {
                 var parent = reader.IsDBNull(3) ? 0 : reader.GetInt32(3);   // DBのParentIdがNULLの場合、0をデフォルト値とする
                 var orderInGroup = reader.GetInt32(4);
                 var isGroup = reader.GetBoolean(5);
+                var isExpanded = reader.GetBoolean(6);
                 var tag = new TagItem
                 {
                     Id = id,
@@ -272,7 +291,8 @@ namespace VideoManager3_WinUI {
                     ColorCode = color,
                     ParentId = parent,
                     OrderInGroup = orderInGroup,
-                    IsGroup = isGroup
+                    IsGroup = isGroup,
+                    IsExpanded = isExpanded
                 };
                 tags.Add( tag );
             }

@@ -15,11 +15,14 @@ using Windows.Storage.Streams;
 namespace VideoManager3_WinUI {
     public class VideoItem:INotifyPropertyChanged {
         public int Id { get; set; } // データベースの主キー
-        public string FileName { get; }
-        public string FilePath { get; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public string Extension { get; set; }
         public long FileSize { get; set; }  // ファイルサイズ（バイト単位）
         public DateTime LastModified { get; set; }  // 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
         public double Duration { get; set; }    // 動画の再生時間（秒）
+        public int LikeCount { get; set; } = 0; // いいね数
+        public int ViewCount { get; set; } = 0; // 再生数
 
         // サムネイルの元データ（軽量なbyte配列）
         public byte[]? Thumbnail { get; set; }
@@ -50,6 +53,8 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        public VideoItem() { }
 
         public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {
             Id = id;

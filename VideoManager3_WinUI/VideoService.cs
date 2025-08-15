@@ -133,7 +133,15 @@ namespace VideoManager3_WinUI {
                             var file = await StorageFile.GetFileFromPathAsync(path);
                             var props = await file.GetBasicPropertiesAsync();
                             var videoProps = await file.Properties.GetVideoPropertiesAsync();
-                            var videoItem = new VideoItem(0, file.Path, file.Name, (long)props.Size, props.DateModified.DateTime, videoProps.Duration.TotalSeconds);
+                            var videoItem = new VideoItem{
+                                Id = 0,
+                                FilePath = file.Path,
+                                FileName = file.Name,
+                                Extension = fileInfo.Extension.ToLower(),
+                                FileSize = (long)props.Size,
+                                LastModified = props.DateModified.DateTime,
+                                Duration = videoProps.Duration.TotalSeconds
+                            };
                             await _databaseService.AddVideoAsync(videoItem);
                             Videos.Add(videoItem);
                             _ = Task.Run(() => LoadThumbnailBytesAsync(videoItem));

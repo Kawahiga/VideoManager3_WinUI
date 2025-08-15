@@ -117,8 +117,8 @@
                                             <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <!-- タグの動画数を表示するボーダー -->
-                                        <Border Grid.Column="1" Background="LightSlateGray  "  CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
-                                            <TextBlock Text="{x:Bind TagVideoItem.Count}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <Border Grid.Column="1" Background="LightSlateGray"  CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
+                                            <TextBlock Text="{x:Bind TagVideoCount}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                         </Border>
                                     </Grid>
                                     <!-- 右クリックメニュー -->

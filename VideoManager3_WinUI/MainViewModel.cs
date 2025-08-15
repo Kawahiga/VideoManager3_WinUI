@@ -36,9 +36,9 @@ namespace VideoManager3_WinUI {
         public ICommand AddFolderCommand { get; }
         public ICommand AddFilesCommand { get; }
         public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
-        public ICommand EditTagCommand { get; }     // タグ編集コマンド
-        public ICommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
-        public ICommand DoubleTappedCommand { get; }    // ファイルをダブルクリックしたときのコマンド
+        public IRelayCommand EditTagCommand { get; }     // タグ編集コマンド
+        public IRelayCommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
+        public IRelayCommand DoubleTappedCommand { get; }    // ファイルをダブルクリックしたときのコマンド
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -50,8 +50,8 @@ namespace VideoManager3_WinUI {
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
                     // 選択アイテムが変わったらコマンドの実行可否を更新
-                    ((RelayCommand)DoubleTappedCommand).RaiseCanExecuteChanged();
-                    ((RelayCommand)UpdateVideoTagsCommand).RaiseCanExecuteChanged();
+                    DoubleTappedCommand.NotifyCanExecuteChanged();
+                    UpdateVideoTagsCommand.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -65,7 +65,7 @@ namespace VideoManager3_WinUI {
                 if ( _selectedTag != value ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
-                    ((RelayCommand)EditTagCommand).RaiseCanExecuteChanged();
+                    EditTagCommand.NotifyCanExecuteChanged();
                     FilterVideos();
                 }
             }
@@ -120,7 +120,7 @@ namespace VideoManager3_WinUI {
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
 
             // コマンドの初期化
-            AddFolderCommand = new RelayCommand( async () =>
+            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () =>
             {
                 await _videoService.AddVideosFromFolderAsync();
                 FilterVideos();
@@ -134,10 +134,10 @@ namespace VideoManager3_WinUI {
                     FilterVideos();
                 }
             });
-            ToggleViewCommand = new RelayCommand( ToggleView );
-            EditTagCommand = new RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
+            ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
+            EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
-            DoubleTappedCommand = new RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
+            DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -146,9 +146,10 @@ namespace VideoManager3_WinUI {
         // 初期データのロード
         public async Task LoadInitialDataAsync() {
             // タグと動画の初期データをロード
-            await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
-            _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
+            await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
+            await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
+            await _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
 
             // 【暫定】ファイルを更新日時降順にソート
             _videoService.SortVideos( SortType );
@@ -158,11 +159,18 @@ namespace VideoManager3_WinUI {
         // タグのフィルタリングを行い、FilteredVideosに結果を格納する
         private void FilterVideos() {
             FilteredVideos.Clear();
-            if ( SelectedTag == null ) {
+            if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
                 foreach ( var video in Videos ) {
                     FilteredVideos.Add( video );
                 }
             } else {
+                // 「タグなし」だった場合は、タグが紐づいていない動画を全て表示
+                if ( SelectedTag.Name.Equals("タグなし") ) {
+                    var filtereds = Videos.Where(v => !v.VideoTagItems.Any());
+                    foreach ( var video in filtereds )
+                        FilteredVideos.Add( video );
+                    return;
+                }
                 var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
                 var filtered = Videos.Where(v => v.VideoTagItems.Any(t => tagIds.Contains(t.Id)));
                 foreach ( var video in filtered )
@@ -191,7 +199,7 @@ namespace VideoManager3_WinUI {
                     SelectedItem.VideoTagItems.Remove( tagToRemove );
                 }
             }
-            _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
+            await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
             FilterVideos();
         }
 

@@ -68,9 +68,9 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// タグに紐づく動画情報を取得
+        /// タグに紐づく動画情報を取得しする。
         /// </summary>
-        public void LoadTagVideos(VideoService videoService)
+        public Task LoadTagVideos(VideoService videoService)
         {
             // 最初に全タグの動画リストをクリア
             foreach (var tag in _allTags)
@@ -81,28 +81,49 @@ namespace VideoManager3_WinUI {
             var allVideos = videoService.Videos;
             if (allVideos == null || !allVideos.Any())
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var tagDictionary = GetAllTagsAsDictionary();
 
-            // 動画リストを一度だけループする
+            // 「タグなし」タグを探す。まずDB由来の全タグリストから探す
+            var untaggedTag = _allTags.FirstOrDefault(t => t.Name == "タグなし");
+
+            // DBに「タグなし」タグがなければ、UI表示用に一時的なものを作成する
+            if (untaggedTag == null)
+            {
+                // 念のため、UI上の既存の揮発的な「タグなし」タグを探す
+                untaggedTag = TagItems.FirstOrDefault(t => t.Name == "タグなし" && t.Id == -1);
+                if (untaggedTag == null)
+                {
+                    untaggedTag = new TagItem { Id = -1, Name = "タグなし" }; // 一時的なID
+                    TagItems.Add(untaggedTag); // UIのルートに表示するためにコレクションに追加
+                }
+            }
+            
+            untaggedTag.TagVideoItem.Clear();
+
+            // 動画リストをループしてタグに割り当てる
             foreach (var video in allVideos)
             {
                 if (video.VideoTagItems == null || !video.VideoTagItems.Any())
                 {
-                    continue;
+                    // タグがない動画を「タグなし」に追加
+                    untaggedTag.TagVideoItem.Add(video);
                 }
-
-                foreach (var videoTag in video.VideoTagItems)
+                else
                 {
-                    // TagServiceが管理するTagItemインスタンスに動画を追加する
-                    if (tagDictionary.TryGetValue(videoTag.Id, out var targetTag))
+                    // 既存のタグに動画を割り当てる
+                    foreach (var videoTag in video.VideoTagItems)
                     {
-                        targetTag.TagVideoItem.Add(video);
+                        if (tagDictionary.TryGetValue(videoTag.Id, out var targetTag))
+                        {
+                            targetTag.TagVideoItem.Add(video);
+                        }
                     }
                 }
             }
+            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -120,6 +120,18 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // タグに関連付けられた動画の数（子孫の数を合算）
+        public int TagVideoCount {
+            get
+            {
+                int count = TagVideoItem.Count;
+                foreach ( var child in Children ) {
+                    count += child.TagVideoCount; // 子タグの動画数を合算
+                }
+                return count;
+            }
+        }
+
         // 階層構造のための子要素
         public ObservableCollection<TagItem> Children { get; set; } = new ObservableCollection<TagItem>();
 

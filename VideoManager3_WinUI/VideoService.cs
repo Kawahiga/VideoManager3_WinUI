@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Windows.Storage.Streams;
+using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
     /// <summary>
@@ -44,11 +45,21 @@ namespace VideoManager3_WinUI {
         public async Task LoadVideosAsync() {
             Videos.Clear();
             var videosFromDb = await _databaseService.GetAllVideosAsync();
-            var allTagsLookup = _tagService.GetAllTagsAsDictionary();
 
             foreach ( var video in videosFromDb ) {
                 Videos.Add( video );
+                // サムネイルのbyte[]の読み込みをバックグラウンドで実行
+                _ = Task.Run( () => LoadThumbnailBytesAsync( video ) );
+            }
+        }
 
+        /// <summary>
+        /// 動画に紐づくタグを設定します。
+        /// <!summary>
+        public async Task LoadVideoTagsAsync() {
+            var allTagsLookup = _tagService.GetAllTagsAsDictionary();
+            foreach ( var video in Videos ) {
+                video.VideoTagItems.Clear();
                 // 動画に紐づくタグを取得
                 var tagsForVideo = await _databaseService.GetTagsForVideoAsync(video);
                 foreach ( var tagFromDb in tagsForVideo ) {
@@ -56,11 +67,11 @@ namespace VideoManager3_WinUI {
                         video.VideoTagItems.Add( existingTag );
                     }
                 }
-
-                // サムネイルのbyte[]の読み込みをバックグラウンドで実行
-                _ = Task.Run( () => LoadThumbnailBytesAsync( video ) );
             }
+
         }
+
+
 
         /// <summary>
         /// 指定されたフォルダから動画とサブフォルダを追加します。
@@ -159,6 +170,8 @@ namespace VideoManager3_WinUI {
         /// 動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
         /// </summary>
         private async Task LoadThumbnailBytesAsync( VideoItem videoItem ) {
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) return;
+
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
             if ( imageBytes != null && imageBytes.Length > 0 ) {
@@ -173,13 +186,12 @@ namespace VideoManager3_WinUI {
         /// ・フォルダ：フォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
-            if ( videoItem != null ) {
-                try {
-                    Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
-                }
-                catch ( Exception ex ) {
-                    Debug.WriteLine( $"Error opening file: {ex.Message}" );
-                }
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) return;
+            try {
+                Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
+            }
+            catch ( Exception ex ) {
+                Debug.WriteLine( $"Error opening file: {ex.Message}" );
             }
         }
 

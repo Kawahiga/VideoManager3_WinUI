@@ -4,6 +4,9 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
+using System.Linq;
 
 namespace VideoManager3_WinUI {
     public sealed partial class MainWindow:Window {
@@ -103,6 +106,34 @@ namespace VideoManager3_WinUI {
                 // tagItemのIsCheckedプロパティをUIと同期させてからコマンドを実行する
                 tagItem.IsChecked = toggleItem.IsChecked;
                 ViewModel.UpdateVideoTagsCommand.Execute( tagItem );
+            }
+        }
+
+        private void Window_DragOver(object sender, DragEventArgs e)
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+
+            if (e.DragUIOverride != null)
+            {
+                e.DragUIOverride.Caption = "ファイルを追加";
+                e.DragUIOverride.IsContentVisible = true;
+            }
+        }
+
+        private async void Window_Drop(object sender, DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                if (items.Any())
+                {
+                    var files = items.OfType<StorageFile>().Select(f => f.Path).ToList();
+                    if (files.Any())
+                    {
+                        // ViewModelにファイルを追加する処理を依頼する
+                        ViewModel.AddFilesCommand.Execute(files);
+                    }
+                }
             }
         }
     }

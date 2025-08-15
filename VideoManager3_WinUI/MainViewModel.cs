@@ -33,7 +33,8 @@ namespace VideoManager3_WinUI {
         // 表示用のコレクション
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
-        public ICommand AddFolderCommand { get; }   // フォルダを指定してファイルを読み込むコマンド
+        public ICommand AddFolderCommand { get; }
+        public ICommand AddFilesCommand { get; }
         public ICommand ToggleViewCommand { get; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
         public ICommand EditTagCommand { get; }     // タグ編集コマンド
         public ICommand UpdateVideoTagsCommand { get; } // 動画のタグ情報を更新するコマンド
@@ -100,6 +101,9 @@ namespace VideoManager3_WinUI {
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
+        // 動画のソート方法     【暫定】ファイルを更新日時降順にソート
+        public VideoService.VideoSortType SortType = VideoService.VideoSortType.LastModifiedDescending;
+
         private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
@@ -121,6 +125,15 @@ namespace VideoManager3_WinUI {
                 await _videoService.AddVideosFromFolderAsync();
                 FilterVideos();
             } );
+            AddFilesCommand = new RelayCommand<IEnumerable<string>>(async (files) =>
+            {
+                if (files != null)
+                {
+                    await _videoService.AddVideosFromPathsAsync(files);
+                    _videoService.SortVideos( SortType );
+                    FilterVideos();
+                }
+            });
             ToggleViewCommand = new RelayCommand( ToggleView );
             EditTagCommand = new RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
@@ -138,7 +151,7 @@ namespace VideoManager3_WinUI {
             _tagService.LoadTagVideos(_videoService); // タグに動画を関連付ける
 
             // 【暫定】ファイルを更新日時降順にソート
-            _videoService.SortVideos(VideoService.VideoSortType.LastModifiedDescending);
+            _videoService.SortVideos( SortType );
             FilterVideos();
         }
 
@@ -257,4 +270,3 @@ namespace VideoManager3_WinUI {
         }
     }
 }
-

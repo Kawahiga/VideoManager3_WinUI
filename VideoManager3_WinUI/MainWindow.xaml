@@ -9,7 +9,7 @@
     mc:Ignorable="d">
 
     <!-- ウィンドウ全体のレイアウトを定義するGrid -->
-    <Grid x:Name="RootGrid">
+    <Grid x:Name="RootGrid" AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- 上部ツールバー用の行 -->

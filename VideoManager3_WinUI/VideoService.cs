@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -102,6 +103,51 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
+        /// 指定されたパスのリストから動画やフォルダを追加します。
+        /// </summary>
+        public async Task AddVideosFromPathsAsync(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                if (Videos.Any(v => v.FilePath == path))
+                {
+                    continue; // 既に存在する場合はスキップ
+                }
+
+                try
+                {
+                    // パスがディレクトリかファイルかを確認
+                    if (Directory.Exists(path))
+                    {
+                        var dirInfo = new DirectoryInfo(path);
+                        var videoItem = new VideoItem(0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0);
+                        await _databaseService.AddVideoAsync(videoItem);
+                        Videos.Add(videoItem);
+                    }
+                    else if (File.Exists(path))
+                    {
+                        var fileInfo = new FileInfo(path);
+                        if (fileInfo.Extension.ToLower() == ".mp4") // .mp4ファイルのみを対象とする
+                        {
+                            // StorageFileを取得して詳細プロパティを取得
+                            var file = await StorageFile.GetFileFromPathAsync(path);
+                            var props = await file.GetBasicPropertiesAsync();
+                            var videoProps = await file.Properties.GetVideoPropertiesAsync();
+                            var videoItem = new VideoItem(0, file.Path, file.Name, (long)props.Size, props.DateModified.DateTime, videoProps.Duration.TotalSeconds);
+                            await _databaseService.AddVideoAsync(videoItem);
+                            Videos.Add(videoItem);
+                            _ = Task.Run(() => LoadThumbnailBytesAsync(videoItem));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error adding item from path: {path}. Error: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
         /// 動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
         /// </summary>
         private async Task LoadThumbnailBytesAsync( VideoItem videoItem ) {
@@ -177,4 +223,3 @@ namespace VideoManager3_WinUI {
         }
     }
 }
-

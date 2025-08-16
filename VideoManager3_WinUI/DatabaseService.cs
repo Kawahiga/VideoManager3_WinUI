@@ -223,7 +223,8 @@ namespace VideoManager3_WinUI {
                         TagColor = $color,
                         Parent = $parent,
                         OrderInGroup = $order,
-                        IsGroup = $isGroup
+                        IsGroup = $isGroup,
+                        IsExpand = $isExpand
                     WHERE TagID = $id;
                 ";
                 command.Parameters.AddWithValue( "$id", tag.Id );
@@ -232,6 +233,7 @@ namespace VideoManager3_WinUI {
                 command.Parameters.AddWithValue( "$parent", tag.ParentId ?? (object)DBNull.Value );
                 command.Parameters.AddWithValue( "$order", tag.OrderInGroup );
                 command.Parameters.AddWithValue( "$isGroup", tag.IsGroup ? 1 : 0 );
+                command.Parameters.AddWithValue( "$isExpand", tag.IsExpanded ? 1 : 0 );
                 await command.ExecuteNonQueryAsync();
             }
         }

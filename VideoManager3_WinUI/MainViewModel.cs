@@ -171,7 +171,6 @@ namespace VideoManager3_WinUI {
             // 画面状態を復元
             var setting = _settingService.LoadSettings();
             if ( setting != null ) {
-                //SortType = VideoSortType.LastModifiedDescending; // 【暫定】ファイルを更新日時降順にソート
                 SortType = (VideoSortType)setting.VideoSortType;
                 IsGridView = setting.IsGridView;
                 ThumbnailSize = setting.ThumbnailSize;
@@ -215,7 +214,7 @@ namespace VideoManager3_WinUI {
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
 
-            // 【暫定】ファイルを更新日時降順にソート
+            // ファイルをソート
             _videoService.SortVideos( SortType );
             FilterVideos();
         }

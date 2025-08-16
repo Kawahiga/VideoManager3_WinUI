@@ -4,10 +4,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
-
-// エンハンス案
-// 1.タグの展開状態を保存するためのプロパティを追加
-
 namespace VideoManager3_WinUI {
     // Tagを表すデータモデル
     public class TagItem:INotifyPropertyChanged {

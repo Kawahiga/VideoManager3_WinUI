@@ -137,13 +137,15 @@ namespace VideoManager3_WinUI {
         }
 
         // 動画のソート方法
-        private VideoService.VideoSortType _sortType;
-        public VideoService.VideoSortType SortType {
+        private VideoSortType _sortType;
+        public VideoSortType SortType {
             get => _sortType;
             set {
                 if ( _sortType != value ) {
                     _sortType = value;
                     OnPropertyChanged( nameof( SortType ) );
+                    _videoService.SortVideos( _sortType );
+                    FilterVideos();
                     SaveSettings();
                 }
             }
@@ -169,7 +171,8 @@ namespace VideoManager3_WinUI {
             // 画面状態を復元
             var setting = _settingService.LoadSettings();
             if ( setting != null ) {
-                SortType = VideoService.VideoSortType.LastModifiedDescending; // 【暫定】ファイルを更新日時降順にソート
+                //SortType = VideoSortType.LastModifiedDescending; // 【暫定】ファイルを更新日時降順にソート
+                SortType = (VideoSortType)setting.VideoSortType;
                 IsGridView = setting.IsGridView;
                 ThumbnailSize = setting.ThumbnailSize;
                 HomeFolderPath = setting.HomeFolderPath;
@@ -245,6 +248,7 @@ namespace VideoManager3_WinUI {
                 // 検索テキストを半角スペースで分割し、AND検索
                 var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 videosBySerach = videosByTag.Where( v => {
+                    if (string.IsNullOrEmpty(v.FileName)) return false;
                     var fileNameLower = v.FileName.ToLower();
                     return searchKeywords.All( keyword => fileNameLower.Contains( keyword ) );
                 } );
@@ -371,14 +375,13 @@ namespace VideoManager3_WinUI {
 
         // 設定を保存するメソッド
         private void SaveSettings() {
-            var settings = new SettingItem
-            {
-                VideoSortType = (int)_sortType,
-                IsGridView = _isGridView,
-                ThumbnailSize = _thumbnailSize,
-                HomeFolderPath = _homeFolderPath,
-                // PaneWidths など、他の設定項目もここに追加
-            };
+            var settings = _settingService.LoadSettings() ?? new SettingItem();
+
+            settings.VideoSortType = (int)_sortType;
+            settings.IsGridView = _isGridView;
+            settings.ThumbnailSize = _thumbnailSize;
+            settings.HomeFolderPath = _homeFolderPath;
+
             _settingService.SaveSettings( settings );
         }
 

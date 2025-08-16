@@ -61,6 +61,11 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ファイル名昇順ソートのイベントハンドラー
+        private void SortByNameAscending( object sender, RoutedEventArgs e ) {
+            ViewModel.SortType = VideoSortType.FileNameAscending;
+        }
+
         // ファイルをダブルクリックしたときのイベントハンドラー
         private void GridView_DoubleTapped( object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e ) {
             if ( e.OriginalSource is FrameworkElement element && element.DataContext is VideoItem videoItem ) {

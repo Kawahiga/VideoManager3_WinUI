@@ -14,6 +14,15 @@ using Windows.Storage.Streams;
 using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
+    public enum VideoSortType {
+        LastModifiedDescending, // 更新日時降順
+        LastModifiedAscending,  // 更新日時昇順
+        FileNameAscending,      // ファイル名昇順
+        FileNameDescending,      // ファイル名降順
+        LikeCountDescending, // いいね数降順
+        LikeCountAscending,  // いいね数昇順
+    }
+
     /// <summary>
     /// 動画関連のデータ操作とビジネスロジックを管理するサービスクラス
     /// </summary>
@@ -21,15 +30,6 @@ namespace VideoManager3_WinUI {
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
 
         public string? HomeFolder = null;
-
-        public enum VideoSortType {
-            LastModifiedDescending, // 更新日時降順
-            LastModifiedAscending,  // 更新日時昇順
-            FileNameAscending,      // ファイル名昇順
-            FileNameDescending,      // ファイル名降順
-            LikeCountDescending, // いいね数降順
-            LikeCountAscending,  // いいね数昇順
-        };
 
         private readonly DatabaseService _databaseService;
         private readonly TagService _tagService;
@@ -213,43 +213,35 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// ファイルをソートします。
         /// </summary>
-        /// 
         public void SortVideos( VideoSortType sortType ) {
+            if ( Videos == null || Videos.Count == 0 ) {
+                Debug.WriteLine( "No videos to sort." );
+                return;
+            }
+            List<VideoItem> sortedVideos;
             switch ( sortType ) {
                 case VideoSortType.LastModifiedDescending:
-                SortVideosByLastModified( true );
-                break;
+                    sortedVideos = Videos.OrderByDescending( v => v.LastModified ).ToList();
+                    break;
                 case VideoSortType.LastModifiedAscending:
-                SortVideosByLastModified( false );
-                break;
-                //case VideoSortType.FileNameAscending:
-                //    Videos = new ObservableCollection<VideoItem>( Videos.OrderBy(v => v.FileName).ToList() );
-                //    break;
-                //case VideoSortType.FileNameDescending:
-                //    Videos = new ObservableCollection<VideoItem>( Videos.OrderByDescending(v => v.FileName).ToList() );
-                //    break;
-                //case VideoSortType.LikeCountDescending:
-                //    Videos = new ObservableCollection<VideoItem>( Videos.OrderByDescending(v => v.LikeCount).ToList() );
-                //    break;
-                //case VideoSortType.LikeCountAscending:
-                //    Videos = new ObservableCollection<VideoItem>( Videos.OrderBy(v => v.LikeCount).ToList() );
-                //    break;
+                    sortedVideos = Videos.OrderBy( v => v.LastModified ).ToList();
+                    break;
+                case VideoSortType.FileNameAscending:
+                    sortedVideos = Videos.OrderBy( v => v.FileName ).ToList();
+                    break;
+                case VideoSortType.FileNameDescending:
+                    sortedVideos = Videos.OrderByDescending( v => v.FileName ).ToList();
+                    break;
+                case VideoSortType.LikeCountDescending:
+                    sortedVideos = Videos.OrderByDescending( v => v.LikeCount ).ToList();
+                    break;
+                case VideoSortType.LikeCountAscending:
+                    sortedVideos = Videos.OrderBy( v => v.LikeCount ).ToList();
+                    break;
                 default:
-                Debug.WriteLine( $"Unsupported sort type: {sortType}" );
-                break;
+                    Debug.WriteLine( $"Unsupported sort type: {sortType}" );
+                    return;
             }
-        }
-
-
-        /// <summary>
-        /// ファイルを更新日時でソートします。
-        /// 降順：新しいのが先  昇順：古いのが先
-        /// </summary>
-        /// <param name="descending">降順の場合は true、昇順の場合は false を指定します。</param>
-        private void SortVideosByLastModified( bool descending = false ) {
-            var sortedVideos = descending
-                ? Videos.OrderByDescending(v => v.LastModified).ToList()
-                : Videos.OrderBy(v => v.LastModified).ToList();
 
             Videos.Clear();
             foreach ( var video in sortedVideos ) {

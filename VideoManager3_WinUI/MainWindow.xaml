@@ -11,10 +11,10 @@
     <!-- ウィンドウ全体のレイアウトを定義するGrid -->
     <Grid x:Name="RootGrid" AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <!-- 上部ツールバー用の行 -->
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <!-- メインコンテンツエリア用の行（残りの領域すべて） -->
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- 上部ツールバー -->
@@ -31,12 +31,19 @@
                     <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
                 </AppBarButton.Flyout>
             </AppBarButton>
-            <!-- いいねボタン（未実装）（ IsEnabled="{Binding IsItemSelected}"） -->
+            <!-- いいねボタン -->
             <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
             <AppBarSeparator/>
             <!-- 検索ボックス -->
             <AppBarElementContainer>
-                <AutoSuggestBox QueryIcon="Find" PlaceholderText="検索" Width="200" Margin="0,8,10,0"/>
+                <AutoSuggestBox x:Name="SearchBox"
+                                QueryIcon="Find"
+                                PlaceholderText="検索"
+                                Width="200"
+                                Margin="0,8,10,0"
+                                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                TextChanged="SearchBox_TextChanged"
+                                QuerySubmitted="SearchBox_QuerySubmitted"/>
             </AppBarElementContainer>
             <!-- ソートボタン（フライアウト付き） -->
             <AppBarButton Icon="Sort" Label="ソート">

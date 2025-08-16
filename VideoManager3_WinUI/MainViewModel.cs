@@ -75,7 +75,7 @@ namespace VideoManager3_WinUI {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
                     EditTagCommand.NotifyCanExecuteChanged();
-                    FilterVideos();
+                    FilterVideos(); // タグが変更されたらフィルタリングを実行
                 }
             }
         }
@@ -118,6 +118,19 @@ namespace VideoManager3_WinUI {
                     _homeFolderPath = value;
                     OnPropertyChanged( nameof( HomeFolderPath ) );
                     SaveSettings();
+                }
+            }
+        }
+
+        // 検索テキストを保持するプロパティ
+        private string _searchText = "";
+        public string SearchText {
+            get => _searchText;
+            set {
+                if ( _searchText != value ) {
+                    _searchText = value;
+                    OnPropertyChanged( nameof( SearchText ) );
+                    FilterVideos(); // 検索テキストが変更されたらフィルタリングを実行
                 }
             }
         }
@@ -196,25 +209,42 @@ namespace VideoManager3_WinUI {
             FilterVideos();
         }
 
-        // タグのフィルタリングを行い、FilteredVideosに結果を格納する
+        // タグと検索テキストのフィルタリングを行い、FilteredVideosに結果を格納する
         private void FilterVideos() {
             FilteredVideos.Clear();
+
+            IEnumerable<VideoItem> videosByTag;
+            IEnumerable<VideoItem> videosBySerach;
+
+            // タグによるフィルタリング
             if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
-                // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を表示
-                foreach ( var video in Videos ) {
-                    FilteredVideos.Add( video );
-                }
+                // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を対象
+                videosByTag = Videos;
             } else if ( SelectedTag.Name.Equals( "タグなし" ) ) {
-                // 「タグなし」だった場合は、タグが紐づいていない動画を全て表示
-                var filtereds = Videos.Where(v => !v.VideoTagItems.Any());
-                foreach ( var video in filtereds )
-                    FilteredVideos.Add( video );
+                // 「タグなし」だった場合は、タグが紐づいていない動画を全て対象
+                videosByTag = Videos.Where( v => !v.VideoTagItems.Any() );
             } else {
-                // 選択されたタグに紐づく動画を表示
+                // 選択されたタグに紐づく動画を対象
                 var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
-                var filtered = Videos.Where(v => v.VideoTagItems.Any(t => tagIds.Contains(t.Id)));
-                foreach ( var video in filtered )
-                    FilteredVideos.Add( video );
+                videosByTag = Videos.Where( v => v.VideoTagItems.Any( t => tagIds.Contains( t.Id ) ) );
+            }
+
+            // 検索テキストによるフィルタリング
+            if ( string.IsNullOrWhiteSpace( SearchText ) ) {
+                // 検索テキストが空の場合は、タグでフィルタリングされた結果をそのまま表示
+                videosBySerach = videosByTag;
+            } else {
+                // 検索テキストを半角スペースで分割し、AND検索
+                var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                videosBySerach = videosByTag.Where(v =>
+                {
+                    var fileNameLower = v.FileName.ToLower();
+                    return searchKeywords.All(keyword => fileNameLower.Contains(keyword));
+                });
+            }
+
+            foreach ( var video in videosBySerach ) {
+                FilteredVideos.Add( video );
             }
         }
 

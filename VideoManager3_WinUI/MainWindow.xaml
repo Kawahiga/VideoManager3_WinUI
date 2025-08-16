@@ -59,13 +59,13 @@
             </AppBarButton>
             <AppBarSeparator/>
             <!-- 表示切替ボタン（詳細表示） -->
-            <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}">
+            <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="List"/>
                 </AppBarButton.Icon>
             </AppBarButton>
             <!-- 表示切替ボタン（サムネイル表示） -->
-            <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}">
+            <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <AppBarButton.Icon>
                     <SymbolIcon Symbol="ViewAll"/>
                 </AppBarButton.Icon>

@@ -61,16 +61,42 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ファイル名昇順ソートのイベントハンドラー
-        private void SortByNameAscending( object sender, RoutedEventArgs e ) {
-            ViewModel.SortType = VideoSortType.FileNameAscending;
-        }
-
         // ファイルをダブルクリックしたときのイベントハンドラー
         private void GridView_DoubleTapped( object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e ) {
             if ( e.OriginalSource is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
                 ViewModel.DoubleTappedCommand.Execute( null );
             }
+        }
+
+        // ソートボタンをクリックしたときのイベントハンドラー
+        private void SortButton_Click( object sender, RoutedEventArgs e ) {
+            var flyout = new MenuFlyout();
+
+            var sortByNameAsc = new ToggleMenuFlyoutItem { Text = "ファイル名 (昇順)", IsChecked = ViewModel.SortType == VideoSortType.FileNameAscending };
+            sortByNameAsc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.FileNameAscending;
+            flyout.Items.Add( sortByNameAsc );
+
+            var sortByNameDesc = new ToggleMenuFlyoutItem { Text = "ファイル名 (降順)", IsChecked = ViewModel.SortType == VideoSortType.FileNameDescending };
+            sortByNameDesc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.FileNameDescending;
+            flyout.Items.Add( sortByNameDesc );
+
+            var sortByDateAsc = new ToggleMenuFlyoutItem { Text = "更新日時 (古い順)", IsChecked = ViewModel.SortType == VideoSortType.LastModifiedAscending };
+            sortByDateAsc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LastModifiedAscending;
+            flyout.Items.Add( sortByDateAsc );
+
+            var sortByDateDesc = new ToggleMenuFlyoutItem { Text = "更新日時 (新しい順)", IsChecked = ViewModel.SortType == VideoSortType.LastModifiedDescending };
+            sortByDateDesc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LastModifiedDescending;
+            flyout.Items.Add( sortByDateDesc );
+
+            var sortByLikesAsc = new ToggleMenuFlyoutItem { Text = "いいね数 (少ない順)", IsChecked = ViewModel.SortType == VideoSortType.LikeCountAscending };
+            sortByLikesAsc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LikeCountAscending;
+            flyout.Items.Add( sortByLikesAsc );
+
+            var sortByLikesDesc = new ToggleMenuFlyoutItem { Text = "いいね数 (多い順)", IsChecked = ViewModel.SortType == VideoSortType.LikeCountDescending };
+            sortByLikesDesc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LikeCountDescending;
+            flyout.Items.Add( sortByLikesDesc );
+
+            flyout.ShowAt( sender as FrameworkElement );
         }
 
         // タグの右クリック編集を実行するイベントハンドラー（ツリー選択時とファイル選択時で共用できる？）

@@ -47,18 +47,7 @@
                                 QuerySubmitted="SearchBox_QuerySubmitted"/>
             </AppBarElementContainer>
             <!-- ソートボタン（フライアウト付き） -->
-            <AppBarButton Icon="Sort" Label="ソート">
-                <AppBarButton.Flyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem Text="ファイル名 (昇順)" Click="SortByNameAscending"/>
-                        <MenuFlyoutItem Text="ファイル名 (降順)" />
-                        <MenuFlyoutItem Text="更新日時 (昇順)" />
-                        <MenuFlyoutItem Text="更新日時 (降順)" />
-                        <MenuFlyoutItem Text="いいね数 (昇順)" />
-                        <MenuFlyoutItem Text="いいね数 (降順)" />
-                    </MenuFlyout>
-                </AppBarButton.Flyout>
-            </AppBarButton>
+            <AppBarButton Icon="Sort" Click="SortButton_Click"/>
             <AppBarSeparator/>
             <!-- 表示切替ボタン（詳細表示） -->
             <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">

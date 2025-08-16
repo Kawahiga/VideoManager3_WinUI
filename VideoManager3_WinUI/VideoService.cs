@@ -91,14 +91,14 @@ namespace VideoManager3_WinUI {
         /// </summary>
         public async Task AddVideosFromFolderAsync() {
             try {
+                if ( App.m_window == null )return;
+
                 var folderPicker = new FolderPicker
                 {
                     SuggestedStartLocation = PickerLocationId.VideosLibrary
                 };
                 folderPicker.FileTypeFilter.Add( "*" );
 
-                if ( App.m_window == null )
-                    return;
                 var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
                 WinRT.Interop.InitializeWithWindow.Initialize( folderPicker, hwnd );
 
@@ -106,23 +106,7 @@ namespace VideoManager3_WinUI {
                 if ( folder != null ) {
                     var items = await folder.GetItemsAsync();
                     foreach ( var item in items ) {
-                        if ( item.IsOfType( StorageItemTypes.Folder ) && item is StorageFolder subFolder ) {
-                            if ( !Videos.Any( v => v.FilePath == subFolder.Path ) ) {
-                                var basicProperties = await subFolder.GetBasicPropertiesAsync();
-                                var videoItem = new VideoItem(0, subFolder.Path, subFolder.Name, 0, basicProperties.DateModified.DateTime, 0);
-                                await _databaseService.AddVideoAsync( videoItem );
-                                Videos.Add( videoItem );
-                            }
-                        } else if ( item.IsOfType( StorageItemTypes.File ) && item is StorageFile file && file.FileType.ToLower() == ".mp4" ) {
-                            if ( !Videos.Any( v => v.FilePath == file.Path ) ) {
-                                var props = await file.GetBasicPropertiesAsync();
-                                var videoProps = await file.Properties.GetVideoPropertiesAsync();
-                                var videoItem = new VideoItem(0, file.Path, file.Name, (long)props.Size, props.DateModified.DateTime, videoProps.Duration.TotalSeconds);
-                                await _databaseService.AddVideoAsync( videoItem );
-                                Videos.Add( videoItem );
-                                _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
-                            }
-                        }
+                        await AddVideoFromPathAsync( item.Path );
                     }
                 }
             } catch ( Exception ex ) {
@@ -135,43 +119,50 @@ namespace VideoManager3_WinUI {
         /// </summary>
         public async Task AddVideosFromPathsAsync( IEnumerable<string> paths ) {
             foreach ( var path in paths ) {
-                if ( Videos.Any( v => v.FilePath == path ) ) {
-                    continue; // 既に存在する場合はスキップ
-                }
+                await AddVideoFromPathAsync( path );
+            }
+        }
 
-                try {
-                    // パスがディレクトリかファイルかを確認
-                    if ( Directory.Exists( path ) ) {
-                        var dirInfo = new DirectoryInfo(path);
-                        var videoItem = new VideoItem(0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0);
+        /// <summary>
+        /// 指定されたパスから動画やフォルダを追加する共通メソッド
+        /// </summary>
+        private async Task AddVideoFromPathAsync( string path ) {
+            if ( Videos.Any( v => v.FilePath == path ) ) {
+                return; // 既に存在する場合はスキップ
+            }
+
+            try {
+                // パスがディレクトリかファイルかを確認
+                if ( Directory.Exists( path ) ) {
+                    var dirInfo = new DirectoryInfo(path);
+                    var videoItem = new VideoItem(0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0);
+                    await _databaseService.AddVideoAsync( videoItem );
+                    Videos.Add( videoItem );
+                } else if ( File.Exists( path ) ) {
+                    var fileInfo = new FileInfo(path);
+                    if ( fileInfo.Extension.ToLower() == ".mp4" ) // .mp4ファイルのみを対象とする
+                    {
+                        // StorageFileを取得して詳細プロパティを取得
+                        var file = await StorageFile.GetFileFromPathAsync(path);
+                        var props = await file.GetBasicPropertiesAsync();
+                        var videoProps = await file.Properties.GetVideoPropertiesAsync();
+                        var videoItem = new VideoItem
+                        {
+                            Id = 0,
+                            FilePath = file.Path,
+                            FileName = file.Name,
+                            Extension = fileInfo.Extension.ToLower(),
+                            FileSize = (long)props.Size,
+                            LastModified = props.DateModified.DateTime,
+                            Duration = videoProps.Duration.TotalSeconds
+                        };
                         await _databaseService.AddVideoAsync( videoItem );
                         Videos.Add( videoItem );
-                    } else if ( File.Exists( path ) ) {
-                        var fileInfo = new FileInfo(path);
-                        if ( fileInfo.Extension.ToLower() == ".mp4" ) // .mp4ファイルのみを対象とする
-                        {
-                            // StorageFileを取得して詳細プロパティを取得
-                            var file = await StorageFile.GetFileFromPathAsync(path);
-                            var props = await file.GetBasicPropertiesAsync();
-                            var videoProps = await file.Properties.GetVideoPropertiesAsync();
-                            var videoItem = new VideoItem
-                            {
-                                Id = 0,
-                                FilePath = file.Path,
-                                FileName = file.Name,
-                                Extension = fileInfo.Extension.ToLower(),
-                                FileSize = (long)props.Size,
-                                LastModified = props.DateModified.DateTime,
-                                Duration = videoProps.Duration.TotalSeconds
-                            };
-                            await _databaseService.AddVideoAsync( videoItem );
-                            Videos.Add( videoItem );
-                            _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
-                        }
+                        _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
                     }
-                } catch ( Exception ex ) {
-                    Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
                 }
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
             }
         }
 
@@ -179,7 +170,8 @@ namespace VideoManager3_WinUI {
         /// 選択された動画を削除します。
         /// </summary>
         public async Task DeleteVideoAsync( VideoItem? videoItem ) {
-            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) return;
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
+                return;
             try {
                 // データベースから動画を削除
                 await _databaseService.DeleteVideoAsync( videoItem );
@@ -199,7 +191,8 @@ namespace VideoManager3_WinUI {
         /// ・フォルダ：フォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
-            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )return;
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
+                return;
 
             try {
                 Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
@@ -221,26 +214,26 @@ namespace VideoManager3_WinUI {
             List<VideoItem> sortedVideos;
             switch ( sortType ) {
                 case VideoSortType.LastModifiedDescending:
-                    sortedVideos = Videos.OrderByDescending( v => v.LastModified ).ToList();
-                    break;
+                sortedVideos = Videos.OrderByDescending( v => v.LastModified ).ToList();
+                break;
                 case VideoSortType.LastModifiedAscending:
-                    sortedVideos = Videos.OrderBy( v => v.LastModified ).ToList();
-                    break;
+                sortedVideos = Videos.OrderBy( v => v.LastModified ).ToList();
+                break;
                 case VideoSortType.FileNameAscending:
-                    sortedVideos = Videos.OrderBy( v => v.FileName ).ToList();
-                    break;
+                sortedVideos = Videos.OrderBy( v => v.FileName ).ToList();
+                break;
                 case VideoSortType.FileNameDescending:
-                    sortedVideos = Videos.OrderByDescending( v => v.FileName ).ToList();
-                    break;
+                sortedVideos = Videos.OrderByDescending( v => v.FileName ).ToList();
+                break;
                 case VideoSortType.LikeCountDescending:
-                    sortedVideos = Videos.OrderByDescending( v => v.LikeCount ).ToList();
-                    break;
+                sortedVideos = Videos.OrderByDescending( v => v.LikeCount ).ToList();
+                break;
                 case VideoSortType.LikeCountAscending:
-                    sortedVideos = Videos.OrderBy( v => v.LikeCount ).ToList();
-                    break;
+                sortedVideos = Videos.OrderBy( v => v.LikeCount ).ToList();
+                break;
                 default:
-                    Debug.WriteLine( $"Unsupported sort type: {sortType}" );
-                    return;
+                Debug.WriteLine( $"Unsupported sort type: {sortType}" );
+                return;
             }
 
             Videos.Clear();

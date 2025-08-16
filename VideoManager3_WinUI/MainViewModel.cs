@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -364,13 +365,18 @@ namespace VideoManager3_WinUI {
 
         // タグ情報を保存
         private async Task SaveTagsInClose( ObservableCollection<TagItem> tags ) {
-            foreach ( var tag in tags ) {
-                if ( tag.IsModified ) {
-                    await _tagService.AddOrUpdateTagAsync( tag );
+            try {
+                ObservableCollection<TagItem> tempTags = new ObservableCollection<TagItem>(tags);
+                foreach ( var tag in tempTags ) {
+                    if ( tag.IsModified ) {
+                        await _tagService.AddOrUpdateTagAsync( tag );
+                    }
                     if ( tag.Children.Any() ) {
                         await SaveTagsInClose( tag.Children );
                     }
                 }
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error saving tags: {ex.Message}" );
             }
         }
 

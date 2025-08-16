@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 
@@ -122,7 +123,11 @@ namespace VideoManager3_WinUI {
         // タグ情報から動的にメニュー項目を生成する再帰メソッド
         private void CreateTagMenuItems( IList<MenuFlyoutItemBase> menuItems, IEnumerable<TagItem> tagItems ) {
             foreach ( var tag in tagItems ) {
-                if ( tag.IsGroup ) {
+                if ( tag.Name.Equals( "全てのファイル" ) || tag.Name.Equals( "タグなし" ) ) {
+                    // 不要なタグは表示しない
+                    CreateTagMenuItems( menuItems, tag.Children );
+
+                } else if ( tag.IsGroup ) {
                     // タグがグループの場合、サブメニューを作成
                     var subItem = new MenuFlyoutSubItem { Text = tag.Name };
                     CreateTagMenuItems( subItem.Items, tag.Children );

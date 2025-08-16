@@ -27,7 +27,6 @@ namespace VideoManager3_WinUI {
             set {
                 _name = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Name ) ) );
-                IsModified = true;
             }
         }
 
@@ -38,7 +37,6 @@ namespace VideoManager3_WinUI {
             set {
                 _color = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Color ) ) );
-                IsModified = true;
                 // Colorプロパティが変更されたときにColorCodeも更新
                 ColorCode = value is SolidColorBrush solidColorBrush
                     ? $"#{solidColorBrush.Color.A:X2}{solidColorBrush.Color.R:X2}{solidColorBrush.Color.G:X2}{solidColorBrush.Color.B:X2}"
@@ -53,7 +51,6 @@ namespace VideoManager3_WinUI {
             set {
                 if ( _colorCode != value ) {
                     _colorCode = value;
-                    IsModified = true;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ColorCode ) ) );
                     // ColorCodeが変更されたときにColorプロパティも更新
                     Color = ConvertStringToBrush( value );
@@ -67,7 +64,6 @@ namespace VideoManager3_WinUI {
             get => _parentId;
             set {
                 _parentId = value;
-                IsModified = true;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ParentId ) ) );
             }
         }
@@ -78,7 +74,6 @@ namespace VideoManager3_WinUI {
             get => _orderInGroup;
             set {
                 _orderInGroup = value;
-                IsModified = true;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( OrderInGroup ) ) );
             }
         }
@@ -109,6 +104,7 @@ namespace VideoManager3_WinUI {
             set {
                 if ( _isExpanded != value ) {
                     _isExpanded = value;
+                    IsModified = true;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsExpanded ) ) );
                 }
             }

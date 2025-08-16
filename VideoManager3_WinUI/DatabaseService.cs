@@ -137,6 +137,16 @@ namespace VideoManager3_WinUI {
             await command.ExecuteNonQueryAsync();
         }
 
+        // 動画をデータベースから削除する
+        public async Task DeleteVideoAsync( VideoItem video ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM Videos WHERE FileID = $id;";
+            command.Parameters.AddWithValue( "$id", video.Id );
+            await command.ExecuteNonQueryAsync();
+        }
+
         // データベースからすべての動画を読み込む
         public async Task<List<VideoItem>> GetAllVideosAsync() {
             var videos = new List<VideoItem>();

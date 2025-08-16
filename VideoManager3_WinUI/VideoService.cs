@@ -176,6 +176,24 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
+        /// 選択された動画を削除します。
+        /// </summary>
+        public async Task DeleteVideoAsync( VideoItem? videoItem ) {
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) ) return;
+            try {
+                // データベースから動画を削除
+                await _databaseService.DeleteVideoAsync( videoItem );
+                // UIから動画を削除
+                Videos.Remove( videoItem );
+                // ファイルシステムからも削除
+                //var file = await StorageFile.GetFileFromPathAsync(videoItem.FilePath);
+                //await file.DeleteAsync();
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error deleting video: {ex.Message}" );
+            }
+        }
+
+        /// <summary>
         /// 選択されたファイル（動画またはフォルダ）を開きます。
         /// ・動画：再生を開始
         /// ・フォルダ：フォルダを開く

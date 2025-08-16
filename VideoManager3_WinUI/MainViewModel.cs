@@ -40,6 +40,7 @@ namespace VideoManager3_WinUI {
         public IRelayCommand UpdateVideoTagsCommand { get; private set; } // 動画のタグ情報を更新するコマンド
         public IRelayCommand DoubleTappedCommand { get; private set; }    // ファイルをダブルクリックしたときのコマンド
         public ICommand SetHomeFolderCommand { get; private set; } // ホームフォルダを設定するコマンド
+        public IRelayCommand DeleteFileCommand { get; private set; } // ファイルを削除するコマンド（未実装）W
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -186,6 +187,13 @@ namespace VideoManager3_WinUI {
                     FilterVideos();
                 }
             } );
+            DeleteFileCommand = new RelayCommand( async () => {
+                if ( SelectedItem != null ) {
+                    // 選択された動画を削除（ファイルそのものも削除したいが未実装）
+                    await _videoService.DeleteVideoAsync( SelectedItem );
+                    FilterVideos();
+                }
+            }, () => SelectedItem != null ); // 選択されている動画がある場合のみ有効
             ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );

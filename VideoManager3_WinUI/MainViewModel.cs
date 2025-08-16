@@ -45,8 +45,7 @@ namespace VideoManager3_WinUI {
         private VideoItem? _selectedItem;
         public VideoItem? SelectedItem {
             get => _selectedItem;
-            set
-            {
+            set {
                 if ( _selectedItem != value ) {
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
@@ -61,8 +60,7 @@ namespace VideoManager3_WinUI {
         private TagItem? _selectedTag;
         public TagItem? SelectedTag {
             get => _selectedTag;
-            set
-            {
+            set {
                 if ( _selectedTag != value ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
@@ -76,8 +74,7 @@ namespace VideoManager3_WinUI {
         private bool _isGridView = true;
         public bool IsGridView {
             get => _isGridView;
-            set
-            {
+            set {
                 if ( _isGridView != value ) {
                     _isGridView = value;
                     OnPropertyChanged( nameof( IsGridView ) );
@@ -92,8 +89,7 @@ namespace VideoManager3_WinUI {
         private double _thumbnailSize;
         public double ThumbnailSize {
             get => _thumbnailSize;
-            set
-            {
+            set {
                 if ( _thumbnailSize != value ) {
                     _thumbnailSize = value;
                     OnPropertyChanged( nameof( ThumbnailSize ) );
@@ -105,15 +101,13 @@ namespace VideoManager3_WinUI {
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
         private string _homeFolderPath;
-        public string HomeFolderPath
-        {
+        public string HomeFolderPath {
             get => _homeFolderPath;
-            set
-            {
-                if (_homeFolderPath != value)
-                {
+            set {
+                if ( _homeFolderPath != value ) {
                     _homeFolderPath = value;
-                    OnPropertyChanged(nameof(HomeFolderPath));
+                    OnPropertyChanged( nameof( HomeFolderPath ) );
+                    SaveSettings();
                 }
             }
         }
@@ -156,9 +150,6 @@ namespace VideoManager3_WinUI {
                 ThumbnailSize = setting.ThumbnailSize;
                 HomeFolderPath = setting.HomeFolderPath;
             }
-            //setting = _settingService.LoadSettings();
-            //setting = _settingService.LoadSettings();
-            //var homeFolderName = Path.GetFileName( HomeFolderPath );
 
             // コマンドの初期化
             AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => {
@@ -199,17 +190,17 @@ namespace VideoManager3_WinUI {
         private void FilterVideos() {
             FilteredVideos.Clear();
             if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
+                // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を表示
                 foreach ( var video in Videos ) {
                     FilteredVideos.Add( video );
                 }
-            } else {
+            } else if ( SelectedTag.Name.Equals( "タグなし" ) ) {
                 // 「タグなし」だった場合は、タグが紐づいていない動画を全て表示
-                if ( SelectedTag.Name.Equals( "タグなし" ) ) {
-                    var filtereds = Videos.Where(v => !v.VideoTagItems.Any());
-                    foreach ( var video in filtereds )
-                        FilteredVideos.Add( video );
-                    return;
-                }
+                var filtereds = Videos.Where(v => !v.VideoTagItems.Any());
+                foreach ( var video in filtereds )
+                    FilteredVideos.Add( video );
+            } else {
+                // 選択されたタグに紐づく動画を表示
                 var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
                 var filtered = Videos.Where(v => v.VideoTagItems.Any(t => tagIds.Contains(t.Id)));
                 foreach ( var video in filtered )
@@ -308,7 +299,8 @@ namespace VideoManager3_WinUI {
 
         // ホームフォルダを設定するコマンド
         private async Task SetHomeFolderAsync() {
-            var folderPicker = new FolderPicker {
+            var folderPicker = new FolderPicker
+            {
                 CommitButtonText = "選択"
             };
             folderPicker.FileTypeFilter.Add( "*" ); // すべてのファイルを表示
@@ -318,7 +310,6 @@ namespace VideoManager3_WinUI {
             // フォルダを選択
             var folder = await folderPicker.PickSingleFolderAsync();
             if ( folder != null ) {
-                System.Diagnostics.Debug.WriteLine($"Selected folder path: {folder.Path}");
                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
                 SaveSettings(); // 設定を保存
             }
@@ -331,7 +322,7 @@ namespace VideoManager3_WinUI {
                 IsGridView = _isGridView,
                 ThumbnailSize = _thumbnailSize,
                 HomeFolderPath = _homeFolderPath,
-                // PaneWidths や HomeFolderPath など、他の設定項目もここに追加
+                // PaneWidths など、他の設定項目もここに追加
             };
             _settingService.SaveSettings( settings );
         }

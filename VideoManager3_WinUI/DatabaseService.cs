@@ -248,6 +248,7 @@ namespace VideoManager3_WinUI {
             command.Parameters.AddWithValue( "$tagId", tag.Id );
             await command.ExecuteNonQueryAsync();
         }
+
         // 動画からタグを削除する
         public async Task RemoveTagFromVideoAsync( VideoItem video, TagItem tag ) {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");

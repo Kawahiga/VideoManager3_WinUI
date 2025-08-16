@@ -4,9 +4,10 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Windows.ApplicationModel.DataTransfer;
-using Windows.Storage;
 using System.Linq;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Devices.Display.Core;
+using Windows.Storage;
 
 namespace VideoManager3_WinUI {
     public sealed partial class MainWindow:Window {
@@ -16,35 +17,29 @@ namespace VideoManager3_WinUI {
             this.InitializeComponent();
             this.Title = "動画管理くん";
 
-            ViewModel = new MainViewModel( );
+            ViewModel = new MainViewModel();
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
         }
 
         // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
-        private void GridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-            {
-                if (args.Item is VideoItem itemToUnload)
-                {
+        private void GridView_ContainerContentChanging( ListViewBase sender, ContainerContentChangingEventArgs args ) {
+            if ( args.InRecycleQueue ) {
+                if ( args.Item is VideoItem itemToUnload ) {
                     // メモリを解放するためにBitmapImageをクリア
                     itemToUnload.UnloadThumbnailImage();
                 }
                 return;
             }
 
-            if (args.Item is VideoItem itemToLoad)
-            {
+            if ( args.Item is VideoItem itemToLoad ) {
                 // まだBitmapImageが読み込まれていない、かつ元データが存在する場合のみ、非同期読み込みを開始
-                if (itemToLoad.ThumbnailImage == null && itemToLoad.Thumbnail != null)
-                {
+                if ( itemToLoad.ThumbnailImage == null && itemToLoad.Thumbnail != null ) {
                     // RegisterUpdateCallbackはUIスレッドでコールバックを実行する
-                    args.RegisterUpdateCallback(async (s, e) =>
-                    {
+                    args.RegisterUpdateCallback( async ( s, e ) => {
                         // UIスレッドで非同期に画像を読み込んで設定する
                         await itemToLoad.LoadThumbnailImageAsync();
-                    });
+                    } );
                 }
             }
         }
@@ -109,31 +104,68 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ドラッグ＆ドロップでファイルを追加するためのプレビューイベントハンドラ
-        private void Window_DragOver(object sender, DragEventArgs e)
-        {
+        // ドラッグ中のアイテムがウィンドウ上にあるときのイベントハンドラ
+        // ホームフォルダの末尾20文字をキャプションとして表示する
+        private void Window_DragOver( object sender, DragEventArgs e ) {
             e.AcceptedOperation = DataPackageOperation.Copy;
 
-            if (e.DragUIOverride != null)
-            {
-                e.DragUIOverride.Caption = "ファイルを追加";
+            if ( e.DragUIOverride != null ) {
+                int pathLength = ViewModel.HomeFolderPath.Length;
+                int maxLength = 20;
+                string displayPath= "ファイルを追加";
+                if ( pathLength > maxLength ) {
+                    displayPath = ViewModel.HomeFolderPath.Substring( pathLength - maxLength );
+                } else {
+                    displayPath = ViewModel.HomeFolderPath;
+                }
+                e.DragUIOverride.Caption = displayPath;
                 e.DragUIOverride.IsContentVisible = true;
             }
         }
 
         // ドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
-        private async void Window_Drop(object sender, DragEventArgs e)
-        {
-            if (e.DataView.Contains(StandardDataFormats.StorageItems))
-            {
-                var items = await e.DataView.GetStorageItemsAsync();
-                if (items.Any())
-                {
-                    var files = items.OfType<StorageFile>().Select(f => f.Path).ToList();
-                    if (files.Any())
-                    {
-                        // ViewModelにファイルを追加する処理を依頼する
-                        ViewModel.AddFilesCommand.Execute(files);
+        // 未実装項目
+        // ・既にファイルが存在する場合の処理
+        // ・元ファイルの削除（現状コピーで実装）なぜか読み取り専用になる
+        private async void Window_Drop( object sender, DragEventArgs e ) {
+            if ( e.DataView.Contains( StandardDataFormats.StorageItems ) ) {
+                var storageItems = await e.DataView.GetStorageItemsAsync();
+                if ( storageItems.Any() ) {
+                    var droppedFiles = storageItems.OfType<StorageFile>().ToList();
+                    if ( droppedFiles.Any() ) {
+                        // ViewModel.HomeFolderPath を StorageFolder オブジェクトに変換
+                        StorageFolder targetFolder = null;
+                        try {
+                            targetFolder = await StorageFolder.GetFolderFromPathAsync( ViewModel.HomeFolderPath );
+                        } catch ( Exception ex ) {
+                            // エラーハンドリング: ViewModel.HomeFolderPath が無効なパスの場合など
+                            // 例: Debug.WriteLine($"Error getting target folder: {ex.Message}");
+                            return; // 処理を中断
+                        }
+
+                        List<string> newFilePaths = new List<string>();
+                        foreach ( var file in droppedFiles ) {
+                            try {
+                                // ファイルをコピーし、コピーされたファイルのStorageFileオブジェクトを取得
+                                StorageFile copiedFile = await file.CopyAsync(targetFolder, file.Name, NameCollisionOption.GenerateUniqueName);
+                                newFilePaths.Add( copiedFile.Path );
+
+                                //// 元のファイルを一時フォルダに移動して後で削除
+                                //StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+                                //// ファイル名が重複しないようにユニークな名前を生成
+                                //string tempFileName = $"{Guid.NewGuid()}_{file.Name}";
+                                //await file.MoveAsync( tempFolder, tempFileName, NameCollisionOption.ReplaceExisting ); // ReplaceExisting if a GUID collision occurs (highly unlikely)
+
+                            } catch ( Exception ex ) {
+                                // エラーハンドリング: ファイル操作に失敗した場合
+                                System.Diagnostics.Debug.WriteLine($"Error processing file {file.Name}: {ex.Message}");
+                            }
+                        }
+
+                        if ( newFilePaths.Any() ) {
+                            // ViewModelに移動後のファイルパスを追加する処理を依頼する
+                            ViewModel.AddFilesCommand.Execute( newFilePaths );
+                        }
                     }
                 }
             }

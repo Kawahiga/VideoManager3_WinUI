@@ -61,8 +61,7 @@ namespace VideoManager3_WinUI {
                 TagItems.Clear();
                 sortedRootTags.ForEach( TagItems.Add );
                 OnPropertyChanged( nameof( TagItems ) );
-            }
-            catch ( Exception ex ) {
+            } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
             }
         }
@@ -70,17 +69,14 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// タグに紐づく動画情報を取得しする。
         /// </summary>
-        public Task LoadTagVideos(VideoService videoService)
-        {
+        public Task LoadTagVideos( VideoService videoService ) {
             // 最初に全タグの動画リストをクリア
-            foreach (var tag in _allTags)
-            {
+            foreach ( var tag in _allTags ) {
                 tag.TagVideoItem.Clear();
             }
 
             var allVideos = videoService.Videos;
-            if (allVideos == null || !allVideos.Any())
-            {
+            if ( allVideos == null || !allVideos.Any() ) {
                 return Task.CompletedTask;
             }
 
@@ -90,35 +86,27 @@ namespace VideoManager3_WinUI {
             var untaggedTag = _allTags.FirstOrDefault(t => t.Name == "タグなし");
 
             // DBに「タグなし」タグがなければ、UI表示用に一時的なものを作成する
-            if (untaggedTag == null)
-            {
+            if ( untaggedTag == null ) {
                 // 念のため、UI上の既存の揮発的な「タグなし」タグを探す
-                untaggedTag = TagItems.FirstOrDefault(t => t.Name == "タグなし" && t.Id == -1);
-                if (untaggedTag == null)
-                {
+                untaggedTag = TagItems.FirstOrDefault( t => t.Name == "タグなし" && t.Id == -1 );
+                if ( untaggedTag == null ) {
                     untaggedTag = new TagItem { Id = -1, Name = "タグなし" }; // 一時的なID
-                    TagItems.Add(untaggedTag); // UIのルートに表示するためにコレクションに追加
+                    TagItems.Add( untaggedTag ); // UIのルートに表示するためにコレクションに追加
                 }
             }
-            
+
             untaggedTag.TagVideoItem.Clear();
 
             // 動画リストをループしてタグに割り当てる
-            foreach (var video in allVideos)
-            {
-                if (video.VideoTagItems == null || !video.VideoTagItems.Any())
-                {
+            foreach ( var video in allVideos ) {
+                if ( video.VideoTagItems == null || !video.VideoTagItems.Any() ) {
                     // タグがない動画を「タグなし」に追加
-                    untaggedTag.TagVideoItem.Add(video);
-                }
-                else
-                {
+                    untaggedTag.TagVideoItem.Add( video );
+                } else {
                     // 既存のタグに動画を割り当てる
-                    foreach (var videoTag in video.VideoTagItems)
-                    {
-                        if (tagDictionary.TryGetValue(videoTag.Id, out var targetTag))
-                        {
-                            targetTag.TagVideoItem.Add(video);
+                    foreach ( var videoTag in video.VideoTagItems ) {
+                        if ( tagDictionary.TryGetValue( videoTag.Id, out var targetTag ) ) {
+                            targetTag.TagVideoItem.Add( video );
                         }
                     }
                 }

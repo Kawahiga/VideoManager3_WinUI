@@ -34,8 +34,7 @@ namespace VideoManager3_WinUI {
         private Brush? _color;
         public Brush? Color {
             get => _color;
-            set
-            {
+            set {
                 _color = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Color ) ) );
                 // Colorプロパティが変更されたときにColorCodeも更新
@@ -49,8 +48,7 @@ namespace VideoManager3_WinUI {
         private string? _colorCode;
         public string? ColorCode {
             get => _colorCode;
-            set
-            {
+            set {
                 if ( _colorCode != value ) {
                     _colorCode = value;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ColorCode ) ) );
@@ -85,8 +83,7 @@ namespace VideoManager3_WinUI {
         private bool _isChecked;
         public bool IsChecked {
             get => _isChecked;
-            set
-            {
+            set {
                 if ( _isChecked != value ) {
                     _isChecked = value;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsChecked ) ) );
@@ -98,8 +95,7 @@ namespace VideoManager3_WinUI {
         private bool _isExpanded = true;
         public bool IsExpanded {
             get => _isExpanded;
-            set
-            {
+            set {
                 if ( _isExpanded != value ) {
                     _isExpanded = value;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsExpanded ) ) );
@@ -111,8 +107,7 @@ namespace VideoManager3_WinUI {
         private ObservableCollection<VideoItem> _tagVideoItem = new ObservableCollection<VideoItem>();
         public ObservableCollection<VideoItem> TagVideoItem {
             get => _tagVideoItem;
-            set
-            {
+            set {
                 if ( _tagVideoItem != value ) {
                     _tagVideoItem = value;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoItem ) ) );
@@ -122,8 +117,7 @@ namespace VideoManager3_WinUI {
 
         // タグに関連付けられた動画の数（子孫の数を合算）
         public int TagVideoCount {
-            get
-            {
+            get {
                 int count = TagVideoItem.Count;
                 foreach ( var child in Children ) {
                     count += child.TagVideoCount; // 子タグの動画数を合算
@@ -188,8 +182,7 @@ namespace VideoManager3_WinUI {
                 b = byte.Parse( s.Substring( 4, 2 ), System.Globalization.NumberStyles.HexNumber );
 
                 return new SolidColorBrush( ColorHelper.FromArgb( a, r, g, b ) );
-            }
-            catch ( System.Exception ) {
+            } catch ( System.Exception ) {
                 // パースに失敗した場合（例：不正な16進数文字）はnullを返します
                 return null;
             }

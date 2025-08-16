@@ -33,20 +33,18 @@ namespace VideoManager3_WinUI {
             get => _thumbnailImage;
             private set // Viewからの直接の変更は禁止
             {
-                if (_thumbnailImage != value)
-                {
+                if ( _thumbnailImage != value ) {
                     _thumbnailImage = value;
-                    OnPropertyChanged(nameof(ThumbnailImage));
+                    OnPropertyChanged( nameof( ThumbnailImage ) );
                 }
             }
         }
-        
+
         // ファイルに設定されたタグ情報
         private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
         public ObservableCollection<TagItem> VideoTagItems {
             get => videoTagItems;
-            set
-            {
+            set {
                 if ( videoTagItems != value ) {
                     videoTagItems = value;
                     OnPropertyChanged( nameof( VideoTagItems ) );
@@ -66,34 +64,28 @@ namespace VideoManager3_WinUI {
         }
 
         // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド
-        public async Task LoadThumbnailImageAsync()
-        {
+        public async Task LoadThumbnailImageAsync() {
             // 既に画像がある、または元データがない場合は何もしない
-            if (ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0)
-            {
+            if ( ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0 ) {
                 return;
             }
 
-            try
-            {
+            try {
                 var bitmapImage = new BitmapImage();
                 using var stream = new InMemoryRandomAccessStream();
-                await stream.WriteAsync(Thumbnail.AsBuffer());
-                stream.Seek(0);
-                
+                await stream.WriteAsync( Thumbnail.AsBuffer() );
+                stream.Seek( 0 );
+
                 // このメソッドはUIスレッドで実行されるため、直接ソースを設定できる
-                await bitmapImage.SetSourceAsync(stream);
+                await bitmapImage.SetSourceAsync( stream );
                 ThumbnailImage = bitmapImage;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to create BitmapImage for {FileName}: {ex.Message}");
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Failed to create BitmapImage for {FileName}: {ex.Message}" );
             }
         }
-        
+
         // 表示されなくなったアイテムのメモリを解放する
-        public void UnloadThumbnailImage()
-        {
+        public void UnloadThumbnailImage() {
             ThumbnailImage = null;
         }
 

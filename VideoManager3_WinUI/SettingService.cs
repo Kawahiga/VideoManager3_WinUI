@@ -23,8 +23,7 @@ namespace VideoManager3_WinUI {
             VideoSortType = 0;
             PaneWidths = new double[] { 200, 200, 200 };
             ThumbnailSize = 260.0;
-            //HomeFolderPath = string.Empty;
-            HomeFolderPath = "aaa";
+            HomeFolderPath = string.Empty;
             IsGridView = true;
         }
 
@@ -35,26 +34,17 @@ namespace VideoManager3_WinUI {
         private ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
 
         public void SaveSettings( SettingItem settings ) {
-            if ( settings.HomeFolderPath != null ) {
-                settings.HomeFolderPath = settings.HomeFolderPath.Replace( @"\\", @"\" );
-            }
             string json = JsonSerializer.Serialize(settings);
-            System.Diagnostics.Debug.WriteLine($"Saving settings JSON: {json}");
             localSettings.Values[SETTINGS_KEY] = json;
         }
 
         public SettingItem LoadSettings() {
-            if ( localSettings.Values.TryGetValue( SETTINGS_KEY, out object obj ) && obj is string json ) {
-                System.Diagnostics.Debug.WriteLine($"Loading settings JSON: {json}");
+            if ( localSettings.Values.TryGetValue( SETTINGS_KEY, out object? obj ) && obj is string json ) {
                 try {
                     var settings = JsonSerializer.Deserialize<SettingItem>( json );
-                    //if ( settings.HomeFolderPath != null ) {
-                    //    settings.HomeFolderPath = settings.HomeFolderPath.Replace( @"\\", @"\" );
-                    //    SaveSettings( settings ); // 修正後のパスを保存
-                    //}
-                    return settings;
-                }
-                catch ( JsonException ) {
+                    if ( settings != null ) return settings;
+
+                } catch ( JsonException ) {
                     // JSONのデシリアライズに失敗した場合はデフォルト設定を返す
                     return new SettingItem();
                 }

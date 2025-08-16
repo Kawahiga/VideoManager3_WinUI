@@ -47,11 +47,21 @@ namespace VideoManager3_WinUI {
             get => _selectedItem;
             set {
                 if ( _selectedItem != value ) {
+                    // 古いSelectedItemのPropertyChangedイベントの購読を解除
+                    if ( _selectedItem != null ) {
+                        _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
+                    }
+
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
                     // 選択アイテムが変わったらコマンドの実行可否を更新
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     UpdateVideoTagsCommand.NotifyCanExecuteChanged();
+
+                    // 新しいSelectedItemのPropertyChangedイベントを購読
+                    if ( _selectedItem != null ) {
+                        _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
+                    }
                 }
             }
         }
@@ -100,7 +110,7 @@ namespace VideoManager3_WinUI {
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
-        private string _homeFolderPath;
+        private string _homeFolderPath = "";
         public string HomeFolderPath {
             get => _homeFolderPath;
             set {
@@ -315,6 +325,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // 設定を保存するメソッド
         private void SaveSettings() {
             var settings = new SettingItem
             {
@@ -335,6 +346,14 @@ namespace VideoManager3_WinUI {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged( string propertyName ) {
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
+        }
+
+        // SelectedItemのプロパティ変更イベントハンドラ
+        private async void SelectedItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
+            if ( SelectedItem != null ) {
+                // データベースを更新
+                await _databaseService.UpdateVideoAsync( SelectedItem );
+            }
         }
     }
 }

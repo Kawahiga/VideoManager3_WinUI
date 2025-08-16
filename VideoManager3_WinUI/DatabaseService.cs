@@ -107,6 +107,36 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // 動画のデータを更新する
+        public async Task UpdateVideoAsync( VideoItem video ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Videos SET
+                    FilePath = $filePath,
+                    FileName = $fileName,
+                    Extension = $extension,
+                    FileSize = $fileSize,
+                    LastModified = $lastModified,
+                    Duration = $duration,
+                    LikeCount = $like,
+                    ViewCount = $view
+                WHERE FileID = $id;";
+            command.Parameters.AddWithValue( "$filePath", video.FilePath );
+            command.Parameters.AddWithValue( "$fileName", video.FileName );
+            command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty );
+            command.Parameters.AddWithValue( "$fileSize", video.FileSize );
+            command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) );
+            command.Parameters.AddWithValue( "$duration", video.Duration );
+            command.Parameters.AddWithValue( "$like", video.LikeCount );
+            command.Parameters.AddWithValue( "$view", video.ViewCount );
+            command.Parameters.AddWithValue( "$id", video.Id );
+
+            await command.ExecuteNonQueryAsync();
+        }
+
         // データベースからすべての動画を読み込む
         public async Task<List<VideoItem>> GetAllVideosAsync() {
             var videos = new List<VideoItem>();

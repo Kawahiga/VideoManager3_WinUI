@@ -181,11 +181,12 @@ namespace VideoManager3_WinUI {
         /// ・フォルダ：フォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
-            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
-                return;
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )return;
+
             try {
                 Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
                 videoItem.ViewCount++; // 再生数を1増やす
+                //_databaseService.UpdateVideoAsync( videoItem );
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error opening file: {ex.Message}" );
             }

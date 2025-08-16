@@ -21,8 +21,28 @@ namespace VideoManager3_WinUI {
         public long FileSize { get; set; }  // ファイルサイズ（バイト単位）
         public DateTime LastModified { get; set; }  // 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
         public double Duration { get; set; }    // 動画の再生時間（秒）
-        public int LikeCount { get; set; } = 0; // いいね数
-        public int ViewCount { get; set; } = 0; // 再生数
+
+        private int _likeCount = 0; // いいね数
+        public int LikeCount {
+            get => _likeCount;
+            set {
+                if ( _likeCount != value ) {
+                    _likeCount = value;
+                    OnPropertyChanged( nameof( LikeCount ) );
+                }
+            }
+        }
+
+        private int _viewCount = 0; // 再生数
+        public int ViewCount {
+            get => _viewCount;
+            set {
+                if ( _viewCount != value ) {
+                    _viewCount = value;
+                    OnPropertyChanged( nameof( ViewCount ) );
+                }
+            }
+        }
 
         // サムネイルの元データ（軽量なbyte配列）
         public byte[]? Thumbnail { get; set; }

@@ -1,6 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -40,6 +41,22 @@ namespace VideoManager3_WinUI {
                         // UIスレッドで非同期に画像を読み込んで設定する
                         await itemToLoad.LoadThumbnailImageAsync();
                     } );
+                }
+            }
+        }
+
+        // いいねボタンを左クリックしたときのイベントハンドラー
+        private void LikeButton_Click( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem != null ) {
+                ViewModel.SelectedItem.LikeCount++;
+            }
+        }
+
+        // いいねボタンを右クリックしたときのイベントハンドラー
+        private void LikeButton_RightTapped( object sender, RightTappedRoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem != null ) {
+                if ( ViewModel.SelectedItem.LikeCount > 0 ) {
+                    ViewModel.SelectedItem.LikeCount--;
                 }
             }
         }
@@ -134,12 +151,12 @@ namespace VideoManager3_WinUI {
                     var droppedFiles = storageItems.OfType<StorageFile>().ToList();
                     if ( droppedFiles.Any() ) {
                         // ViewModel.HomeFolderPath を StorageFolder オブジェクトに変換
-                        StorageFolder targetFolder = null;
+                        StorageFolder? targetFolder = null;
                         try {
                             targetFolder = await StorageFolder.GetFolderFromPathAsync( ViewModel.HomeFolderPath );
                         } catch ( Exception ex ) {
                             // エラーハンドリング: ViewModel.HomeFolderPath が無効なパスの場合など
-                            // 例: Debug.WriteLine($"Error getting target folder: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine( $"Error getting target folder: {ex.Message}" );
                             return; // 処理を中断
                         }
 
@@ -158,7 +175,7 @@ namespace VideoManager3_WinUI {
 
                             } catch ( Exception ex ) {
                                 // エラーハンドリング: ファイル操作に失敗した場合
-                                System.Diagnostics.Debug.WriteLine($"Error processing file {file.Name}: {ex.Message}");
+                                System.Diagnostics.Debug.WriteLine( $"Error processing file {file.Name}: {ex.Message}" );
                             }
                         }
 

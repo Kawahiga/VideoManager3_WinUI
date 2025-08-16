@@ -32,7 +32,7 @@
                 </AppBarButton.Flyout>
             </AppBarButton>
             <!-- いいねボタン（未実装）（ IsEnabled="{Binding IsItemSelected}"） -->
-            <AppBarButton Icon="Like" Label="いいね"/>
+            <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
             <AppBarSeparator/>
             <!-- 検索ボックス -->
             <AppBarElementContainer>
@@ -154,6 +154,7 @@
                     <ListView
                         ItemsSource="{Binding FilteredVideos}"
                         Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        DoubleTapped="GridView_DoubleTapped"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:VideoItem">

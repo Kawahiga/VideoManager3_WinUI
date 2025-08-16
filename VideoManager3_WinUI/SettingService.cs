@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Windows.Storage;
-using static VideoManager3_WinUI.VideoService;
 
 // ソート条件やUIの状態（各ペインの幅やサムネイルの拡大状態など）を保存・復元する。
 

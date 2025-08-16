@@ -1,17 +1,12 @@
-using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.Storage.Streams;
-using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI {
     public enum VideoSortType {

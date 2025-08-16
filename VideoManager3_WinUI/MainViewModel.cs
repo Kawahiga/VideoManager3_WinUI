@@ -236,15 +236,21 @@ namespace VideoManager3_WinUI {
             } else {
                 // 検索テキストを半角スペースで分割し、AND検索
                 var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                videosBySerach = videosByTag.Where(v =>
-                {
+                videosBySerach = videosByTag.Where( v => {
                     var fileNameLower = v.FileName.ToLower();
-                    return searchKeywords.All(keyword => fileNameLower.Contains(keyword));
-                });
+                    return searchKeywords.All( keyword => fileNameLower.Contains( keyword ) );
+                } );
             }
 
             foreach ( var video in videosBySerach ) {
                 FilteredVideos.Add( video );
+            }
+
+            // 絞り込み後の先頭の動画を選択状態にする
+            if ( FilteredVideos.Count > 0 ) {
+                SelectedItem = FilteredVideos[0];
+            } else {
+                SelectedItem = null; // 絞り込み結果がない場合は選択を解除
             }
         }
 

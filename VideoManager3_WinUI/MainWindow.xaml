@@ -19,6 +19,7 @@
 
         <!-- 上部ツールバー -->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+            <!-- 参照先なしDBのクリーンアップボタン（未実装） -->
             <!-- 作業フォルダ設定ボタン -->
             <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
             <!-- フォルダ追加ボタン -->

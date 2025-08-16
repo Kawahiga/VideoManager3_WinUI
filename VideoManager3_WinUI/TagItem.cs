@@ -27,7 +27,11 @@ namespace VideoManager3_WinUI {
         private string _name = "";
         public string Name {
             get => _name;
-            set { _name = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Name ) ) ); }
+            set {
+                _name = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Name ) ) );
+                IsModified = true;
+            }
         }
 
         // 表示用のタグ/グループの色
@@ -37,6 +41,7 @@ namespace VideoManager3_WinUI {
             set {
                 _color = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Color ) ) );
+                IsModified = true;
                 // Colorプロパティが変更されたときにColorCodeも更新
                 ColorCode = value is SolidColorBrush solidColorBrush
                     ? $"#{solidColorBrush.Color.A:X2}{solidColorBrush.Color.R:X2}{solidColorBrush.Color.G:X2}{solidColorBrush.Color.B:X2}"
@@ -51,6 +56,7 @@ namespace VideoManager3_WinUI {
             set {
                 if ( _colorCode != value ) {
                     _colorCode = value;
+                    IsModified = true;
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ColorCode ) ) );
                     // ColorCodeが変更されたときにColorプロパティも更新
                     Color = ConvertStringToBrush( value );
@@ -62,14 +68,22 @@ namespace VideoManager3_WinUI {
         private int? _parentId;
         public int? ParentId {
             get => _parentId;
-            set { _parentId = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ParentId ) ) ); }
+            set {
+                _parentId = value;
+                IsModified = true;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ParentId ) ) );
+            }
         }
 
         // グループ内での順序
         private int _orderInGroup;
         public int OrderInGroup {
             get => _orderInGroup;
-            set { _orderInGroup = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( OrderInGroup ) ) ); }
+            set {
+                _orderInGroup = value;
+                IsModified = true;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( OrderInGroup ) ) );
+            }
         }
 
         // グループかどうか
@@ -102,6 +116,9 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        // 保存が必要か
+        public bool IsModified = false;
 
         //  タグに関連付けられた動画アイテムのリスト
         private ObservableCollection<VideoItem> _tagVideoItem = new ObservableCollection<VideoItem>();
@@ -140,23 +157,6 @@ namespace VideoManager3_WinUI {
             }
             return ids;
         }
-
-        ///// <summary>
-        ///// 子要素まで探索して、指定したIDのタグを取得する
-        ///// </summary>
-        ///// <param name="id">検索するタグのID</param>
-        ///// <returns>見つかったタグ。存在しない場合はnull</returns>
-        //public TagItem? FindTagById( int id ) {
-        //    if ( Id == id )
-        //        return this;
-        //    foreach ( var child in Children ) {
-        //        var found = child.FindTagById(id);
-        //        if ( found != null )
-        //            return found;
-        //    }
-        //    return null;
-        //}
-
 
         // DB用のカラーコードを表示用Brushに変換する
         private static Brush? ConvertStringToBrush( string? colorString ) {

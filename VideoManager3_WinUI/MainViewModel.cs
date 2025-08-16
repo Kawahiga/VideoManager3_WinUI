@@ -90,7 +90,6 @@ namespace VideoManager3_WinUI {
                     _isGridView = value;
                     OnPropertyChanged( nameof( IsGridView ) );
                     OnPropertyChanged( nameof( IsListView ) );
-                    SaveSettings();
                 }
             }
         }
@@ -105,7 +104,6 @@ namespace VideoManager3_WinUI {
                     _thumbnailSize = value;
                     OnPropertyChanged( nameof( ThumbnailSize ) );
                     OnPropertyChanged( nameof( ThumbnailHeight ) );
-                    SaveSettings();
                 }
             }
         }
@@ -118,7 +116,6 @@ namespace VideoManager3_WinUI {
                 if ( _homeFolderPath != value ) {
                     _homeFolderPath = value;
                     OnPropertyChanged( nameof( HomeFolderPath ) );
-                    SaveSettings();
                 }
             }
         }
@@ -146,7 +143,6 @@ namespace VideoManager3_WinUI {
                     OnPropertyChanged( nameof( SortType ) );
                     _videoService.SortVideos( _sortType );
                     FilterVideos();
-                    SaveSettings();
                 }
             }
         }
@@ -247,7 +243,8 @@ namespace VideoManager3_WinUI {
                 // 検索テキストを半角スペースで分割し、AND検索
                 var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 videosBySerach = videosByTag.Where( v => {
-                    if (string.IsNullOrEmpty(v.FileName)) return false;
+                    if ( string.IsNullOrEmpty( v.FileName ) )
+                        return false;
                     var fileNameLower = v.FileName.ToLower();
                     return searchKeywords.All( keyword => fileNameLower.Contains( keyword ) );
                 } );
@@ -287,7 +284,7 @@ namespace VideoManager3_WinUI {
                 }
             }
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
-            FilterVideos();
+            //FilterVideos();
         }
 
         // ファイルに対するタグ設定ボタン
@@ -368,11 +365,28 @@ namespace VideoManager3_WinUI {
             var folder = await folderPicker.PickSingleFolderAsync();
             if ( folder != null ) {
                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
-                SaveSettings(); // 設定を保存
             }
         }
 
-        // 設定を保存するメソッド
+        // アプリを閉じるときのイベント
+        public async Task WindowCloseAsync() {
+            SaveSettings();
+            await SaveTagsInClose( TagItems );
+        }
+
+        // タグ情報を保存
+        private async Task SaveTagsInClose( ObservableCollection<TagItem> tags ) {
+            foreach ( var tag in tags ) {
+                if ( tag.IsModified ) {
+                    await _tagService.AddOrUpdateTagAsync( tag );
+                    if ( tag.Children.Any() ) {
+                        await SaveTagsInClose( tag.Children );
+                    }
+                }
+            }
+        }
+
+        // 設定を保存する
         private void SaveSettings() {
             var settings = _settingService.LoadSettings() ?? new SettingItem();
 

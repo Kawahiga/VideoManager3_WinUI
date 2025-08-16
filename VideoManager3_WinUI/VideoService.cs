@@ -197,7 +197,6 @@ namespace VideoManager3_WinUI {
             try {
                 Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
                 videoItem.ViewCount++; // 再生数を1増やす
-                //_databaseService.UpdateVideoAsync( videoItem );
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error opening file: {ex.Message}" );
             }

@@ -45,6 +45,11 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // アプリを閉じるときのイベントハンドラー
+        private async void Window_Closed( object sender, WindowEventArgs args ) {
+            await ViewModel.WindowCloseAsync();
+        }
+
         // いいねボタンを左クリックしたときのイベントハンドラー
         private void LikeButton_Click( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem != null ) {

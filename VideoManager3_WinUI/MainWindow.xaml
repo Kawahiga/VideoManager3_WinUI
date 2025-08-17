@@ -19,40 +19,53 @@
         </Grid.RowDefinitions>
 
         <!-- 上部ツールバー -->
-        <CommandBar Grid.Row="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-            <!-- 参照先なしDBのクリーンアップボタン（未実装） -->
-            <AppBarButton Icon="Setting" Label="設定"/>
-            <!-- 作業フォルダ設定ボタン -->
-            <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
-            <!-- フォルダ追加ボタン -->
-            <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
-            <!-- 削除ボタン -->
-            <AppBarButton Icon="Delete" Label="削除" Command="{Binding DeleteFileCommand}"/>
-            <!-- タグ編集ボタン（フライアウト付き） -->
-            <AppBarButton Icon="Tag" Label="タグを編集">
-                <AppBarButton.Flyout>
-                    <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
-                </AppBarButton.Flyout>
-            </AppBarButton>
-            <!-- いいねボタン -->
-            <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
-            <AppBarSeparator/>
-            <!-- 検索ボックス -->
-            <AppBarElementContainer>
-                <AutoSuggestBox x:Name="SearchBox" QueryIcon="Find" PlaceholderText="検索" Width="200" Margin="0,8,10,0" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            </AppBarElementContainer>
-            <!-- ソートボタン（フライアウト付き） -->
-            <AppBarButton Icon="Sort" Click="SortButton_Click"/>
-            <AppBarSeparator/>
-            <!-- サムネイルサイズ調整スライダー -->
-            <AppBarElementContainer VerticalAlignment="Center" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Slider x:Name="ThumbnailSizeSlider" Minimum="100" Maximum="400" Width="200" Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
-            </AppBarElementContainer>
-            <!-- 表示切替ボタン（詳細表示） -->
-            <AppBarButton Label="詳細" Icon="List" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <!-- 表示切替ボタン（サムネイル表示） -->
-            <AppBarButton Label="サムネイル" Icon="ViewAll" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-        </CommandBar>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <!-- ファイル操作系 -->
+                <ColumnDefinition Width="Auto"/>
+                <!-- 検索、ソートなど表示系 -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <CommandBar Grid.Column="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+                <!-- 参照先なしDBのクリーンアップボタン（未実装） -->
+                <AppBarButton Icon="Setting" Label="設定"/>
+                <!-- 作業フォルダ設定ボタン -->
+                <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
+                <!-- フォルダ追加ボタン -->
+                <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
+                <AppBarSeparator/>
+                <!-- 削除ボタン -->
+                <AppBarButton Icon="Delete" Label="削除" Command="{Binding DeleteFileCommand}"/>
+                <!-- タグ編集ボタン（フライアウト付き） -->
+                <AppBarButton Icon="Tag" Label="タグを編集">
+                    <AppBarButton.Flyout>
+                        <MenuFlyout x:Name="TagEditFlyout" Opening="TagEditFlyout_Opening" />
+                    </AppBarButton.Flyout>
+                </AppBarButton>
+                <!-- いいねボタン -->
+                <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
+            </CommandBar>
+            
+            <CommandBar Grid.Column="1" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+                <!-- サムネイルサイズ調整スライダー -->
+                <AppBarElementContainer VerticalAlignment="Center" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Slider x:Name="ThumbnailSizeSlider" Minimum="100" Maximum="400" Width="200" Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
+                </AppBarElementContainer>
+                <!-- 表示切替ボタン（詳細表示） -->
+                <AppBarButton Label="詳細" Icon="List" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <!-- 表示切替ボタン（サムネイル表示） -->
+                <AppBarButton Label="サムネイル" Icon="ViewAll" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <AppBarSeparator/>
+                <!-- ソートボタン（フライアウト付き） -->
+                <AppBarButton Icon="Sort" Click="SortButton_Click"/>
+                <!-- 検索ボックス -->
+                <AppBarElementContainer>
+                    <AutoSuggestBox x:Name="SearchBox" QueryIcon="Find" PlaceholderText="検索" Width="200" Margin="0,8,10,0" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                </AppBarElementContainer>
+            </CommandBar>
+        </Grid>
+
 
         <!-- メインコンテンツエリア (左ペイン + 右ペイン) -->
         <Grid Grid.Row="1">

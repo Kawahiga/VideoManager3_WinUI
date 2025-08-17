@@ -228,7 +228,7 @@
 
                         <!-- ファイル名 -->
                         <TextBlock
-                            Text="{Binding FileName, TargetNullValue='ファイルが選択されていません'}"
+                            Text="{Binding FileName}"
                             FontWeight="Bold"
                             IsTextSelectionEnabled="True"
                             FontSize="16"

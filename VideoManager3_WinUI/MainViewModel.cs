@@ -136,25 +136,20 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        private readonly ThumbnailService _thumbnailService;
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
-        private readonly SettingService _settingService;
-
+        
         // コンストラクタ
         public MainViewModel() {
-            _thumbnailService = new ThumbnailService();
-
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
-            _settingService = new SettingService();
-
+        
             // コマンドの初期化
-            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => {await _videoService.AddVideosFromFolderAsync();FilterVideos();} );
+            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); FilterVideos(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); FilterVideos(); }, () => SelectedItem != null );
             ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
@@ -163,22 +158,8 @@ namespace VideoManager3_WinUI {
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
             SetHomeFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await SetHomeFolderAsync() );
 
-            // 画面状態を復元
-            LoadSetting();
-
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
-        }
-
-        // 画面などの初期状態をロード
-        private void LoadSetting() {
-            var setting = _settingService.LoadSettings();
-            if ( setting != null ) {
-                _sortType = (VideoSortType)setting.VideoSortType;
-                _isGridView = setting.IsGridView;
-                _thumbnailSize = setting.ThumbnailSize;
-                _homeFolderPath = setting.HomeFolderPath;
-            }
         }
 
         // 初期データをDBからロード
@@ -349,7 +330,6 @@ namespace VideoManager3_WinUI {
 
         // アプリを閉じるときのイベント
         public async Task WindowCloseAsync() {
-            SaveSettings();
             await SaveTagsInClose( TagItems );
         }
 
@@ -368,18 +348,6 @@ namespace VideoManager3_WinUI {
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error saving tags: {ex.Message}" );
             }
-        }
-
-        // 設定を保存する
-        private void SaveSettings() {
-            var settings = _settingService.LoadSettings() ?? new SettingItem();
-
-            settings.VideoSortType = (int)_sortType;
-            settings.IsGridView = _isGridView;
-            settings.ThumbnailSize = _thumbnailSize;
-            settings.HomeFolderPath = _homeFolderPath;
-
-            _settingService.SaveSettings( settings );
         }
 
         // ファイルの表示方法を切り替える（一覧表示 ←→ サムネイル ）

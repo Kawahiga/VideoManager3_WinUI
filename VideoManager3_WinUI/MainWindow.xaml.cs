@@ -1,3 +1,5 @@
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -6,11 +8,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Windows.ApplicationModel.DataTransfer;
+using Windows.Graphics;
 using Windows.Storage;
+using WinRT.Interop;
 
 namespace VideoManager3_WinUI {
     public sealed partial class MainWindow:Window {
         public MainViewModel ViewModel { get; }
+
+        private SettingService _settingService;
+        private AppWindow _appWindow;
 
         public MainWindow() {
             this.InitializeComponent();
@@ -19,9 +26,14 @@ namespace VideoManager3_WinUI {
             ViewModel = new MainViewModel();
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
 
+            _settingService = new SettingService();
+            IntPtr hWnd = WindowNative.GetWindowHandle(this);
+            WindowId wndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId( wndId );
+            LoadSetting();
         }
 
-        // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
+         // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
         private void GridView_ContainerContentChanging( ListViewBase sender, ContainerContentChangingEventArgs args ) {
             if ( args.InRecycleQueue ) {
                 if ( args.Item is VideoItem itemToUnload ) {
@@ -45,6 +57,7 @@ namespace VideoManager3_WinUI {
 
         // アプリを閉じるときのイベントハンドラー
         private async void Window_Closed( object sender, WindowEventArgs args ) {
+            SaveSettings();
             await ViewModel.WindowCloseAsync();
         }
 
@@ -226,18 +239,61 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        //// 検索ボックスのテキストが変更されたときのイベントハンドラ
-        //private void SearchBox_TextChanged( AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args ) {
-        //    // TextChangedイベントは、ユーザーの入力だけでなく、プログラムによるテキストの変更でも発生します。
-        //    // ユーザーの操作によってのみフィルタリングを実行するために、args.Reasonを確認します。
-        //    if ( args.Reason == AutoSuggestionBoxTextChangeReason.UserInput ) {
-        //        //ViewModel.FilterVideos();
-        //    }
-        //}
+        // 画面などの初期状態をロード
+        public void LoadSetting() {
+            var setting = _settingService.LoadSettings();
+            if ( setting != null ) {
+                ViewModel.SortType = (VideoSortType)setting.VideoSortType;
+                ViewModel.IsGridView = setting.IsGridView;
+                ViewModel.ThumbnailSize = setting.ThumbnailSize;
+                ViewModel.HomeFolderPath = setting.HomeFolderPath;
 
-        //// 検索ボックスのクエリが送信されたときのイベントハンドラ
-        //private void SearchBox_QuerySubmitted( AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args ) {
-        //    //ViewModel.FilterVideos();
-        //}
+                // ウィンドウが画面外に出てしまうのを防ぐ
+                var requestRect = new RectInt32((int)setting.WindowLeft, (int)setting.WindowTop, (int)setting.WindowWidth, (int)setting.WindowHeight);
+                var displayArea = DisplayArea.GetFromRect(requestRect, DisplayAreaFallback.Primary);
+                var workArea = displayArea.WorkArea;
+
+                var windowLeft = requestRect.X;
+                var windowTop = requestRect.Y;
+                var windowWidth = requestRect.Width;
+                var windowHeight = requestRect.Height;
+
+                // ウィンドウが完全に作業領域内に収まるように位置を調整
+                if ( windowLeft < workArea.X )
+                    windowLeft = workArea.X;
+                if ( windowTop < workArea.Y )
+                    windowTop = workArea.Y;
+                if ( windowLeft + windowWidth > workArea.X + workArea.Width )
+                    windowLeft = workArea.X + workArea.Width - windowWidth;
+                if ( windowTop + windowHeight > workArea.Y + workArea.Height )
+                    windowTop = workArea.Y + workArea.Height - windowHeight;
+
+                _appWindow.MoveAndResize( new RectInt32( windowLeft, windowTop, windowWidth, windowHeight ) );
+
+                if ( setting.IsFullScreen && _appWindow.Presenter is OverlappedPresenter overlappedPresenter ) {
+                    overlappedPresenter.Maximize();
+                }
+            }
+        }
+        // 設定を保存する
+        private void SaveSettings() {
+            var settings = _settingService.LoadSettings() ?? new SettingItem();
+
+            settings.VideoSortType = (int)ViewModel.SortType;
+            settings.IsGridView = ViewModel.IsGridView;
+            settings.ThumbnailSize = ViewModel.ThumbnailSize;
+            settings.HomeFolderPath = ViewModel.HomeFolderPath;
+
+            if ( _appWindow.Presenter is OverlappedPresenter presenter ) {
+                settings.IsFullScreen = presenter.State == OverlappedPresenterState.Maximized;
+                if ( presenter.State == OverlappedPresenterState.Restored ) {
+                    settings.WindowLeft = _appWindow.Position.X;
+                    settings.WindowTop = _appWindow.Position.Y;
+                    settings.WindowWidth = _appWindow.Size.Width;
+                    settings.WindowHeight = _appWindow.Size.Height;
+                }
+            }
+            _settingService.SaveSettings( settings );
+        }
     }
 }

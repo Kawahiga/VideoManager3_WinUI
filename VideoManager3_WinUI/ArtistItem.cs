@@ -6,11 +6,6 @@ using System.Threading.Tasks;
 
 namespace VideoManager3_WinUI {
     internal class ArtistItem {
-        public string Name { get; set; }
-
-        ArtistItem(string name) {
-            Name = name;
-        }
-
+        public string Name { get; set; } = string.Empty;
     }
 }

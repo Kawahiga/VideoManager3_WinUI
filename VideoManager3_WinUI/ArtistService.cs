@@ -41,6 +41,7 @@ namespace VideoManager3_WinUI {
             }
 
             var sortedArtistNames = artistsWithFiles.Keys.OrderBy(name => name);
+            //var sortedArtistNames = artistsWithFiles.Keys.OrderByDescending(name => artistsWithFiles[name].Count);
 
             foreach ( var artistName in sortedArtistNames ) {
                 Artists.Add( new ArtistItem

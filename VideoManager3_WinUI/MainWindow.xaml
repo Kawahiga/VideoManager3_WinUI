@@ -39,41 +39,19 @@
             <AppBarSeparator/>
             <!-- 検索ボックス -->
             <AppBarElementContainer>
-                <AutoSuggestBox x:Name="SearchBox"
-                                QueryIcon="Find"
-                                PlaceholderText="検索"
-                                Width="200"
-                                Margin="0,8,10,0"
-                                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                TextChanged="SearchBox_TextChanged"
-                                QuerySubmitted="SearchBox_QuerySubmitted"/>
+                <AutoSuggestBox x:Name="SearchBox" QueryIcon="Find" PlaceholderText="検索" Width="200" Margin="0,8,10,0" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
             </AppBarElementContainer>
             <!-- ソートボタン（フライアウト付き） -->
             <AppBarButton Icon="Sort" Click="SortButton_Click"/>
             <AppBarSeparator/>
-            <!-- 表示切替ボタン（詳細表示） -->
-            <AppBarButton Label="詳細" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="List"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <!-- 表示切替ボタン（サムネイル表示） -->
-            <AppBarButton Label="サムネイル" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="ViewAll"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
             <!-- サムネイルサイズ調整スライダー -->
-            <AppBarElementContainer Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,10,0,0">
-                    <TextBlock Text="サムネイルサイズ" Margin="10,5,10,0"/>
-                    <Slider x:Name="ThumbnailSizeSlider"
-                                    Minimum="100"
-                                    Maximum="400"
-                                    Width="200"
-                                    Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
-                </StackPanel>
+            <AppBarElementContainer VerticalAlignment="Center" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Slider x:Name="ThumbnailSizeSlider" Minimum="100" Maximum="400" Width="200" Value="{Binding ThumbnailSize, Mode=TwoWay}"/>
             </AppBarElementContainer>
+            <!-- 表示切替ボタン（詳細表示） -->
+            <AppBarButton Label="詳細" Icon="List" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsGridView}" Visibility="{Binding IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <!-- 表示切替ボタン（サムネイル表示） -->
+            <AppBarButton Label="サムネイル" Icon="ViewAll" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding IsListView}" Visibility="{Binding IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </CommandBar>
 
         <!-- メインコンテンツエリア (左ペイン + 右ペイン) -->
@@ -141,12 +119,12 @@
             <!-- 右ペイン: 上下に分割 -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
                     <!-- 動画リスト -->
-                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="*"/>
                     <!-- 横方向のグリッドスプリッター -->
-                    <RowDefinition Height="Auto" MinHeight="130"/>
+                    <RowDefinition Height="5"/>
                     <!-- 詳細情報 -->
+                    <RowDefinition Height="Auto" MinHeight="130"/>
                 </Grid.RowDefinitions>
 
                 <!-- 右ペイン上部: 動画リスト -->

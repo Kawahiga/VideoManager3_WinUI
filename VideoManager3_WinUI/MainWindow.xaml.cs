@@ -226,18 +226,18 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // 検索ボックスのテキストが変更されたときのイベントハンドラ
-        private void SearchBox_TextChanged( AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args ) {
-            // TextChangedイベントは、ユーザーの入力だけでなく、プログラムによるテキストの変更でも発生します。
-            // ユーザーの操作によってのみフィルタリングを実行するために、args.Reasonを確認します。
-            if ( args.Reason == AutoSuggestionBoxTextChangeReason.UserInput ) {
-                //ViewModel.FilterVideos();
-            }
-        }
+        //// 検索ボックスのテキストが変更されたときのイベントハンドラ
+        //private void SearchBox_TextChanged( AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args ) {
+        //    // TextChangedイベントは、ユーザーの入力だけでなく、プログラムによるテキストの変更でも発生します。
+        //    // ユーザーの操作によってのみフィルタリングを実行するために、args.Reasonを確認します。
+        //    if ( args.Reason == AutoSuggestionBoxTextChangeReason.UserInput ) {
+        //        //ViewModel.FilterVideos();
+        //    }
+        //}
 
-        // 検索ボックスのクエリが送信されたときのイベントハンドラ
-        private void SearchBox_QuerySubmitted( AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args ) {
-            //ViewModel.FilterVideos();
-        }
+        //// 検索ボックスのクエリが送信されたときのイベントハンドラ
+        //private void SearchBox_QuerySubmitted( AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args ) {
+        //    //ViewModel.FilterVideos();
+        //}
     }
 }

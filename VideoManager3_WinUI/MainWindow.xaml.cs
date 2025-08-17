@@ -77,6 +77,11 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // 左ペインの表示を切り替える（タグツリービュー ←→ アーティスト一覧）
+        private void ToggleLeftPain_Click( object sender, RoutedEventArgs e ) {
+            ViewModel.IsTreeView = !ViewModel.IsTreeView;
+        }
+
         // ファイルをダブルクリックしたときのイベントハンドラー
         private void GridView_DoubleTapped( object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e ) {
             if ( e.OriginalSource is FrameworkElement element && element.DataContext is VideoItem videoItem ) {

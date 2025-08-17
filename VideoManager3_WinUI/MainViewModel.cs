@@ -19,6 +19,8 @@ namespace VideoManager3_WinUI {
 
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
 
+        public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
+
         // 表示用のコレクション
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
@@ -84,6 +86,20 @@ namespace VideoManager3_WinUI {
         }
         public bool IsListView => !_isGridView;
 
+        // ツリービューの表示を切り替えるプロパティ
+        private bool _isTreeView = true;
+        public bool IsTreeView {
+            get => _isTreeView;
+            set {
+                if ( _isTreeView != value ) {
+                    _isTreeView = value;
+                    OnPropertyChanged( nameof( IsTreeView ) );
+                    OnPropertyChanged( nameof( IsArtistView ) );
+                }
+            }
+        }
+        public bool IsArtistView => !_isTreeView;
+
         // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ（サムネイルの横幅）
         private double _thumbnailSize;
         public double ThumbnailSize {
@@ -139,7 +155,8 @@ namespace VideoManager3_WinUI {
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
-        
+        private readonly ArtistService _artistService;
+
         // コンストラクタ
         public MainViewModel() {
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
@@ -147,7 +164,8 @@ namespace VideoManager3_WinUI {
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
-        
+            _artistService = new ArtistService();
+
             // コマンドの初期化
             AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); FilterVideos(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
@@ -160,8 +178,6 @@ namespace VideoManager3_WinUI {
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
-
-            new ArtistService().CreateArtistList(Videos);
         }
 
         // 初期データをDBからロード
@@ -171,6 +187,8 @@ namespace VideoManager3_WinUI {
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
+
+            _artistService.CreateArtistList( Videos );
 
             // ファイルをソート
             _videoService.SortVideos( SortType );

@@ -86,14 +86,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="タグツリー" TextAlignment="Center" FontWeight="Bold" Margin="3"/>
+                    <Button Grid.Row="0" Background="LightGray" HorizontalAlignment="Center" Click="ToggleLeftPain_Click" Visibility="{Binding IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="タグツリー"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
+                    </Button>
 
                     <!-- タグを表示するTreeView -->
                     <TreeView Grid.Row="1" x:Name="TagsTreeView"
                         ItemsSource="{Binding TagItems, Mode=TwoWay}"
                         SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
                         Margin="5,0,5,5"
-                        ScrollViewer.VerticalScrollBarVisibility="Visible">
+                        ScrollViewer.VerticalScrollBarVisibility="Visible"
+                        Visibility="{Binding IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <TreeView.ItemTemplate>
                             <!-- 各タグアイテムの表示形式を定義 -->
                             <DataTemplate x:DataType="local:TagItem">
@@ -123,6 +126,19 @@
                             </DataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
+
+                    <Button Grid.Row="0" Background="LightGray" HorizontalAlignment="Center" Click="ToggleLeftPain_Click" Visibility="{Binding IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="女優一覧"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
+                    </Button>
+
+                    <ListView Grid.Row="1" ItemsSource="{Binding ArtistItems}" Visibility="{Binding IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:ArtistItem">
+                                <TextBlock Text="{Binding Name}" IsTextSelectionEnabled="True"/>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
                 </Grid>
             </Grid>
 

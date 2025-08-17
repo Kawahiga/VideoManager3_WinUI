@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace VideoManager3_WinUI {
-    internal class ArtistService {
+    public class ArtistService {
         public ObservableCollection<ArtistItem> Artists { get; } = [];
-
 
         /// <summary>
         /// アーティスト一覧を作成

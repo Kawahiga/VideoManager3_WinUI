@@ -160,6 +160,8 @@ namespace VideoManager3_WinUI {
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
+
+            new ArtistService().CreateArtistList(Videos);
         }
 
         // 初期データをDBからロード

@@ -12,7 +12,10 @@ namespace VideoManager3_WinUI {
         public string HomeFolderPath { get; set; }  // ホームフォルダのパス
         public bool IsGridView { get; set; }        // グリッドビューかリストビューかの状態
         public bool IsFullScreen { get; set; }      // フルスクリーンモードの状態
-        public double[] WindowPosition { get; set; } // ウィンドウの位置（X, Y）
+        public double WindowLeft { get; set; }      // ウィンドウの左端座標
+        public double WindowTop { get; set; }       // ウィンドウの上端座標
+        public double WindowWidth { get; set; }     // ウィンドウの幅
+        public double WindowHeight { get; set; }    // ウィンドウの高さ
 
         public SettingItem() {
             VideoSortType = 0;
@@ -21,7 +24,10 @@ namespace VideoManager3_WinUI {
             HomeFolderPath = string.Empty;
             IsGridView = true;
             IsFullScreen = false;
-            WindowPosition = [100, 100];
+            WindowLeft = 100;
+            WindowTop = 100;
+            WindowWidth = 1280;
+            WindowHeight = 720;
         }
 
     }

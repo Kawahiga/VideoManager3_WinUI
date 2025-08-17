@@ -86,7 +86,8 @@ namespace VideoManager3_WinUI {
         /// </summary>
         public async Task AddVideosFromFolderAsync() {
             try {
-                if ( App.m_window == null )return;
+                if ( App.m_window == null )
+                    return;
 
                 var folderPicker = new FolderPicker
                 {
@@ -112,7 +113,8 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// 指定されたパスのリストから動画やフォルダを追加します。
         /// </summary>
-        public async Task AddVideosFromPathsAsync( IEnumerable<string> paths ) {
+        public async Task AddVideosFromPathsAsync( IEnumerable<string>? paths ) {
+            if ( paths == null )return;
             foreach ( var path in paths ) {
                 await AddVideoFromPathAsync( path );
             }
@@ -162,7 +164,7 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// 選択された動画を削除します。
+        /// 選択された動画を削除します。（ファイルそのものも削除したいが未実装）
         /// </summary>
         public async Task DeleteVideoAsync( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )

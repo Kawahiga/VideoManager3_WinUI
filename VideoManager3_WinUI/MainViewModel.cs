@@ -153,45 +153,35 @@ namespace VideoManager3_WinUI {
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
             _settingService = new SettingService();
 
-            // 画面状態を復元
-            var setting = _settingService.LoadSettings();
-            if ( setting != null ) {
-                SortType = (VideoSortType)setting.VideoSortType;
-                IsGridView = setting.IsGridView;
-                ThumbnailSize = setting.ThumbnailSize;
-                HomeFolderPath = setting.HomeFolderPath;
-            }
-
             // コマンドの初期化
-            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => {
-                await _videoService.AddVideosFromFolderAsync();
-                FilterVideos();
-            } );
-            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => {
-                if ( files != null ) {
-                    await _videoService.AddVideosFromPathsAsync( files );
-                    _videoService.SortVideos( SortType );
-                    FilterVideos();
-                }
-            } );
-            DeleteFileCommand = new RelayCommand( async () => {
-                if ( SelectedItem != null ) {
-                    // 選択された動画を削除（ファイルそのものも削除したいが未実装）
-                    await _videoService.DeleteVideoAsync( SelectedItem );
-                    FilterVideos();
-                }
-            }, () => SelectedItem != null ); // 選択されている動画がある場合のみ有効
+            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => {await _videoService.AddVideosFromFolderAsync();FilterVideos();} );
+            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
+            DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); FilterVideos(); }, () => SelectedItem != null );
             ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await EditTagAsync(), () => SelectedTag != null );
             UpdateVideoTagsCommand = new RelayCommand<TagItem>( async ( tag ) => await UpdateVideoTagSelection( tag ), ( tag ) => SelectedItem != null );
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
             SetHomeFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await SetHomeFolderAsync() );
 
+            // 画面状態を復元
+            LoadSetting();
+
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
         }
 
-        // 初期データのロード
+        // 画面などの初期状態をロード
+        private void LoadSetting() {
+            var setting = _settingService.LoadSettings();
+            if ( setting != null ) {
+                _sortType = (VideoSortType)setting.VideoSortType;
+                _isGridView = setting.IsGridView;
+                _thumbnailSize = setting.ThumbnailSize;
+                _homeFolderPath = setting.HomeFolderPath;
+            }
+        }
+
+        // 初期データをDBからロード
         private async Task LoadInitialDataAsync() {
             // タグと動画の初期データをロード
             await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始

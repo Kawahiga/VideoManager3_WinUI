@@ -177,42 +177,47 @@ namespace VideoManager3_WinUI {
             FilterVideos();
         }
 
-        // タグと検索テキストのフィルタリングを行い、FilteredVideosに結果を格納する
+        /// <summary>
+        /// ファイルのフィルタリングを行う（タグ、検索テキスト）
+        /// </summary>
         private void FilterVideos() {
             FilteredVideos.Clear();
 
+            IEnumerable<VideoItem> targetVideos = Videos;
             IEnumerable<VideoItem> videosByTag;
             IEnumerable<VideoItem> videosBySerach;
 
             // タグによるフィルタリング
             if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
                 // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を対象
-                videosByTag = Videos;
+                videosByTag = targetVideos;
             } else if ( SelectedTag.Name.Equals( "タグなし" ) ) {
                 // 「タグなし」だった場合は、タグが紐づいていない動画を全て対象
-                videosByTag = Videos.Where( v => !v.VideoTagItems.Any() );
+                videosByTag = targetVideos.Where( v => !v.VideoTagItems.Any() );
             } else {
                 // 選択されたタグに紐づく動画を対象
                 var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
-                videosByTag = Videos.Where( v => v.VideoTagItems.Any( t => tagIds.Contains( t.Id ) ) );
+                videosByTag = targetVideos.Where( v => v.VideoTagItems.Any( t => tagIds.Contains( t.Id ) ) );
             }
+            targetVideos = videosByTag;
 
             // 検索テキストによるフィルタリング
             if ( string.IsNullOrWhiteSpace( SearchText ) ) {
                 // 検索テキストが空の場合は、タグでフィルタリングされた結果をそのまま表示
-                videosBySerach = videosByTag;
+                videosBySerach = targetVideos;
             } else {
                 // 検索テキストを半角スペースで分割し、AND検索
                 var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                videosBySerach = videosByTag.Where( v => {
+                videosBySerach = targetVideos.Where( v => {
                     if ( string.IsNullOrEmpty( v.FileName ) )
                         return false;
                     var fileNameLower = v.FileName.ToLower();
                     return searchKeywords.All( keyword => fileNameLower.Contains( keyword ) );
                 } );
             }
+            targetVideos = videosBySerach;
 
-            foreach ( var video in videosBySerach ) {
+            foreach ( var video in targetVideos ) {
                 FilteredVideos.Add( video );
             }
 

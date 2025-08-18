@@ -201,7 +201,7 @@ namespace VideoManager3_WinUI {
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
-            _artistService.CreateArtistList( Videos );
+            _artistService.CreateArtistList( Videos, TagItems );
 
             // ファイルをソート
             _videoService.SortVideos( SortType );

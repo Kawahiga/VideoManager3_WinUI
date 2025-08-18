@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI;
 
 namespace VideoManager3_WinUI {
 
@@ -24,7 +26,7 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// アーティスト一覧を作成
         /// </summary>
-        public void CreateArtistList( ObservableCollection<VideoItem> videos ) {
+        public void CreateArtistList( ObservableCollection<VideoItem> videos, ObservableCollection<TagItem> tags ) {
             Artists.Clear();
             foreach ( var video in videos ) {
                 video.ArtistsInVideo.Clear();
@@ -66,10 +68,24 @@ namespace VideoManager3_WinUI {
 
             // ソートされた順序で、最終的なアーティストリストを作成
             foreach ( var artistName in sortedArtistNames ) {
-                var newArtist = new ArtistItem {
+
+                Brush artistColor;
+                var matchingTag = FindTagByName(tags, artistName);
+                if ( matchingTag != null ) {
+                    // 同名のタグが存在する場合は、アーティスト色をピンクに設定
+                    artistColor = new SolidColorBrush( Colors.DeepPink );
+                } else {
+                    // タグが見つからない場合は、DarkGray色を設定
+                    artistColor = new SolidColorBrush( Colors.DarkGray );
+                }
+
+                var newArtist = new ArtistItem
+                {
                     Name = artistName,
-                    VideosInArtist = artistsWithVideos[artistName]
+                    VideosInArtist = artistsWithVideos[artistName],
+                    ArtistColor = artistColor,
                 };
+
                 Artists.Add( newArtist );
 
                 // このアーティストが含まれるビデオに、このArtistItemを関連付ける
@@ -77,6 +93,22 @@ namespace VideoManager3_WinUI {
                     video.ArtistsInVideo.Add( newArtist );
                 }
             }
+        }
+
+        /// <summary>
+        /// タグ名でタグを検索します。将来的にはTagServiceに移動する。
+        /// </summary>
+        private TagItem? FindTagByName( IEnumerable<TagItem> tags, string name ) {
+            foreach ( var tag in tags ) {
+                if ( tag.Name.Equals( name, StringComparison.OrdinalIgnoreCase ) ) {
+                    return tag;
+                }
+                var foundInChild = FindTagByName(tag.Children, name);
+                if ( foundInChild != null ) {
+                    return foundInChild;
+                }
+            }
+            return null;
         }
 
         /// <summary>

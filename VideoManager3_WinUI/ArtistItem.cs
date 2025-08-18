@@ -17,12 +17,12 @@ namespace VideoManager3_WinUI {
         public List<VideoItem> VideosInArtist { get; set; } = new List<VideoItem>();
 
         // 表示用の色
-        private Brush? _color;
-        public Brush? Color {
-            get => _color;
+        private Brush? _artistColor;
+        public Brush? ArtistColor {
+            get => _artistColor;
             set {
-                _color = value;
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Color ) ) );
+                _artistColor = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ArtistColor ) ) );
             }
         }
 

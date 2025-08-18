@@ -66,6 +66,9 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ファイルのアーティスト情報
+        public ObservableCollection<ArtistItem> ArtistsInVideo = new ObservableCollection<ArtistItem>();
+
         public VideoItem() { }
 
         public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {

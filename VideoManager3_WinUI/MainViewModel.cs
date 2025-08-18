@@ -72,6 +72,19 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // アーティストツリーで選択されているアーティストを保持するためのプロパティ
+        private ArtistItem? _selectedArtist;
+        public ArtistItem? SelectedArtist {
+            get => _selectedArtist;
+            set {
+                if ( _selectedArtist != value ) {
+                    _selectedArtist = value;
+                    OnPropertyChanged( nameof( SelectedArtist ) );
+                    FilterVideos(); // アーティストが変更されたらフィルタリングを実行
+                }
+            }
+        }
+
         // ビューの切り替え状態を保持するプロパティ
         private bool _isGridView = true;
         public bool IsGridView {
@@ -86,7 +99,7 @@ namespace VideoManager3_WinUI {
         }
         public bool IsListView => !_isGridView;
 
-        // ツリービューの表示を切り替えるプロパティ
+        // （タグツリービュー ←→ アーティスト一覧）の表示を切り替えるプロパティ
         private bool _isTreeView = true;
         public bool IsTreeView {
             get => _isTreeView;
@@ -114,6 +127,7 @@ namespace VideoManager3_WinUI {
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
+        // ホームフォルダのパスを保持するプロパティ
         private string _homeFolderPath = "";
         public string HomeFolderPath {
             get => _homeFolderPath;
@@ -187,7 +201,6 @@ namespace VideoManager3_WinUI {
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
-
             _artistService.CreateArtistList( Videos );
 
             // ファイルをソート
@@ -200,12 +213,10 @@ namespace VideoManager3_WinUI {
         /// </summary>
         private void FilterVideos() {
             FilteredVideos.Clear();
-
             IEnumerable<VideoItem> targetVideos = Videos;
-            IEnumerable<VideoItem> videosByTag;
-            IEnumerable<VideoItem> videosBySerach;
 
             // タグによるフィルタリング
+            IEnumerable<VideoItem> videosByTag;
             if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
                 // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を対象
                 videosByTag = targetVideos;
@@ -219,7 +230,19 @@ namespace VideoManager3_WinUI {
             }
             targetVideos = videosByTag;
 
+            // アーティストによるフィルタリング
+            IEnumerable<VideoItem> videosByArtist;
+            if ( SelectedArtist == null ) {
+                // アーティストが選択されていない場合は、全動画を対象
+                videosByArtist = targetVideos;
+            } else {
+                // 選択されたアーティストに紐づく動画を対象
+                videosByArtist = targetVideos.Where( v => v.ArtistsInVideo.Any( a => a.Name == SelectedArtist.Name ) );
+            }
+            targetVideos = videosByArtist;
+
             // 検索テキストによるフィルタリング
+            IEnumerable<VideoItem> videosBySerach;
             if ( string.IsNullOrWhiteSpace( SearchText ) ) {
                 // 検索テキストが空の場合は、タグでフィルタリングされた結果をそのまま表示
                 videosBySerach = targetVideos;

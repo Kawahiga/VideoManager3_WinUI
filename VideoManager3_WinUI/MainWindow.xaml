@@ -131,10 +131,26 @@
                         <TextBlock Text="女優一覧"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
                     </Button>
 
-                    <ListView Grid.Row="1" ItemsSource="{Binding ArtistItems}" Visibility="{Binding IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ListView Grid.Row="1" ItemsSource="{Binding ArtistItems}" SelectedItem="{Binding SelectedArtist, Mode=TwoWay}" Visibility="{Binding IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="local:ArtistItem">
-                                <TextBlock Text="{Binding Name}" IsTextSelectionEnabled="True"/>
+                                <Grid Margin="5,0,5,5" Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                        <!-- 女優のサムネイル画像 -->
+                                        <Rectangle Width="16" Height="12" Fill="DarkGray" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <!-- 女優の名前 -->
+                                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" IsTextSelectionEnabled="True"/>
+                                    </StackPanel>
+                                    <!-- 女優の動画数を表示するボーダー -->
+                                    <Border Grid.Column="1" Background="LightSlateGray" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
+                                        <TextBlock Text="{x:Bind VideosInArtist.Count}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                    </Border>
+                                </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

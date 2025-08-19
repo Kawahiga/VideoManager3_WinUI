@@ -120,10 +120,10 @@ namespace VideoManager3_WinUI {
                 var uf = new UnionFind();
 
                 foreach ( var video in videos ) {
-                    if ( video.FileName != null && video.FileName.StartsWith( "[" ) ) {
-                        int endIndex = video.FileName.IndexOf(']');
-                        if ( endIndex > 1 ) {
-                            string artistsString = video.FileName.Substring(1, endIndex - 1);
+                    if ( video.FileName != null ) {
+                        var match = Regex.Match(video.FileName, @"^[\[【](.*?)[\]】]");
+                        if ( match.Success ) {
+                            string artistsString = match.Groups[1].Value;
                             // アーティスト名を抽出する正規表現: `Artist1(Alias1)` のような形式を一つの塊として捉えます。
                             string pattern = @"\S+(\s*[\(（][^\)）]*[\)）])+|\S+";
                             MatchCollection matches = Regex.Matches(artistsString, pattern);

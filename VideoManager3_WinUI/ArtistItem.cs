@@ -13,8 +13,8 @@ namespace VideoManager3_WinUI {
         // アーティスト名
         public string Name { get; set; } = string.Empty;
         
-        // アーティストが関連付けられた動画のリスト
-        public List<VideoItem> VideosInArtist { get; set; } = new List<VideoItem>();
+        // お気に入り
+        public bool IsFavorite { get; set; } = false;
 
         // 表示用の色
         private Brush? _artistColor;
@@ -26,5 +26,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // アーティストが関連付けられた動画のリスト
+        public List<VideoItem> VideosInArtist { get; set; } = new List<VideoItem>();
     }
 }

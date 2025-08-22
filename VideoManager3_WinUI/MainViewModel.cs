@@ -66,6 +66,7 @@ namespace VideoManager3_WinUI {
                 if ( _selectedTag != value ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
+                    if ( _selectedTag != null && _selectedTag.Name.Equals("全てのファイル") ) SelectedArtist = null; // 「全てのファイル」が選択された場合はアーティスト選択を解除
                     EditTagCommand.NotifyCanExecuteChanged();
                     FilterVideos(); // タグが変更されたらフィルタリングを実行
                 }
@@ -178,7 +179,7 @@ namespace VideoManager3_WinUI {
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
-            _artistService = new ArtistService();
+            _artistService = new ArtistService( _databaseService );
 
             // コマンドの初期化
             AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); FilterVideos(); } );
@@ -201,7 +202,9 @@ namespace VideoManager3_WinUI {
             await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
             await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
             await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
-            _artistService.CreateArtistList( Videos, TagItems );
+            //_artistService.CreateArtistList( Videos, TagItems );
+            await _artistService.LoadArtistsAsync(); // アーティスト情報を非同期で読み込み
+            await _artistService.LoadArtistVideosAsync( Videos ); // アーティストに動画を関連付ける
 
             // ファイルをソート
             _videoService.SortVideos( SortType );

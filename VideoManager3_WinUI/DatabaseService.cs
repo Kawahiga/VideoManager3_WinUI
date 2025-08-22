@@ -60,6 +60,21 @@ namespace VideoManager3_WinUI {
                     FOREIGN KEY (TagId) REFERENCES Tags(TagID),
                     PRIMARY KEY (VideoId, TagId)
                 );
+
+                CREATE TABLE IF NOT EXISTS Artists (
+                    ArtistID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ArtistName TEXT NOT NULL,
+                    IsFavorite BOOLEAN DEFAULT 0,
+                    IconPath TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS VideoArtists (
+                    VideoId INTEGER NOT NULL,
+                    ArtistID INTEGER NOT NULL,
+                    PRIMARY KEY (VideoId, ArtistID),
+                    FOREIGN KEY (VideoId) REFERENCES Videos(FileID),
+                    FOREIGN KEY (ArtistID) REFERENCES Artists(ArtistID)
+                );
             ";
             // エンハンス案：関連づいたIDが削除された場合に、関連する行も削除するためのON DELETE CASCADEを設定
             // FOREIGN KEY (VideoId) REFERENCES Videos(FileID) ON DELETE CASCADE,
@@ -372,5 +387,126 @@ namespace VideoManager3_WinUI {
         //    }
         //    return videos;
         //}
+
+        // アーティストをデータベースに追加または更新する
+        public async Task AddOrUpdateArtistAsync( ArtistItem artist ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            if ( artist.Id == 0 ) {
+                // 新規追加
+                command.CommandText = @"
+                    INSERT INTO Artists (ArtistName, IsFavorite, IconPath)
+                    VALUES ($name, $isFavorite, $iconPath);
+                ";
+                command.Parameters.AddWithValue( "$name", artist.Name );
+                command.Parameters.AddWithValue( "$isFavorite", artist.IsFavorite ? 1 : 0 );
+                command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
+                await command.ExecuteNonQueryAsync();
+                // 新しく生成されたIDを取得してセット
+                command.CommandText = "SELECT last_insert_rowid()";
+                command.Parameters.Clear();
+                artist.Id = Convert.ToInt32( await command.ExecuteScalarAsync() );
+            } else {
+                // 更新
+                command.CommandText = @"
+                    UPDATE Artists SET
+                        ArtistName = $name,
+                        IsFavorite = $isFavorite,
+                        IconPath = $iconPath
+                    WHERE ArtistID = $id;
+                ";
+                command.Parameters.AddWithValue( "$id", artist.Id );
+                command.Parameters.AddWithValue( "$name", artist.Name );
+                command.Parameters.AddWithValue( "$isFavorite", artist.IsFavorite ? 1 : 0 );
+                command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        // データベースからすべてのアーティストを読み込む
+        public async Task<List<ArtistItem>> GetAllArtistsAsync() {
+            var artists = new List<ArtistItem>();
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT ArtistID, ArtistName, IsFavorite, IconPath
+                FROM Artists";
+            using var reader = await command.ExecuteReaderAsync();
+            while ( await reader.ReadAsync() ) {
+                var id = reader.GetInt32(0);
+                var name = reader.GetString(1);
+                var isFavorite = reader.GetBoolean(2);
+                var iconPath = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                var artist = new ArtistItem {
+                    Id = id,
+                    Name = name,
+                    IsFavorite = isFavorite,
+                    IconPath = iconPath
+                };
+                artists.Add( artist );
+            }
+            return artists;
+        }
+
+        // 動画にアーティストを追加する
+        public async Task AddArtistToVideoAsync( VideoItem video, ArtistItem artist ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            // 既に存在する場合は無視する
+            command.CommandText = @"
+                INSERT OR IGNORE INTO VideoArtists (VideoId, ArtistID)
+                VALUES ($videoId, $artistId);
+            ";
+            command.Parameters.AddWithValue( "$videoId", video.Id );
+            command.Parameters.AddWithValue( "$artistId", artist.Id );
+            await command.ExecuteNonQueryAsync();
+        }
+
+        // 動画からアーティストを削除する
+        public async Task RemoveArtistFromVideoAsync( VideoItem video, ArtistItem artist ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM VideoArtists
+                WHERE VideoId = $videoId AND ArtistID = $artistId;
+            ";
+            command.Parameters.AddWithValue( "$videoId", video.Id );
+            command.Parameters.AddWithValue( "$artistId", artist.Id );
+            await command.ExecuteNonQueryAsync();
+        }
+
+        // データベースからアーティストと動画の関連情報を取得する
+        public async Task<List<ArtistItem>> GetArtistsForVideoAsync( VideoItem video ) {
+            var artists = new List<ArtistItem>();
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                SELECT a.ArtistID, a.ArtistName, a.IsFavorite, a.IconPath
+                FROM Artists a
+                JOIN VideoArtists va ON va.ArtistID = a.ArtistID
+                WHERE va.VideoId = $videoId;
+            ";
+            command.Parameters.AddWithValue( "$videoId", video.Id );
+            using var reader = await command.ExecuteReaderAsync();
+            while ( await reader.ReadAsync() ) {
+                var id = reader.GetInt32(0);
+                var name = reader.GetString(1);
+                var isFavorite = reader.GetBoolean(2);
+                var iconPath = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                var artist = new ArtistItem {
+                    Id = id,
+                    Name = name,
+                    IsFavorite = isFavorite,
+                    IconPath = iconPath
+                };
+                artists.Add( artist );
+            }
+            return artists;
+        }
     }
 }

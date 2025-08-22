@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 
@@ -31,6 +32,13 @@ namespace VideoManager3_WinUI {
         /// UIに表示されるアーティストのコレクションです。
         /// </summary>
         public ObservableCollection<ArtistItem> Artists { get; } = [];
+
+        private readonly DatabaseService _databaseService;
+
+        public ArtistService( DatabaseService databaseService ) {
+            _databaseService = databaseService;
+        }
+
 
         /// <summary>
         /// アーティストのグループ化（同一性の判定）を行うためのデータ構造です。
@@ -254,6 +262,56 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
+        /// データベースからアーティスト情報を非同期にロードします。
+        /// </summary>
+        public async Task LoadArtistsAsync() {
+            try {
+                Artists.Clear();
+                var artistsFromDb = await _databaseService.GetAllArtistsAsync();
+                foreach ( var artist in artistsFromDb ) {
+                    Artists.Add( artist );
+                }
+
+                //// アーティストリストを動画数でソートします。
+                //SortArtists( ArtistSortKey.VideoCount, SortOrder.Descending );
+
+            } catch ( Exception ex ) {
+                // エラーが発生した場合は、アプリがクラッシュしないように例外を捕捉します。
+                System.Diagnostics.Debug.WriteLine( $"Error loading artists: {ex.Message}" );
+            }
+        }
+
+        /// <summary>
+        /// データベースからアーティストと動画の関連情報を非同期にロードします。
+        /// </summary>
+        public async Task LoadArtistVideosAsync( ObservableCollection<VideoItem> videos ) {
+            try {
+                // 全てのアーティストの動画リストをクリアします。
+                foreach ( var artist in Artists ) {
+                    artist.VideosInArtist.Clear();
+                }
+
+                foreach ( var video in videos ) {
+                    video.ArtistsInVideo.Clear();
+                    // データベースからアーティストと動画の関連情報を取得します。
+                    var artistsFromDb = await _databaseService.GetArtistsForVideoAsync( video );
+                    if ( artistsFromDb != null && artistsFromDb.Count > 0 ) {
+                        foreach ( var artist in artistsFromDb ) {
+                            // 動画とアーティストの関連付けを行います。
+                            video.ArtistsInVideo.Add( artist );
+                            Artists.Where( a => a.Id == artist.Id )
+                                   .FirstOrDefault()?.VideosInArtist.Add( video );
+                        }
+                    }
+                }
+            } catch ( Exception ex ) {
+                // エラーが発生した場合は、アプリがクラッシュしないように例外を捕捉します。
+                System.Diagnostics.Debug.WriteLine( $"Error loading artist videos: {ex.Message}" );
+            }
+        }
+
+
+        /// <summary>
         /// アーティストリストを指定されたキーと順序でソートします。
         /// </summary>
         public void SortArtists( ArtistSortKey sortKey, SortOrder sortOrder ) {
@@ -269,8 +327,9 @@ namespace VideoManager3_WinUI {
                 case ArtistSortKey.VideoCount:
                 sortedList = (sortOrder == SortOrder.Ascending)
                     ? Artists.OrderBy( a => a.VideosInArtist.Count ).ThenBy( a => a.Name ).ToList()
-                    : Artists.OrderByDescending( a => a.VideosInArtist.Count ).ThenBy( a => a.Name ).ToList();
+                    : Artists.OrderByDescending( a => a.VideosInArtist.Count ).ThenByDescending( a => a.Name ).ToList();
                 break;
+
                 default:
                 throw new ArgumentException( "Invalid sort key specified." );
             }

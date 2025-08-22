@@ -68,14 +68,18 @@ namespace VideoManager3_WinUI {
         /// 動画に紐づくタグを設定します。
         /// </summary>
         public async Task LoadVideoTagsAsync() {
-            var allTagsLookup = _tagService.GetAllTagsAsDictionary();
+            var orderedAllTags = _tagService.GetTagsInOrder();
+            var allTagsLookup = orderedAllTags.ToDictionary(t => t.Id);
+
             foreach ( var video in Videos ) {
                 video.VideoTagItems.Clear();
-                // 動画に紐づくタグを取得
-                var tagsForVideo = await _databaseService.GetTagsForVideoAsync(video);
-                foreach ( var tagFromDb in tagsForVideo ) {
-                    if ( allTagsLookup.TryGetValue( tagFromDb.Id, out var existingTag ) ) {
-                        video.VideoTagItems.Add( existingTag );
+                var tagsForVideoFromDb = await _databaseService.GetTagsForVideoAsync(video);
+                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
+
+                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
+                foreach ( var tag in orderedAllTags ) {
+                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
+                        video.VideoTagItems.Add( tag );
                     }
                 }
             }
@@ -114,7 +118,8 @@ namespace VideoManager3_WinUI {
         /// 指定されたパスのリストから動画やフォルダを追加します。
         /// </summary>
         public async Task AddVideosFromPathsAsync( IEnumerable<string>? paths ) {
-            if ( paths == null )return;
+            if ( paths == null )
+                return;
             foreach ( var path in paths ) {
                 await AddVideoFromPathAsync( path );
             }

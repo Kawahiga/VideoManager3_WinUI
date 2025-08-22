@@ -138,8 +138,24 @@ namespace VideoManager3_WinUI {
         /// すべてのタグをIDをキーとする辞書として取得します。
         /// </summary>
         /// <returns>タグの辞書</returns>
-        public Dictionary<int, TagItem> GetAllTagsAsDictionary() {
+        private Dictionary<int, TagItem> GetAllTagsAsDictionary() {
             return _allTags.ToDictionary( t => t.Id );
+        }
+
+        /// <summary>
+        /// すべてのタグをツリーの表示順でフラットなリストとして取得します。
+        /// </summary>
+        /// <returns>順序付けされたタグのリスト</returns>
+        public List<TagItem> GetTagsInOrder() {
+            var orderedTags = new List<TagItem>();
+            void Traverse( IEnumerable<TagItem> tags ) {
+                foreach ( var tag in tags ) {
+                    orderedTags.Add( tag );
+                    Traverse( tag.Children );
+                }
+            }
+            Traverse( TagItems );
+            return orderedTags;
         }
 
         protected virtual void OnPropertyChanged( string propertyName ) {

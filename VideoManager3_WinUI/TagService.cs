@@ -115,11 +115,10 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// タグをデータベースに追加または更新し、UIをリフレッシュします。
+        /// タグをデータベースに追加または更新します。
         /// </summary>
         public async Task AddOrUpdateTagAsync( TagItem tag ) {
             await _databaseService.AddOrUpdateTagAsync( tag );
-            await LoadTagsAsync(); // タグツリーを再読み込みしてUIを更新
         }
 
         /// <summary>

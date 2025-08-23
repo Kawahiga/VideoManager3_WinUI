@@ -93,6 +93,18 @@ namespace VideoManager3_WinUI {
             set { _isGroup = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsGroup ) ) ); }
         }
 
+        // タグ編集中かどうか
+        private bool _isEditing = false;
+        public bool IsEditing {
+            get => _isEditing;
+            set {
+                _isEditing = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsEditing ) ) );
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsNotEditing ) ) );
+            }
+        }
+        public bool IsNotEditing => !IsEditing;
+
         // 動画にこのタグが付けられているかどうかを示すフラグ
         private bool _isChecked;
         public bool IsChecked {
@@ -128,12 +140,15 @@ namespace VideoManager3_WinUI {
             set {
                 if ( _tagVideoItem != value ) {
                     _tagVideoItem = value;
+                    TagVideoCount = calcTagVideoCount(); // 動画数を再計算
                     PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoItem ) ) );
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoCount ) ) );
                 }
             }
         }
 
         // タグに関連付けられた動画の数（子孫の数を合算）
+        private int _tagVideoCount;
         public int TagVideoCount {
             get {
                 int count = TagVideoItem.Count;
@@ -142,6 +157,18 @@ namespace VideoManager3_WinUI {
                 }
                 return count;
             }
+            set {
+                _tagVideoCount = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoCount ) ) );
+            }
+        }
+
+        private int calcTagVideoCount() {
+            int count = TagVideoItem.Count;
+            foreach ( var child in Children ) {
+                count += child.calcTagVideoCount(); // 子タグの動画数を合算
+            }
+            return count;
         }
 
         // 階層構造のための子要素

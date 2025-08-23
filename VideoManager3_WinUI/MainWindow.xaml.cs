@@ -3,6 +3,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +34,7 @@ namespace VideoManager3_WinUI {
             LoadSetting();
         }
 
-         // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
+        // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
         private void GridView_ContainerContentChanging( ListViewBase sender, ContainerContentChangingEventArgs args ) {
             if ( args.InRecycleQueue ) {
                 if ( args.Item is VideoItem itemToUnload ) {
@@ -120,61 +121,66 @@ namespace VideoManager3_WinUI {
             flyout.ShowAt( sender as FrameworkElement );
         }
 
-        // タグの右クリック編集を実行するイベントハンドラー（ツリー選択時とファイル選択時で共用できる？）
+        // タグの右クリック編集を実行するイベントハンドラー
         private void TagEdit( object sender, RoutedEventArgs e ) {
-            ViewModel.EditTagCommand.Execute( null );
+            // sender（クリックされたMenuFlyoutItem）のDataContextを取得
+            if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
+                // DataContextがTagItemであれば、それをコマンドのパラメータとして渡す
+                ViewModel.EditTagCommand.Execute( selectedTag );
+            }
         }
 
-        // 動画に対するタグ設定フライアウトが開かれる直前のイベントハンドラ
+        // タグ設定モード開始時の動画アイテム
+        private VideoItem? _editTargetItem;
+
+        // 動画に対するタグ設定イベントハンドラ
         private void TagEditFlyout_Opening( object sender, object e ) {
-            // ViewModelに、現在選択中の動画に合わせてタグのチェック状態を更新させる
-            ViewModel.PrepareTagsForEditing();
 
-            if ( sender is MenuFlyout flyout ) {
-                // 既存の項目をクリア
-                flyout.Items.Clear();
-                // ViewModelのTagItemsからメニューを再帰的に構築
-                CreateTagMenuItems( flyout.Items, ViewModel.TagItems );
+            if ( ViewModel.IsTagSetting == false ) {
+                // 現在選択中の動画に合わせてタグのチェック状態を設定
+                ViewModel.PrepareTagsForEditing();
+                ViewModel.IsTagSetting = true;
+                _editTargetItem = ViewModel.SelectedItem;
+            } else {
+                // 変更を確定させDBに保存
+                ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
+                ViewModel.IsTagSetting = false;
             }
         }
 
-        // タグ情報から動的にメニュー項目を生成する再帰メソッド
-        private void CreateTagMenuItems( IList<MenuFlyoutItemBase> menuItems, IEnumerable<TagItem> tagItems ) {
-            foreach ( var tag in tagItems ) {
-                if ( tag.Name.Equals( "全てのファイル" ) || tag.Name.Equals( "タグなし" ) ) {
-                    // 不要なタグは表示しない
-                    CreateTagMenuItems( menuItems, tag.Children );
+        // タグ設定モード中に画面の他の部分をタップしたときのイベントハンドラ
+        private void RootGrid_Tapped( object sender, TappedRoutedEventArgs e ) {
+            if ( !ViewModel.IsTagSetting ) {
+                return;
+            }
 
-                } else if ( tag.IsGroup ) {
-                    // タグがグループの場合、サブメニューを作成
-                    var subItem = new MenuFlyoutSubItem { Text = tag.Name };
-                    CreateTagMenuItems( subItem.Items, tag.Children );
-                    menuItems.Add( subItem );
-                } else {
-                    // タグがグループでない場合、チェックボックス付きのメニュー項目を作成
-                    var toggleItem = new ToggleMenuFlyoutItem
-                    {
-                        Text = tag.Name,
-                        IsChecked = tag.IsChecked,
-                        // TagプロパティにTagItemインスタンスを格納しておく
-                        Tag = tag
-                    };
-                    // ClickイベントでViewModelのコマンドを呼び出す
-                    toggleItem.Click += ToggleTag_Click;
-                    menuItems.Add( toggleItem );
+            var originalSource = e.OriginalSource as DependencyObject;
+
+            // TagsTreeViewまたはその子の場合は何もしない
+            if ( IsChildOf<TreeView>( originalSource, "TagsTreeView" ) ) {
+                return;
+            }
+
+            // TagEditButtonまたはその子の場合は何もしない
+            if ( IsChildOf<AppBarButton>( originalSource, "TagEditButton" ) ) {
+                return;
+            }
+
+            // それ以外の場合は変更を確定
+            ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
+            ViewModel.IsTagSetting = false;
+        }
+
+        private bool IsChildOf<T>( DependencyObject element, string name = null ) where T : FrameworkElement {
+            while ( element != null ) {
+                if ( element is T targetElement ) {
+                    if ( name == null || targetElement.Name == name ) {
+                        return true;
+                    }
                 }
+                element = VisualTreeHelper.GetParent( element );
             }
-        }
-
-        // チェックボックス付きメニュー項目がクリックされたときのイベントハンドラ
-        private void ToggleTag_Click( object sender, RoutedEventArgs e ) {
-            if ( sender is ToggleMenuFlyoutItem toggleItem && toggleItem.Tag is TagItem tagItem ) {
-                // IsCheckedプロパティはクリック後に更新されるため、現在の値を反転させた値をViewModelに伝える
-                // ただし、ToggleMenuFlyoutItemがクリックされるとIsCheckedは自動でトグルするので、
-                // tagItemのIsCheckedプロパティをUIと同期させてからコマンドを実行する
-                tagItem.IsChecked = toggleItem.IsChecked;
-                ViewModel.UpdateVideoTagsCommand.Execute( tagItem );
-            }
+            return false;
         }
 
         // ドラッグ中のアイテムがウィンドウ上にあるときのイベントハンドラ

@@ -209,6 +209,7 @@
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
                                     <!-- サムネイル画像 -->
                                     <Image
@@ -226,8 +227,24 @@
                                         </Image.Source>
                                     </Image>
 
+                                    <!-- アーティスト一覧 -->
+                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding ArtistsInVideo}" Margin="0">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <controls:WrapPanel  Height="16" Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="local:TagItem">
+                                                <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="3,1" FontSize="10"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
                                     <!-- タグ一覧 -->
-                                    <ItemsControl Grid.Row="1" ItemsSource="{Binding VideoTagItems}" Margin="0">
+                                    <ItemsControl Grid.Row="2" ItemsSource="{Binding VideoTagItems}" Margin="0">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <controls:WrapPanel  Height="16" Orientation="Horizontal"/>
@@ -236,14 +253,14 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="local:TagItem">
                                                 <Border Background="{Binding Color}" CornerRadius="4" Margin="0">
-                                                    <TextBlock Text="{Binding Name}" Foreground="White" Padding="3,1" FontSize="10"/>
+                                                    <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="3,1" FontSize="10"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
                                     <!-- ファイル名 -->
-                                    <TextBlock Grid.Row="2" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
+                                    <TextBlock Grid.Row="3" Text="{Binding FileNameWithoutArtists}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>
@@ -259,31 +276,31 @@
                     <StackPanel DataContext="{Binding SelectedItem}">
 
                         <!-- ファイル名 -->
-                        <TextBlock
-                            Text="{Binding FileName}"
-                            FontWeight="Bold"
-                            IsTextSelectionEnabled="True"
-                            FontSize="16"
-                            TextWrapping="Wrap"
-                            Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding FileNameWithoutArtists}" FontWeight="Bold" IsTextSelectionEnabled="True" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                        <!-- 更新日時、サイズ、長さ -->
-                        <Grid Margin="0,0,0,10">
+                         <!-- ファイルに設定されたアーティスト一覧 -->
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto" MinWidth="20"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto" MinWidth="20"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="更新日時:" FontWeight="SemiBold" Margin="0,0,10,5" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LastModified}" Margin="0,0,20,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="2" Text="サイズ:" FontWeight="SemiBold" Margin="0,0,10,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding FileSize, Converter={StaticResource FileSizeConverter}}" Margin="0,0,20,5"/>
-                            <TextBlock Grid.Row="0" Grid.Column="4" Text="長さ:" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                            <TextBlock Grid.Row="0" Grid.Column="5" Text="{Binding Duration, Converter={StaticResource DurationConverter}}" Margin="0,0,0,0"/>
+                            <TextBlock Grid.Column="0" Text="出演:" FontWeight="SemiBold" Margin="0,5,10,5" VerticalAlignment="Top"/>
+                            <!-- アーティスト名を横に並べるためのItemsControl -->
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding ArtistsInVideo}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <controls:WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <!-- 各アーティストの表示形式 -->
+                                    <DataTemplate x:DataType="local:TagItem">
+                                        <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0,0,8,5">
+                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" IsTextSelectionEnabled="True" Padding="8,3" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </Grid>
 
                         <!-- ファイルに設定されたタグ一覧 -->
@@ -304,11 +321,30 @@
                                     <!-- 各タグの表示形式 -->
                                     <DataTemplate x:DataType="local:TagItem">
                                         <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
-                                            <TextBlock Text="{Binding Name}" Foreground="White" Padding="8,3" />
+                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="8,3" />
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                        </Grid>
+
+                        <!-- 更新日時、サイズ、長さ -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto" MinWidth="20"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="更新日時:" FontWeight="SemiBold" Margin="0,0,10,5" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding LastModified}" Margin="0,0,20,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="サイズ:" FontWeight="SemiBold" Margin="0,0,10,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding FileSize, Converter={StaticResource FileSizeConverter}}" Margin="0,0,20,5"/>
+                            <TextBlock Grid.Row="0" Grid.Column="4" Text="長さ:" FontWeight="SemiBold" Margin="0,0,10,0"/>
+                            <TextBlock Grid.Row="0" Grid.Column="5" Text="{Binding Duration, Converter={StaticResource DurationConverter}}" Margin="0,0,0,0"/>
                         </Grid>
                     </StackPanel>
                 </Grid>

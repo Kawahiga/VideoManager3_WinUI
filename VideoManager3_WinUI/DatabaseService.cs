@@ -34,6 +34,7 @@ namespace VideoManager3_WinUI {
                     FileID INTEGER PRIMARY KEY AUTOINCREMENT,
                     FilePath TEXT NOT NULL UNIQUE,
                     FileName TEXT NOT NULL,
+                    FileNameWithoutArtist TEXT NOT NULL,
                     Extension TEXT DEFAULT '',
                     FileSize INTEGER DEFAULT 0,
                     LastModified TEXT,
@@ -92,11 +93,12 @@ namespace VideoManager3_WinUI {
             // 既に存在する場合は無視する
             command.CommandText = @"
                 INSERT OR IGNORE INTO Videos 
-                (FilePath, FileName, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount) 
-                VALUES 
-                ($filePath, $fileName, $extension, $fileSize, $lastModified, $duration, $like, $view)";
+                    (FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount) 
+                    VALUES 
+                    ($filePath, $fileName, $fileNameWithiutArtist, $extension, $fileSize, $lastModified, $duration, $like, $view)";
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
+            command.Parameters.AddWithValue( "$fileNameWithiutArtist", video.FileNameWithoutArtists );
             command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty ); // 拡張子がnullの場合は空文字列を設定
             command.Parameters.AddWithValue( "$fileSize", video.FileSize );
             command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) ); // 日付は環境に依存しないISO 8601形式("o")で保存する
@@ -132,6 +134,7 @@ namespace VideoManager3_WinUI {
                 UPDATE Videos SET
                     FilePath = $filePath,
                     FileName = $fileName,
+                    FileNameWithoutArtist = $fileNameWithiutArtist,
                     Extension = $extension,
                     FileSize = $fileSize,
                     LastModified = $lastModified,
@@ -141,6 +144,7 @@ namespace VideoManager3_WinUI {
                 WHERE FileID = $id;";
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
+            command.Parameters.AddWithValue( "$fileNameWithiutArtist", video.FileNameWithoutArtists );
             command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty );
             command.Parameters.AddWithValue( "$fileSize", video.FileSize );
             command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) );
@@ -170,7 +174,7 @@ namespace VideoManager3_WinUI {
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT FileID, FilePath, FileName, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
+                SELECT FileID, FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
                 FROM Videos";
 
             using var reader = await command.ExecuteReaderAsync();
@@ -178,18 +182,20 @@ namespace VideoManager3_WinUI {
                 var id = reader.GetInt32(0);
                 var filePath = reader.GetString(1);
                 var fileName = reader.GetString(2);
-                var extension = reader.IsDBNull(3) ? string.Empty : reader.GetString(3); // 拡張子がNULLの場合は空文字列を設定
-                var fileSize = reader.GetInt64(4);
+                var fileNameWithoutArtist = reader.GetString(3);
+                var extension = reader.IsDBNull(4) ? string.Empty : reader.GetString(4); // 拡張子がNULLの場合は空文字列を設定
+                var fileSize = reader.GetInt64(5);
                 // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
-                var lastModified = DateTime.Parse(reader.GetString(5), null, System.Globalization.DateTimeStyles.RoundtripKind);
-                var duration = reader.GetDouble(6);
-                var likeCount = reader.GetInt32(7);
-                var viewCount = reader.GetInt32(8);
+                var lastModified = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind);
+                var duration = reader.GetDouble(7);
+                var likeCount = reader.GetInt32(8);
+                var viewCount = reader.GetInt32(9);
 
                 var video = new VideoItem {
                     Id = id,
                     FilePath = filePath,
                     FileName = fileName,
+                    FileNameWithoutArtists = fileNameWithoutArtist,
                     Extension = extension,
                     FileSize = fileSize,
                     LastModified = lastModified,

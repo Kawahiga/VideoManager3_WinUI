@@ -24,9 +24,9 @@ namespace VideoManager3_WinUI {
             set {
                 _isFavorite = value;
                 if ( _isFavorite == false ) {
-                    _artistColor = new SolidColorBrush( Colors.DarkGray );
+                    ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
                 } else {
-                    _artistColor = new SolidColorBrush( Colors.DeepPink );
+                    ArtistColor = new SolidColorBrush( Colors.Pink );
                 }
             }
         }
@@ -35,16 +35,41 @@ namespace VideoManager3_WinUI {
         public string IconPath { get; set; } = string.Empty;
 
         // 表示用の色
-        private Brush? _artistColor;
-        public Brush? ArtistColor {
+        private Brush _artistColor = new SolidColorBrush( Colors.DarkGray );
+        public Brush ArtistColor {
             get => _artistColor;
             set {
                 _artistColor = value;
+                // Colorプロパティが変更されたときにに文字色も更新
+                TextColor = GetContrastingTextBrush( value );
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ArtistColor ) ) );
+            }
+        }
+
+        // 表示用の文字色
+        private Brush _textColor = new SolidColorBrush( Colors.Black );
+        public Brush TextColor {
+            get => _textColor;
+            set {
+                _textColor = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TextColor ) ) );
             }
         }
 
         // アーティストが関連付けられた動画のリスト
         public List<VideoItem> VideosInArtist { get; set; } = new List<VideoItem>();
+
+        // 色に合わせた文字色を設定する
+        private Brush GetContrastingTextBrush( Brush? background ) {
+            if ( background is SolidColorBrush solidColorBrush ) {
+                var color = solidColorBrush.Color;
+                // 輝度を計算 (0.299*R + 0.587*G + 0.114*B)
+                double brightness = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
+                // 輝度が0.5以上なら黒、そうでなければ白を返す
+                return brightness > 0.5 ? new SolidColorBrush( Colors.Black ) : new SolidColorBrush( Colors.White );
+            }
+            // デフォルトは黒
+            return new SolidColorBrush( Colors.Black );
+        }
     }
 }

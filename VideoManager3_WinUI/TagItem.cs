@@ -26,6 +26,16 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // 表示用のタグ/グループの文字色
+        private Brush _textColor = new SolidColorBrush( Colors.Black );
+        public Brush TextColor {
+            get => _textColor;
+            set {
+                _textColor = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TextColor ) ) );
+            }
+        }
+
         // 表示用のタグ/グループの色
         private Brush? _color;
         public Brush? Color {
@@ -33,6 +43,8 @@ namespace VideoManager3_WinUI {
             set {
                 _color = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Color ) ) );
+                // Colorプロパティが変更されたときにに文字色も更新
+                TextColor = GetContrastingTextBrush( value );
                 // Colorプロパティが変更されたときにColorCodeも更新
                 ColorCode = value is SolidColorBrush solidColorBrush
                     ? $"#{solidColorBrush.Color.A:X2}{solidColorBrush.Color.R:X2}{solidColorBrush.Color.G:X2}{solidColorBrush.Color.B:X2}"
@@ -145,6 +157,19 @@ namespace VideoManager3_WinUI {
                 ids.AddRange( child.GetAllDescendantIds() );
             }
             return ids;
+        }
+
+        // 色に合わせた文字色を設定する
+        private Brush GetContrastingTextBrush( Brush? background ) {
+            if ( background is SolidColorBrush solidColorBrush ) {
+                var color = solidColorBrush.Color;
+                // 輝度を計算 (0.299*R + 0.587*G + 0.114*B)
+                double brightness = (0.299 * color.R + 0.587 * color.G + 0.114 * color.B) / 255;
+                // 輝度が0.5以上なら黒、そうでなければ白を返す
+                return brightness > 0.5 ? new SolidColorBrush( Colors.Black ) : new SolidColorBrush( Colors.White );
+            }
+            // デフォルトは黒
+            return new SolidColorBrush( Colors.Black );
         }
 
         // DB用のカラーコードを表示用Brushに変換する

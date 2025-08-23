@@ -108,12 +108,14 @@
                                         </Grid.ColumnDefinitions>
                                         <!-- タグの色と名前を表示するパネル -->
                                         <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                            <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                            <Rectangle Visibility="Visible" Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                            <CheckBox Visibility="Collapsed" IsChecked="True" IsThreeState="True" Background="{x:Bind Color}" MinWidth="16" Width="16" Margin="0,0,5,0"/>
                                             <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <!-- タグの動画数を表示するボーダー -->
                                         <Border Grid.Column="1" Background="LightSlateGray"  CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
                                             <TextBlock Text="{x:Bind TagVideoCount}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                            
                                         </Border>
                                     </Grid>
                                     <!-- 右クリックメニュー -->

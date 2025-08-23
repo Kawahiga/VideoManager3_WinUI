@@ -93,6 +93,7 @@ namespace VideoManager3_WinUI {
             get => _isTagSetting;
             set {
                 _isTagSetting = value;
+                // タグ設定モードの切り替えに応じて、すべてのタグのIsEditingプロパティを更新
                 var tmpTag = _tagService.GetTagsInOrder();
                 foreach ( var tag in tmpTag ) {
                     tag.IsEditing = value;

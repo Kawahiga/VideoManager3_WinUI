@@ -98,6 +98,7 @@ namespace VideoManager3_WinUI {
         public bool IsEditing {
             get => _isEditing;
             set {
+                if ( _isGroup == true ) return; // グループは編集不可
                 _isEditing = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsEditing ) ) );
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsNotEditing ) ) );

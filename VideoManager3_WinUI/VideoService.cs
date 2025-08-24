@@ -169,16 +169,21 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// 選択された動画を削除します。（未実装：ファイルそのものを削除、タグの持つビデオデータを削除）
+        /// 選択された動画を削除します。（未実装：ファイルそのものを削除）
         /// </summary>
         public async Task DeleteVideoAsync( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
                 return;
             try {
-                // データベースから動画を削除
+                // データベースから動画と動画とタグの紐づけ情報を削除
                 await _databaseService.DeleteVideoAsync( videoItem );
-                // UIから動画を削除
+                
+                // セッションデータから動画を削除
+                foreach ( var tag in videoItem.VideoTagItems ) {
+                    tag.TagVideoItem.Remove( videoItem );
+                }
                 Videos.Remove( videoItem );
+
                 // ファイルシステムからも削除
                 //var file = await StorageFile.GetFileFromPathAsync(videoItem.FilePath);
                 //await file.DeleteAsync();

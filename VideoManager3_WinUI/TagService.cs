@@ -129,6 +129,9 @@ namespace VideoManager3_WinUI {
             await _databaseService.DeleteTagAsync( tag );
             _allTags.Remove( tag );
             RemoveTagFromHierarchy( TagItems, tag );
+            foreach ( var video in tag.TagVideoItem ) {
+                video.VideoTagItems.Remove( tag );
+            }
             OnPropertyChanged( nameof( TagItems ) );
         }
 

@@ -156,13 +156,27 @@ namespace VideoManager3_WinUI {
             await command.ExecuteNonQueryAsync();
         }
 
-        // 動画をデータベースから削除する
+        /// <summary>
+        /// 動画をデータベースから削除する（タグ、アーティストとの関連付け情報も削除）
+        /// </summary>
+        /// <param name="video"></param>
+        /// <returns></returns>
         public async Task DeleteVideoAsync( VideoItem video ) {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();
             var command = connection.CreateCommand();
-            command.CommandText = "DELETE FROM Videos WHERE FileID = $id;";
+
+            // VideoTagsテーブルから関連付けを削除
+            command.CommandText = "DELETE FROM VideoTags WHERE VideoId = $id;";
             command.Parameters.AddWithValue( "$id", video.Id );
+            await command.ExecuteNonQueryAsync();
+
+            // VideoArtistsテーブルから関連付けを削除
+            command.CommandText = "DELETE FROM VideoArtists WHERE VideoId = $id;";
+            await command.ExecuteNonQueryAsync();
+
+            // Videosテーブルから動画を削除
+            command.CommandText = "DELETE FROM Videos WHERE FileID = $id;";
             await command.ExecuteNonQueryAsync();
         }
 
@@ -272,8 +286,6 @@ namespace VideoManager3_WinUI {
 
             // Tagsテーブルからタグを削除
             command.CommandText = "DELETE FROM Tags WHERE TagID = $id;";
-            //パラメーターは上で設定済みなので不要
-            //command.Parameters.AddWithValue( "$id", tag.Id );
             await command.ExecuteNonQueryAsync();
         }
 
@@ -446,6 +458,25 @@ namespace VideoManager3_WinUI {
                 command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
                 await command.ExecuteNonQueryAsync();
             }
+        }
+
+        /// <summary>
+        /// アーティストをデータベースから削除する（動画との関連付け情報も削除）  
+        /// </summary>
+        /// <returns></returns>
+        public async Task DeleteArtistAsync( ArtistItem artist ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+
+            // VideoArtistsテーブルから関連付けを削除
+            command.CommandText = "DELETE FROM VideoArtists WHERE ArtistID = $id;";
+            command.Parameters.AddWithValue( "$id", artist.Id );
+            await command.ExecuteNonQueryAsync();
+
+            // Artistsテーブルからアーティストを削除
+            command.CommandText = "DELETE FROM Artists WHERE ArtistID = $id;";
+            await command.ExecuteNonQueryAsync();
         }
 
         // データベースからすべてのアーティストを読み込む

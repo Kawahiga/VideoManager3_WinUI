@@ -117,7 +117,8 @@
                                     <!-- 右クリックメニュー -->
                                     <TreeViewItem.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="名前の変更" Click="TagEdit"/>
+                                            <MenuFlyoutItem Text="タグを編集" Click="TagEdit"/>
+                                            <MenuFlyoutItem Text="タグを追加"/>
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>
                                 </TreeViewItem>

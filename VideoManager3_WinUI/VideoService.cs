@@ -169,7 +169,7 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// 選択された動画を削除します。（ファイルそのものも削除したいが未実装）
+        /// 選択された動画を削除します。（未実装：ファイルそのものを削除、タグの持つビデオデータを削除）
         /// </summary>
         public async Task DeleteVideoAsync( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )

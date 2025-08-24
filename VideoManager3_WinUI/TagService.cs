@@ -119,6 +119,32 @@ namespace VideoManager3_WinUI {
         /// </summary>
         public async Task AddOrUpdateTagAsync( TagItem tag ) {
             await _databaseService.AddOrUpdateTagAsync( tag );
+            _allTags.Add( tag );
+        }
+
+        /// <summary>
+        /// タグをデータベースから削除します。
+        /// </summary>
+        public async Task DeleteTagAsync( TagItem tag ) {
+            await _databaseService.DeleteTagAsync( tag );
+            _allTags.Remove( tag );
+            RemoveTagFromHierarchy( TagItems, tag );
+            OnPropertyChanged( nameof( TagItems ) );
+        }
+
+        // UI上のタグ階層からタグを再帰的に削除
+        private bool RemoveTagFromHierarchy( ObservableCollection<TagItem> tags, TagItem tagToRemove ) {
+            if ( tags.Remove( tagToRemove ) ) {
+                return true;
+            }
+
+            foreach ( var tag in tags ) {
+                if ( RemoveTagFromHierarchy( tag.Children, tagToRemove ) ) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

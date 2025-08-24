@@ -259,6 +259,24 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // タグをデータベースから削除する
+        public async Task DeleteTagAsync( TagItem tag ) {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+
+            // VideoTagsテーブルから関連付けを削除
+            command.CommandText = "DELETE FROM VideoTags WHERE TagId = $id;";
+            command.Parameters.AddWithValue( "$id", tag.Id );
+            await command.ExecuteNonQueryAsync();
+
+            // Tagsテーブルからタグを削除
+            command.CommandText = "DELETE FROM Tags WHERE TagID = $id;";
+            //パラメーターは上で設定済みなので不要
+            //command.Parameters.AddWithValue( "$id", tag.Id );
+            await command.ExecuteNonQueryAsync();
+        }
+
         // データベースからすべてのタグを読み込む
         public async Task<List<TagItem>> GetTagsAsync() {
             var tags = new List<TagItem>();

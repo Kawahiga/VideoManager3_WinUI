@@ -362,6 +362,7 @@ namespace VideoManager3_WinUI {
                 Title = "タグの編集",
                 Content = inputTextBox,
                 PrimaryButtonText = "OK",
+                SecondaryButtonText = "削除",
                 CloseButtonText = "キャンセル",
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = App.MainWindow.Content.XamlRoot // ダイアログを表示するために必要
@@ -369,13 +370,15 @@ namespace VideoManager3_WinUI {
 
             var result = await dialog.ShowAsync();
 
-            // OKボタンが押され、かつテキストが空でなく、変更があった場合のみ更新
-            if ( result == ContentDialogResult.Primary
-                && !string.IsNullOrWhiteSpace( inputTextBox.Text )
-                && tag.Name != inputTextBox.Text ) {
-                tag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
-                // 変更内容をDBに保存
-                await _tagService.AddOrUpdateTagAsync( tag );
+            if ( result == ContentDialogResult.Primary ) {
+                // OKボタンが押された場合、タグ名を更新
+                if ( !string.IsNullOrWhiteSpace( inputTextBox.Text ) && tag.Name != inputTextBox.Text ) {
+                    tag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
+                    await _tagService.AddOrUpdateTagAsync( tag );
+                }
+            } else if ( result == ContentDialogResult.Secondary ) {
+                // 削除ボタンが押された場合、タグを削除
+                await _tagService.DeleteTagAsync( tag );
             }
         }
 

@@ -33,6 +33,8 @@ namespace VideoManager3_WinUI {
             WindowId wndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
             _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId( wndId );
             LoadSetting();
+
+            FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
         }
 
         private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {

@@ -251,7 +251,7 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// 動画ファイルの名前を変更します。
         /// </summary>
-        public async Task RenameFileAsync( VideoItem videoItem, string newFileName ) {
+        public async Task RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
             if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals(videoItem.FileName) ) {
                 return;
             }
@@ -269,6 +269,7 @@ namespace VideoManager3_WinUI {
                 File.Move( oldPath, newPath );
                 videoItem.FilePath = newPath;
                 videoItem.FileName = newFileName;
+                videoItem.FileNameWithoutArtists = newFileNameWithoutArtists;
                 await _databaseService.UpdateVideoAsync( videoItem );
 
             } catch ( Exception ex ) {

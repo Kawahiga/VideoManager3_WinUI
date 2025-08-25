@@ -1,7 +1,9 @@
-﻿using Microsoft.UI;
+using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -11,13 +13,28 @@ namespace VideoManager3_WinUI {
     public class ArtistItem:INotifyPropertyChanged {
         public event PropertyChangedEventHandler? PropertyChanged;
 
+        public ArtistItem() {
+            VideosInArtist.CollectionChanged += VideosInArtist_CollectionChanged;
+        }
+
         // アーティストID
         public int Id { get; set; } = 0;
 
-        // アーティスト名
-        public string Name { get; set; } = string.Empty;
+        // 表示用アーティスト名
+        // 例: "浜崎りお(篠原絵梨香、森下えりか)"
+        private string _name = string.Empty;
+        public string Name {
+            get => _name;
+            set {
+                if ( _name != value ) {
+                    _name = value;
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Name ) ) );
+                }
+            }
+        }
 
-        // アーティスの別名義リスト(主名も含む)
+        // アーティスの名義リスト(主名が先頭)
+        // 例: ["浜崎りお", "篠原絵梨香", "森下えりか"]
         public List<string> AliaseNames { get; set; } = new List<string>();
 
         // お気に入り
@@ -60,7 +77,16 @@ namespace VideoManager3_WinUI {
         }
 
         // アーティストが関連付けられた動画のリスト
-        public List<VideoItem> VideosInArtist { get; set; } = new List<VideoItem>();
+        public ObservableCollection<VideoItem> VideosInArtist { get; } = new ObservableCollection<VideoItem>();
+
+        // VideoCountはVideosInArtistの要素数を返す読み取り専用プロパティ
+        public int VideoCount => VideosInArtist.Count;
+
+        private void VideosInArtist_CollectionChanged( object? sender, NotifyCollectionChangedEventArgs e ) {
+            // VideosInArtistの中身が変更されたら、VideoCountプロパティも変更されたことをUIに通知
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( VideoCount ) ) );
+        }
+
 
         // 色に合わせた文字色を設定する
         private Brush GetContrastingTextBrush( Brush? background ) {

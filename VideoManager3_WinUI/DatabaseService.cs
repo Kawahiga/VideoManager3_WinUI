@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 // ・タグから動画を取得（タグからの絞り込みで必要？）
 // ・リンク切れになった動画を探して削除
 // そもそも起動時のDBアクセスは1つのメソッドにまとめた方がいい？
+//
+// DBにゴミが溜まるケース
+// ・ファイル名の変更により、アーティストとその関連付けが残ったままになる
+// ・ファイルへのリンク切れにより、動画とその関連付けが残ったままになる
 
 namespace VideoManager3_WinUI {
     public class DatabaseService {
@@ -463,7 +467,6 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// アーティストをデータベースから削除する（動画との関連付け情報も削除）  
         /// </summary>
-        /// <returns></returns>
         public async Task DeleteArtistAsync( ArtistItem artist ) {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();

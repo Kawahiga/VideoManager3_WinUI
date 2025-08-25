@@ -38,7 +38,7 @@ namespace VideoManager3_WinUI {
 
         /// <summary>
         /// 設定の保存
-        /// <!summary>
+        /// </summary>
         public void SaveSettings( SettingItem settings ) {
             string json = JsonSerializer.Serialize(settings);
             localSettings.Values[SETTINGS_KEY] = json;
@@ -46,7 +46,7 @@ namespace VideoManager3_WinUI {
 
         /// <summary>
         /// 設定の読み込み
-        /// <!summary>
+        /// </summary>
         public SettingItem LoadSettings() {
             if ( localSettings.Values.TryGetValue( SETTINGS_KEY, out object? obj ) && obj is string json ) {
                 try {

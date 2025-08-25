@@ -255,7 +255,7 @@ namespace VideoManager3_WinUI {
                 videosByArtist = targetVideos;
             } else {
                 // 選択されたアーティストに紐づく動画を対象
-                videosByArtist = targetVideos.Where( v => v.ArtistsInVideo.Any( a => a.Name == SelectedArtist.Name ) );
+                videosByArtist = targetVideos.Where( v => v.ArtistsInVideo.Any( a => a.Id == SelectedArtist.Id ) );
             }
             targetVideos = videosByArtist;
 
@@ -433,14 +433,27 @@ namespace VideoManager3_WinUI {
 
         // ファイル名を変更するメソッド
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == newFileName ) {
+            if ( SelectedItem == null || SelectedItem.FileName.Equals( newFileName )) {
                 return;
             }
 
-            await _videoService.RenameFileAsync( SelectedItem, newFileName );
-            // 新しい名前でアーティスト情報を更新
-            _artistService.AddOrUpdateArtistFromVideo( SelectedItem );
-            await _databaseService.UpdateVideoAsync( SelectedItem );
+            // 変更前のアーティスト名を取得
+            string oldArtists = ArtistService.GetArtistNameWithoutFileName( SelectedItem.FileName );
+
+            // アーティスト名を除いたファイル名を取得
+            string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist( newFileName );
+            await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
+
+            string newArtists = ArtistService.GetArtistNameWithoutFileName( newFileName );
+            if ( !(String.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
+                // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
+                // 新しい名前でアーティスト情報を更新
+                await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
+            }
+
+            // 変更後のファイル名でソートし直し、表示を更新
+            _videoService.SortVideos( SortType );
+            FilterVideos();
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ

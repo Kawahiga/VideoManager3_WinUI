@@ -2,12 +2,17 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 
 namespace VideoManager3_WinUI {
     // Tagを表すデータモデル
     public class TagItem:INotifyPropertyChanged {
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        public TagItem() {
+            TagVideoItem.CollectionChanged += TagVideoItem_CollectionChanged;
+        }
 
         // データベースの主キー
         private int _id;
@@ -135,34 +140,28 @@ namespace VideoManager3_WinUI {
         public bool IsModified = false;
 
         //  タグに関連付けられた動画アイテムのリスト
-        private ObservableCollection<VideoItem> _tagVideoItem = new ObservableCollection<VideoItem>();
-        public ObservableCollection<VideoItem> TagVideoItem {
-            get => _tagVideoItem;
-            set {
-                if ( _tagVideoItem != value ) {
-                    _tagVideoItem = value;
-                    TagVideoCount = calcTagVideoCount(); // 動画数を再計算
-                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoItem ) ) );
-                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoCount ) ) );
-                }
-            }
-        }
+        public ObservableCollection<VideoItem> TagVideoItem { get; } = new ObservableCollection<VideoItem>();
 
         // タグに関連付けられた動画の数（子孫の数を合算）
         private int _tagVideoCount;
         public int TagVideoCount {
             get {
-                int count = TagVideoItem.Count;
+                int _tagVideoCount = TagVideoItem.Count;
                 foreach ( var child in Children ) {
-                    count += child.TagVideoCount; // 子タグの動画数を合算
+                    _tagVideoCount += child.TagVideoCount; // 子タグの動画数を合算
                 }
-                return count;
-            }
-            set {
-                _tagVideoCount = value;
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoCount ) ) );
+                return _tagVideoCount;
             }
         }
+
+        /// <summary>
+        /// TagVideoItemの中身が変更されたときに呼び出されるイベントハンドラ
+        /// </summary>
+        private void TagVideoItem_CollectionChanged( object? sender, NotifyCollectionChangedEventArgs e ) {
+            // TagVideoItemの中身が変更されたら、TagVideoCountプロパティも変更されたことをUIに通知
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TagVideoCount ) ) );
+        }
+
 
         private int calcTagVideoCount() {
             int count = TagVideoItem.Count;

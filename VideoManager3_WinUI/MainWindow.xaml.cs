@@ -26,12 +26,21 @@ namespace VideoManager3_WinUI {
 
             ViewModel = new MainViewModel();
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
 
             _settingService = new SettingService();
             IntPtr hWnd = WindowNative.GetWindowHandle(this);
             WindowId wndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
             _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId( wndId );
             LoadSetting();
+        }
+
+        private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {
+            if ( e.PropertyName == nameof( ViewModel.SelectedItem ) ) {
+                if ( FileNameTextBox.FocusState == FocusState.Unfocused ) {
+                    FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
+                }
+            }
         }
 
         // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
@@ -305,6 +314,30 @@ namespace VideoManager3_WinUI {
                 }
             }
             _settingService.SaveSettings( settings );
+        }
+
+        // ファイル名テキストボックスのイベントハンドラー
+        private async void FileNameTextBox_LostFocus( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
+                if ( selectedItem.FileName != textBox.Text ) {
+                    await ViewModel.RenameFileAsync( textBox.Text );
+                }
+                textBox.Text = selectedItem.FileNameWithoutArtists;
+            }
+        }
+
+        // Enterキーでフォーカスを外す
+        private void FileNameTextBox_KeyDown( object sender, KeyRoutedEventArgs e ) {
+            if ( e.Key == Windows.System.VirtualKey.Enter ) {
+                RootGrid.Focus( FocusState.Programmatic );
+            }
+        }
+
+        // フォーカスを得たときに元のファイル名を表示する
+        private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
+                textBox.Text = selectedItem.FileName;
+            }
         }
     }
 }

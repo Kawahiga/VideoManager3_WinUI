@@ -173,17 +173,31 @@ namespace VideoManager3_WinUI {
 
         /// <summary>
         /// １つのビデオファイル名を解析し、アーティスト情報を内部状態(_artistUnionFind, _videosByArtistName)に格納します。
+        /// 同時に、VideoItemのFileNameWithoutArtistsプロパティも設定します。
         /// </summary>
         private void ParseArtistsFromVideo( VideoItem video ) {
-            if ( video.FileName == null )
+            if ( video.FileName == null ) {
+                video.FileNameWithoutArtists = string.Empty;
                 return;
+            }
 
-            var match = Regex.Match(video.FileName, @"^[\[【](.*?)[\]】]");
-            if ( !match.Success )
+            // アーティスト情報が `[artist]` または `【artist】` の形式でファイル名の先頭にあると仮定
+            var match = Regex.Match(video.FileName, @"^[\[【](.*?)[\]】]\s*(.*)");
+
+            if ( !match.Success ) {
+                // アーティスト情報が見つからない場合は、ファイル名全体をそのまま使用
+                video.FileNameWithoutArtists = video.FileName;
                 return;
+            }
 
+            // アーティスト情報を抽出
             string artistsString = match.Groups[1].Value;
-            string pattern = @"\S+(\s*[\(（][^\)）]*[\)）])+|\S+";
+            // アーティスト部分を除いたファイル名を設定
+            video.FileNameWithoutArtists = match.Groups[2].Value.Trim();
+
+            // --- 以下、アーティスト名の解析処理 ---
+
+            string pattern = @"\\S+(\\s*[\\(（][^\\)）]*[\\)）])+|\\S+";
             MatchCollection matches = Regex.Matches(artistsString, pattern);
             string[] extractedNames = matches.Cast<Match>().Select(m => m.Value).ToArray();
 

@@ -267,7 +267,7 @@
                                     </ItemsControl>
 
                                     <!-- ファイル名 -->
-                                    <TextBlock Grid.Row="3" Text="{Binding FileNameWithoutArtists}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
+                                    <TextBlock Grid.Row="3" Text="{Binding FileNameWithoutArtists, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" Height="38" Margin="5,2"/>
                                 </Grid>
                             </DataTemplate>
                         </GridView.ItemTemplate>
@@ -283,7 +283,7 @@
                     <StackPanel DataContext="{Binding SelectedItem}">
 
                         <!-- ファイル名 -->
-                        <TextBox Text="{Binding FileNameWithoutArtists}" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" BorderBrush="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" Margin="0,0,0,10"/>
+                        <TextBox x:Name="FileNameTextBox" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,10" LostFocus="FileNameTextBox_LostFocus" KeyDown="FileNameTextBox_KeyDown" GotFocus="FileNameTextBox_GotFocus" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" BorderBrush="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"/>
 
                          <!-- ファイルに設定されたアーティスト一覧 -->
                         <Grid>
@@ -328,7 +328,7 @@
                                     <!-- 各タグの表示形式 -->
                                     <DataTemplate x:DataType="local:TagItem">
                                         <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
-                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" IsTextSelectionEnabled="True" Padding="8,3" />
+                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="8,3" />
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

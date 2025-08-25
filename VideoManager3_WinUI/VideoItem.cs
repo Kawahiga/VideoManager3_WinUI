@@ -79,8 +79,16 @@ namespace VideoManager3_WinUI {
         }
 
         // アーティスト名を除いたファイル名
-        public string FileNameWithoutArtists { get; set; } = string.Empty;
-
+        private string _fileNameWithoutArtists = string.Empty;
+        public string FileNameWithoutArtists {
+            get => _fileNameWithoutArtists;
+            set {
+                if ( _fileNameWithoutArtists != value ) {
+                    _fileNameWithoutArtists = value;
+                    OnPropertyChanged( nameof( FileNameWithoutArtists ) );
+                }
+            }
+        }
 
         public VideoItem() { }
 

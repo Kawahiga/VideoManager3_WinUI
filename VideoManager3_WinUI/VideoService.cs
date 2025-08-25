@@ -177,7 +177,7 @@ namespace VideoManager3_WinUI {
             try {
                 // データベースから動画と動画とタグの紐づけ情報を削除
                 await _databaseService.DeleteVideoAsync( videoItem );
-                
+
                 // セッションデータから動画を削除
                 foreach ( var tag in videoItem.VideoTagItems ) {
                     tag.TagVideoItem.Remove( videoItem );
@@ -245,6 +245,37 @@ namespace VideoManager3_WinUI {
             Videos.Clear();
             foreach ( var video in sortedVideos ) {
                 Videos.Add( video );
+            }
+        }
+
+        /// <summary>
+        /// 動画ファイルの名前を変更します。
+        /// </summary>
+        public async Task RenameFileAsync( VideoItem videoItem, string newFileName ) {
+            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals(videoItem.FileName) ) {
+                return;
+            }
+
+            var oldPath = videoItem.FilePath;
+            var directory = Path.GetDirectoryName(oldPath);
+            var newPath = Path.Combine(directory, newFileName);
+
+            if ( File.Exists( newPath ) ) {
+                // 新しいファイル名が既に存在する場合は処理しない
+                return;
+            }
+
+            try {
+                File.Move( oldPath, newPath );
+                videoItem.FilePath = newPath;
+                videoItem.FileName = newFileName;
+                await _databaseService.UpdateVideoAsync( videoItem );
+
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error renaming file: {ex.Message}" );
+                // エラーが発生した場合は、プロパティを元に戻すことを検討
+                videoItem.FilePath = oldPath;
+                videoItem.FileName = Path.GetFileName( oldPath );
             }
         }
     }

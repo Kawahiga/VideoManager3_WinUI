@@ -17,6 +17,9 @@ namespace VideoManager3_WinUI {
         // アーティスト名
         public string Name { get; set; } = string.Empty;
 
+        // アーティスの別名義リスト(主名も含む)
+        public List<string> AliaseNames { get; set; } = new List<string>();
+
         // お気に入り
         private bool _isFavorite = false;
         public bool IsFavorite {

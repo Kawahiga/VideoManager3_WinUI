@@ -202,8 +202,8 @@ namespace VideoManager3_WinUI {
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); FilterVideos(); }, () => SelectedItem != null );
             ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
-            EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async (tag) => await EditTagAsync(tag) );
-            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async (video) => await UpdateVideoTagSelection(video) );
+            EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
+            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
             SetHomeFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await SetHomeFolderAsync() );
 
@@ -429,6 +429,18 @@ namespace VideoManager3_WinUI {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged( string propertyName ) {
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
+        }
+
+        // ファイル名を変更するメソッド
+        public async Task RenameFileAsync( string newFileName ) {
+            if ( SelectedItem == null || SelectedItem.FileName == newFileName ) {
+                return;
+            }
+
+            await _videoService.RenameFileAsync( SelectedItem, newFileName );
+            // 新しい名前でアーティスト情報を更新
+            _artistService.AddOrUpdateArtistFromVideo( SelectedItem );
+            await _databaseService.UpdateVideoAsync( SelectedItem );
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ

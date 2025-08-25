@@ -182,7 +182,7 @@ namespace VideoManager3_WinUI {
             ViewModel.IsTagSetting = false;
         }
 
-        private bool IsChildOf<T>( DependencyObject element, string name = null ) where T : FrameworkElement {
+        private bool IsChildOf<T>( DependencyObject? element, string name ) where T : FrameworkElement {
             while ( element != null ) {
                 if ( element is T targetElement ) {
                     if ( name == null || targetElement.Name == name ) {

@@ -257,13 +257,19 @@ namespace VideoManager3_WinUI {
             }
 
             var oldPath = videoItem.FilePath;
+            if ( string.IsNullOrEmpty( oldPath ) ) {
+                return;
+            }
             var directory = Path.GetDirectoryName(oldPath);
+            if ( string.IsNullOrEmpty( directory ) ) {
+                return;
+            }
             var newPath = Path.Combine(directory, newFileName);
-
-            if ( File.Exists( newPath ) ) {
+            if ( string.IsNullOrEmpty( newPath ) ||  File.Exists( newPath ) ) {
                 // 新しいファイル名が既に存在する場合は処理しない
                 return;
             }
+
 
             try {
                 File.Move( oldPath, newPath );

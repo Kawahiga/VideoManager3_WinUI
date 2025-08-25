@@ -343,8 +343,8 @@ namespace VideoManager3_WinUI {
         }
 
         // タグ編集コマンド
-        public async Task EditTagAsync( TagItem tag ) {
-            if ( App.MainWindow == null )
+        public async Task EditTagAsync( TagItem? tag ) {
+            if ( App.MainWindow == null || tag == null )
                 return;
 
             // 編集用のTextBoxを作成
@@ -433,7 +433,7 @@ namespace VideoManager3_WinUI {
 
         // ファイル名を変更するメソッド
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName.Equals( newFileName )) {
+            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName )) {
                 return;
             }
 

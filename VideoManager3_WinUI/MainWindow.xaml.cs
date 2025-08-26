@@ -182,6 +182,7 @@ namespace VideoManager3_WinUI {
             ViewModel.IsTagSetting = false;
         }
 
+        // 指定した型および名前の親要素が存在するかどうかを確認するヘルパーメソッド
         private bool IsChildOf<T>( DependencyObject? element, string name ) where T : FrameworkElement {
             while ( element != null ) {
                 if ( element is T targetElement ) {
@@ -318,6 +319,9 @@ namespace VideoManager3_WinUI {
             _settingService.SaveSettings( settings );
         }
 
+        // メモ：フォーカスが外れたらキャンセル扱いにして元のファイル名に戻す
+        //       確定はEnterキーのみで行うように変更したい
+
         // ファイル名テキストボックスのイベントハンドラー
         private async void FileNameTextBox_LostFocus( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
@@ -334,6 +338,8 @@ namespace VideoManager3_WinUI {
                 RootGrid.Focus( FocusState.Programmatic );
             }
         }
+
+        // Enterキーでフォーカスを外す（編集内容を破棄）
 
         // フォーカスを得たときに元のファイル名を表示する
         private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {

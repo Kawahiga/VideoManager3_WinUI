@@ -451,9 +451,9 @@ namespace VideoManager3_WinUI {
                 await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
             }
 
-            // 変更後のファイル名でソートし直し、表示を更新
+            // 変更後のファイル名でソート
             _videoService.SortVideos( SortType );
-            FilterVideos();
+            //FilterVideos();
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ

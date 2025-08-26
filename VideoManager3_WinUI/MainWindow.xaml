@@ -43,13 +43,25 @@
                 <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
                 <AppBarSeparator/>
                 <!-- 絞り込み範囲を表示 -->
+                <!-- メモ：「絞り込み範囲：」をクリックでフィルター全解除 -->
                 <AppBarElementContainer VerticalAlignment="Center">
                     <TextBlock Text="絞り込み範囲：" FontWeight="Bold" Margin="10,0"/>
                 </AppBarElementContainer>
-                <!-- メモ：FilterItemのリストを表示させる 「絞り込み範囲：」をクリックでフィルター全解除 -->
-                <AppBarToggleButton Label="{Binding SelectedTag.Name}" Background="LightGray" FontWeight="Bold" Foreground="DarkBlue"/>
-                <AppBarToggleButton Label="{Binding SelectedArtist.Name}" FontWeight="Bold" Foreground="DarkBlue" Margin="0,0,10,0"/>
-                <AppBarToggleButton Label="{Binding SearchText}" FontWeight="Bold" Foreground="DarkBlue" Margin="0,0,10,0"/>
+                <!-- メモ：FilterItemのリストを表示させる 最大数は決めるべきか -->
+                <AppBarElementContainer>
+                    <ItemsControl ItemsSource="{Binding Filters}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="local:FilterItem">
+                                <AppBarToggleButton Label="{x:Bind Label}" Background="LightGray" FontWeight="Bold" Foreground="DarkBlue" Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </AppBarElementContainer>
             </CommandBar>
             
             <CommandBar Grid.Column="1" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
@@ -128,6 +140,7 @@
                                         <MenuFlyout>
                                             <MenuFlyoutItem Text="タグを編集" Click="TagEdit"/>
                                             <MenuFlyoutItem Text="タグを追加"/>
+                                            <MenuFlyoutItem Text="グループを追加"/>
                                         </MenuFlyout>
                                     </TreeViewItem.ContextFlyout>
                                 </TreeViewItem>
@@ -159,6 +172,15 @@
                                     <Border Grid.Column="1" Background="LightSlateGray" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
                                         <TextBlock Text="{x:Bind VideoCount,Mode=OneWay}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Border>
+
+                                    <!-- 右クリックメニュー -->
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="名前を編集"/>
+                                            <MenuFlyoutItem Text="画像を設定"/>
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
+
                                 </Grid>
                             </DataTemplate>
                         </ListView.ItemTemplate>
@@ -307,10 +329,10 @@
                          <!-- ファイルに設定されたアーティスト一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="出演:" FontWeight="SemiBold" Margin="0,5,10,5" VerticalAlignment="Top"/>
+                            <TextBlock Grid.Column="0" Text="出演：" FontWeight="SemiBold" Margin="0,5,10,5" HorizontalTextAlignment="Right" VerticalAlignment="Top"/>
                             <!-- アーティスト名を横に並べるためのItemsControl -->
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding ArtistsInVideo}">
                                 <ItemsControl.ItemsPanel>
@@ -335,10 +357,10 @@
                         <!-- ファイルに設定されたタグ一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="タグ:" FontWeight="SemiBold" Margin="0,5,10,5" VerticalAlignment="Top"/>
+                            <TextBlock Grid.Column="0" Text="タグ：" FontWeight="SemiBold" Margin="0,5,10,5" HorizontalTextAlignment="Right" VerticalAlignment="Top"/>
                             <!-- タグを横に並べるためのItemsControl -->
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding VideoTagItems}">
                                 <ItemsControl.ItemsPanel>

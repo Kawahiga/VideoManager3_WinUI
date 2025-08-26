@@ -11,8 +11,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Windows.Storage.Pickers;
 
-// タグとファイルの対応の取り方が下手、、、
-
 namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
@@ -24,7 +22,7 @@ namespace VideoManager3_WinUI {
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
         // フィルター項目リスト
-        ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
+        public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
 
         // コマンド
         public ICommand AddFolderCommand { get; private set; }

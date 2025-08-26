@@ -17,14 +17,16 @@ namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
-
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
-
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
-        // 表示用のコレクション
+        // 絞り込み後の動画（表示用）
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
+        // フィルター項目リスト
+        ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
+
+        // コマンド
         public ICommand AddFolderCommand { get; private set; }
         public ICommand AddFilesCommand { get; private set; }
         public ICommand ToggleViewCommand { get; private set; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）

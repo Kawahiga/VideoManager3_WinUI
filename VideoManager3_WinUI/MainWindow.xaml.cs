@@ -93,7 +93,7 @@ namespace VideoManager3_WinUI {
 
         // 左ペインの表示を切り替える（タグツリービュー ←→ アーティスト一覧）
         private void ToggleLeftPain_Click( object sender, RoutedEventArgs e ) {
-            ViewModel.IsTreeView = !ViewModel.IsTreeView;
+            ViewModel.UIManager.IsTreeView = !ViewModel.UIManager.IsTreeView;
         }
 
         // ファイルをダブルクリックしたときのイベントハンドラー
@@ -149,21 +149,21 @@ namespace VideoManager3_WinUI {
         // 動画に対するタグ設定イベントハンドラ
         private void TagEditFlyout_Opening( object sender, object e ) {
 
-            if ( ViewModel.IsTagSetting == false ) {
+            if ( ViewModel.UIManager.IsTagSetting == false ) {
                 // 現在選択中の動画に合わせてタグのチェック状態を設定
                 ViewModel.PrepareTagsForEditing();
-                ViewModel.IsTagSetting = true;
+                ViewModel.UIManager.IsTagSetting = true;
                 _editTargetItem = ViewModel.SelectedItem;
             } else {
                 // 変更を確定させDBに保存
                 ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
-                ViewModel.IsTagSetting = false;
+                ViewModel.UIManager.IsTagSetting = false;
             }
         }
 
         // タグ設定モード中に画面の他の部分をタップしたときのイベントハンドラ
         private void RootGrid_Tapped( object sender, TappedRoutedEventArgs e ) {
-            if ( !ViewModel.IsTagSetting ) {
+            if ( !ViewModel.UIManager.IsTagSetting ) {
                 return;
             }
 
@@ -181,7 +181,7 @@ namespace VideoManager3_WinUI {
 
             // それ以外の場合は変更を確定
             ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
-            ViewModel.IsTagSetting = false;
+            ViewModel.UIManager.IsTagSetting = false;
         }
 
         // 指定した型および名前の親要素が存在するかどうかを確認するヘルパーメソッド
@@ -213,7 +213,7 @@ namespace VideoManager3_WinUI {
             if ( e.DragUIOverride != null ) {
                 int pathLength = ViewModel.HomeFolderPath.Length;
                 int maxLength = 20;
-                string displayPath= "ファイルを追加";
+                string displayPath = "ファイルを追加";
                 if ( pathLength > maxLength ) {
                     displayPath = ViewModel.HomeFolderPath.Substring( pathLength - maxLength );
                 } else {
@@ -251,9 +251,11 @@ namespace VideoManager3_WinUI {
                                 StorageFile copiedFile = await file.CopyAsync(targetFolder, file.Name, NameCollisionOption.GenerateUniqueName);
                                 newFilePaths.Add( copiedFile.Path );
 
-                                //// 元のファイルを一時フォルダに移動して後で削除
+                                //
+                                // 元のファイルを一時フォルダに移動して後で削除
+
                                 //StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
-                                //// ファイル名が重複しないようにユニークな名前を生成
+                                // ファイル名が重複しないようにユニークな名前を生成
                                 //string tempFileName = $"{Guid.NewGuid()}_{file.Name}";
                                 //await file.MoveAsync( tempFolder, tempFileName, NameCollisionOption.ReplaceExisting ); // ReplaceExisting if a GUID collision occurs (highly unlikely)
 
@@ -277,8 +279,8 @@ namespace VideoManager3_WinUI {
             var setting = _settingService.LoadSettings();
             if ( setting != null ) {
                 ViewModel.SortType = (VideoSortType)setting.VideoSortType;
-                ViewModel.IsGridView = setting.IsGridView;
-                ViewModel.ThumbnailSize = setting.ThumbnailSize;
+                ViewModel.UIManager.IsGridView = setting.IsGridView;
+                ViewModel.UIManager.ThumbnailSize = setting.ThumbnailSize;
                 ViewModel.HomeFolderPath = setting.HomeFolderPath;
 
                 // ウィンドウが画面外に出てしまうのを防ぐ
@@ -313,8 +315,8 @@ namespace VideoManager3_WinUI {
             var settings = _settingService.LoadSettings() ?? new SettingItem();
 
             settings.VideoSortType = (int)ViewModel.SortType;
-            settings.IsGridView = ViewModel.IsGridView;
-            settings.ThumbnailSize = ViewModel.ThumbnailSize;
+            settings.IsGridView = ViewModel.UIManager.IsGridView;
+            settings.ThumbnailSize = ViewModel.UIManager.ThumbnailSize;
             settings.HomeFolderPath = ViewModel.HomeFolderPath;
 
             if ( _appWindow.Presenter is OverlappedPresenter presenter ) {

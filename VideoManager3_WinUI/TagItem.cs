@@ -99,18 +99,16 @@ namespace VideoManager3_WinUI {
             set { _isGroup = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsGroup ) ) ); }
         }
 
-        // タグ編集中かどうか
+        // 動画に対してタグ設定中かどうか
         private bool _isEditing = false;
         public bool IsEditing {
             get => _isEditing;
             set {
-                if ( _isGroup == true ) return; // グループは編集不可
+                if ( _isGroup == true ) return; // グループは設定不可
                 _isEditing = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsEditing ) ) );
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsNotEditing ) ) );
             }
         }
-        public bool IsNotEditing => !IsEditing;
 
         // 動画にこのタグが付けられているかどうかを示すフラグ
         private bool _isChecked;

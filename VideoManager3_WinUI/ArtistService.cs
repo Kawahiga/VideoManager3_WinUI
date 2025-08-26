@@ -47,7 +47,6 @@ namespace VideoManager3_WinUI {
                         artist.AliaseNames = new List<string> { artist.Name };
                     }
                     Artists.Add( artist );
-                    SortArtists();
                 }
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading artists: {ex.Message}" );
@@ -79,6 +78,7 @@ namespace VideoManager3_WinUI {
                         }
                     }
                 }
+                SortArtists();
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading artist videos: {ex.Message}" );
             }
@@ -204,7 +204,7 @@ namespace VideoManager3_WinUI {
 
         /// <summary>
         /// アーティスト情報をソートします。
-        /// 名前順→動画数順→お気に入り順の優先順位でソートされます。
+        /// 1. お気に入り(あり→なし)、2. 動画数(多い順)、3. 名前(昇順)の優先順位でソートします。
         /// </summary>
         private void SortArtists() {
             var sorted = Artists

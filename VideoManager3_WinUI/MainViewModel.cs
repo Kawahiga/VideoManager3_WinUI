@@ -15,6 +15,7 @@ using Windows.Storage.Pickers;
 
 namespace VideoManager3_WinUI {
     public class MainViewModel:INotifyPropertyChanged {
+        public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
 
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
@@ -63,7 +64,7 @@ namespace VideoManager3_WinUI {
         public TagItem? SelectedTag {
             get => _selectedTag;
             set {
-                if ( _selectedTag != value && !IsTagSetting ) {
+                if ( _selectedTag != value && !UIManager.IsTagSetting ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
                     if ( _selectedTag != null && _selectedTag.Name.Equals( "全てのファイル" ) )
@@ -86,62 +87,6 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
-
-        // タグ設定中かどうかを示すプロパティ
-        private bool _isTagSetting = false;
-        public bool IsTagSetting {
-            get => _isTagSetting;
-            set {
-                _isTagSetting = value;
-                // タグ設定モードの切り替えに応じて、すべてのタグのIsEditingプロパティを更新
-                var tmpTag = _tagService.GetTagsInOrder();
-                foreach ( var tag in tmpTag ) {
-                    tag.IsEditing = value;
-                }
-            }
-        }
-
-        // （サムネイル表示 ←→ リストビュー表示）を切り替るプロパティ
-        private bool _isGridView = true;
-        public bool IsGridView {
-            get => _isGridView;
-            set {
-                if ( _isGridView != value ) {
-                    _isGridView = value;
-                    OnPropertyChanged( nameof( IsGridView ) );
-                    OnPropertyChanged( nameof( IsListView ) );
-                }
-            }
-        }
-        public bool IsListView => !_isGridView;
-
-        // （タグツリービュー ←→ アーティスト一覧）の表示を切り替えるプロパティ
-        private bool _isTreeView = true;
-        public bool IsTreeView {
-            get => _isTreeView;
-            set {
-                if ( _isTreeView != value ) {
-                    _isTreeView = value;
-                    OnPropertyChanged( nameof( IsTreeView ) );
-                    OnPropertyChanged( nameof( IsArtistView ) );
-                }
-            }
-        }
-        public bool IsArtistView => !_isTreeView;
-
-        // スライダーの値を保持し、サムネイルサイズを制御するためのプロパティ（サムネイルの横幅）
-        private double _thumbnailSize;
-        public double ThumbnailSize {
-            get => _thumbnailSize;
-            set {
-                if ( _thumbnailSize != value ) {
-                    _thumbnailSize = value;
-                    OnPropertyChanged( nameof( ThumbnailSize ) );
-                    OnPropertyChanged( nameof( ThumbnailHeight ) );
-                }
-            }
-        }
-        public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;    // サムネイルの高さ
 
         // ホームフォルダのパスを保持するプロパティ
         private string _homeFolderPath = "";
@@ -189,6 +134,7 @@ namespace VideoManager3_WinUI {
 
         // コンストラクタ
         public MainViewModel() {
+            UIManager = new UIManager();
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
             _databaseService = new DatabaseService( dbPath );
@@ -200,7 +146,7 @@ namespace VideoManager3_WinUI {
             AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); FilterVideos(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); FilterVideos(); }, () => SelectedItem != null );
-            ToggleViewCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( ToggleView );
+            ToggleViewCommand = UIManager.ToggleViewCommand;
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
             UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
@@ -311,6 +257,9 @@ namespace VideoManager3_WinUI {
                         tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
                     }
                 }
+                // タグの編集モードを解除
+                tag.IsEditing = false;
+
                 //await _tagService.LoadTagVideos( _videoService );
                 //FilterVideos();
             }
@@ -323,14 +272,7 @@ namespace VideoManager3_WinUI {
                 return;
 
             // すべてのタグを再帰的に取得
-            var allTags = new List<TagItem>();
-            void FlattenTags( IEnumerable<TagItem> tags ) {
-                foreach ( var tag in tags ) {
-                    allTags.Add( tag );
-                    FlattenTags( tag.Children );
-                }
-            }
-            FlattenTags( TagItems );
+            var allTags = _tagService.GetTagsInOrder();
 
             // 現在選択されている動画が持っているタグIDのリストを作成
             var checkedTagIds = new HashSet<int>(SelectedItem.VideoTagItems.Select(t => t.Id));
@@ -338,6 +280,7 @@ namespace VideoManager3_WinUI {
             // 全てのタグをループし、選択状態に応じてIsCheckedプロパティを設定
             foreach ( var tag in allTags ) {
                 tag.IsChecked = checkedTagIds.Contains( tag.Id );
+                tag.IsEditing = true; // 設定モードに設定
             }
         }
 
@@ -432,11 +375,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ファイルの表示方法を切り替える（一覧表示 ←→ サムネイル ）
-        private void ToggleView() {
-            IsGridView = !IsGridView;
-        }
-
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged( string propertyName ) {
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
@@ -444,18 +382,18 @@ namespace VideoManager3_WinUI {
 
         // ファイル名を変更するメソッド
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName )) {
+            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) ) {
                 return;
             }
 
             // 変更前のアーティスト名を取得
-            string oldArtists = ArtistService.GetArtistNameWithoutFileName( SelectedItem.FileName );
+            string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);
 
             // アーティスト名を除いたファイル名を取得
-            string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist( newFileName );
+            string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
             await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
 
-            string newArtists = ArtistService.GetArtistNameWithoutFileName( newFileName );
+            string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
             if ( !(String.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
                 // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
                 // 新しい名前でアーティスト情報を更新

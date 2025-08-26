@@ -5,47 +5,52 @@ using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace VideoManager3_WinUI
-{
-    public partial class UIManager : ObservableObject
-    {
-        [ObservableProperty]
+namespace VideoManager3_WinUI {
+    public partial class UIManager:ObservableObject {
         private bool _isGridView = true;
+        public bool IsGridView {
+            get => _isGridView;
+            set {
+                if ( SetProperty( ref _isGridView, value ) ) {
+                    OnPropertyChanged( nameof( IsListView ) );
+                }
+            }
+        }
 
         public bool IsListView => !IsGridView;
 
-        [ObservableProperty]
         private bool _isTreeView = true;
-
+        public bool IsTreeView {
+            get => _isTreeView;
+            set {
+                if ( SetProperty( ref _isTreeView, value ) ) {
+                    OnPropertyChanged( nameof( IsArtistView ) );
+                }
+            }
+        }
         public bool IsArtistView => !IsTreeView;
 
-        [ObservableProperty]
         private double _thumbnailSize = 150.0;
-
+        public double ThumbnailSize {
+            get => _thumbnailSize;
+            set {
+                if ( SetProperty( ref _thumbnailSize, value ) ) {
+                    OnPropertyChanged( nameof( ThumbnailHeight ) );
+                }
+            }
+        }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;
 
-        [ObservableProperty]
         private bool _isTagSetting = false;
+        public bool IsTagSetting {
+            get => _isTagSetting;
+            set => SetProperty( ref _isTagSetting, value );
+        }
+
 
         [RelayCommand]
-        private void ToggleView()
-        {
+        private void ToggleView() {
             IsGridView = !IsGridView;
-        }
-
-        partial void OnIsGridViewChanged(bool value)
-        {
-            OnPropertyChanged(nameof(IsListView));
-        }
-
-        partial void OnIsTreeViewChanged(bool value)
-        {
-            OnPropertyChanged(nameof(IsArtistView));
-        }
-
-        partial void OnThumbnailSizeChanged(double value)
-        {
-            OnPropertyChanged(nameof(ThumbnailHeight));
         }
     }
 }

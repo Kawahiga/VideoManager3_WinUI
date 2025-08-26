@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Windows.ApplicationModel.DataTransfer;
@@ -195,6 +197,14 @@ namespace VideoManager3_WinUI {
             return false;
         }
 
+        // アーティスト一覧でお気に入りアイコンをクリックしたときのイベントハンドラ
+        private void FavoriteIcon_PointerPressed( object sender, PointerRoutedEventArgs e ) {
+            if ( sender is FrameworkElement element && element.DataContext is ArtistItem artist ) {
+                artist.IsFavorite = !artist.IsFavorite;
+                e.Handled = true;
+            }
+        }
+
         // ドラッグ中のアイテムがウィンドウ上にあるときのイベントハンドラ
         // ホームフォルダの末尾20文字をキャプションとして表示する
         private void Window_DragOver( object sender, DragEventArgs e ) {
@@ -319,9 +329,6 @@ namespace VideoManager3_WinUI {
             _settingService.SaveSettings( settings );
         }
 
-        // メモ：フォーカスが外れたらキャンセル扱いにして元のファイル名に戻す
-        //       確定はEnterキーのみで行うように変更したい
-
         // ファイル名テキストボックスのイベントハンドラー
         private async void FileNameTextBox_LostFocus( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
@@ -332,19 +339,35 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // Enterキーでフォーカスを外す
+        // ファイル名編集テキストボックスのキーイベントハンドラー
         private void FileNameTextBox_KeyDown( object sender, KeyRoutedEventArgs e ) {
             if ( e.Key == Windows.System.VirtualKey.Enter ) {
+                // Enterキーでフォーカスを外す（編集内容を確定）
+                RootGrid.Focus( FocusState.Programmatic );
+            } else if ( e.Key == Windows.System.VirtualKey.Escape ) {
+                // Escapeキーでフォーカスを外す（キャンセル）
+                if ( sender is TextBox textBox && ViewModel.SelectedItem is VideoItem selectedItem ) {
+                    textBox.Text = selectedItem.FileName;
+                }
+                // フォーカスを外す
                 RootGrid.Focus( FocusState.Programmatic );
             }
         }
-
-        // Enterキーでフォーカスを外す（編集内容を破棄）
 
         // フォーカスを得たときに元のファイル名を表示する
         private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
                 textBox.Text = selectedItem.FileName;
+            }
+        }
+
+        // ファイルの保存場所をエクスプローラーで開く
+        private void OpenFileLocation_Click( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem != null ) {
+                string? path = ViewModel.SelectedItem.FilePath;
+                if ( !string.IsNullOrEmpty( path ) && File.Exists( path ) ) {
+                    Process.Start( "explorer.exe", $"/select, \"{path}\"" );
+                }
             }
         }
     }

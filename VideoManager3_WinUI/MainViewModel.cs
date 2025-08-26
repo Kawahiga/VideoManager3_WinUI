@@ -100,7 +100,6 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
-        public bool IsNotTagSetting => !_isTagSetting;
 
         // （サムネイル表示 ←→ リストビュー表示）を切り替るプロパティ
         private bool _isGridView = true;
@@ -402,6 +401,7 @@ namespace VideoManager3_WinUI {
         // アプリを閉じるときのイベント
         public async Task WindowCloseAsync() {
             await SaveTagsInClose( TagItems );
+            await SaveArtistsInClose( ArtistItems );
         }
 
         // タグ情報を保存
@@ -418,6 +418,17 @@ namespace VideoManager3_WinUI {
                 }
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error saving tags: {ex.Message}" );
+            }
+        }
+
+        // アーティスト情報を保存
+        public async Task SaveArtistsInClose( ObservableCollection<ArtistItem> artists ) {
+            try {
+                foreach ( var artist in artists ) {
+                    await _databaseService.AddOrUpdateArtistAsync( artist );
+                }
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error saving artists: {ex.Message}" );
             }
         }
 

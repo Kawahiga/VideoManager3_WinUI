@@ -47,6 +47,7 @@ namespace VideoManager3_WinUI {
                         artist.AliaseNames = new List<string> { artist.Name };
                     }
                     Artists.Add( artist );
+                    SortArtists();
                 }
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading artists: {ex.Message}" );
@@ -70,8 +71,12 @@ namespace VideoManager3_WinUI {
                 foreach ( var video in videos ) {
                     var artistsFromDb = await _databaseService.GetArtistsForVideoAsync(video);
                     foreach ( var artist in artistsFromDb ) {
-                        video.ArtistsInVideo.Add( artist );
-                        Artists.Where( a => a.Id == artist.Id ).FirstOrDefault()?.VideosInArtist.Add( video );
+                        // Artistsから同じIDのアーティストを探す
+                        ArtistItem? existingArtist = Artists.FirstOrDefault(a => a.Id == artist.Id);
+                        if ( existingArtist != null ) {
+                            video.ArtistsInVideo.Add( existingArtist );
+                            Artists.Where( a => a.Id == artist.Id ).FirstOrDefault()?.VideosInArtist.Add( video );
+                        }
                     }
                 }
             } catch ( Exception ex ) {
@@ -194,7 +199,25 @@ namespace VideoManager3_WinUI {
                     await _databaseService.AddArtistToVideoAsync( video, newArtist );
                 }
             }
+            SortArtists();
         }
+
+        /// <summary>
+        /// アーティスト情報をソートします。
+        /// 名前順→動画数順→お気に入り順の優先順位でソートされます。
+        /// </summary>
+        private void SortArtists() {
+            var sorted = Artists
+                .OrderByDescending( a => a.IsFavorite )               // お気に入りを優先
+                .ThenByDescending( a => a.VideosInArtist.Count )      // 動画数の多い順
+                .ThenBy( a => a.Name, StringComparer.OrdinalIgnoreCase ) // 名前順（大文字小文字無視）
+                .ToList();
+            Artists.Clear();
+            foreach ( var artist in sorted ) {
+                Artists.Add( artist );
+            }
+        }
+
 
         /// <summary>
         /// ファイル名からアーティスト名を抽出するユーティリティメソッド。

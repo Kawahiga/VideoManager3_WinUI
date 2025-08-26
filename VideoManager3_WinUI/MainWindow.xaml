@@ -111,9 +111,8 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <!-- タグの色と名前を表示するパネル -->
-                                        <!-- メモ：タグ編集中もタグの色見たい -->
                                         <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                            <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center" Visibility="{x:Bind IsNotEditing, Mode=OneWay}"/>
+                                            <Rectangle Width="16" Height="12" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                             <CheckBox IsChecked="{x:Bind IsChecked, Mode=TwoWay}" MinWidth="16" Width="16" Margin="0,0,5,0" Visibility="{x:Bind IsEditing, Mode=OneWay}"/>
                                             <TextBlock Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -152,7 +151,7 @@
                                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                                         <!-- 女優のサムネイル画像 -->
                                         <!-- メモ：矩形をハートマークにして、クリックでお気に入りをトグル設定させる -->
-                                        <Rectangle Width="16" Height="12" Fill="{x:Bind ArtistColor}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB52;" Foreground="{x:Bind ArtistColor, Mode=OneWay}" PointerPressed="FavoriteIcon_PointerPressed" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                         <!-- 女優の名前 -->
                                         <TextBlock Grid.Column="1" Text="{x:Bind Name,Mode=OneWay}" VerticalAlignment="Center" IsTextSelectionEnabled="True"/>
                                     </StackPanel>
@@ -253,7 +252,7 @@
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="local:TagItem">
+                                            <DataTemplate x:DataType="local:ArtistItem">
                                                 <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0">
                                                     <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="3,1" FontSize="10"/>
                                                 </Border>
@@ -283,7 +282,9 @@
                                     <!-- 右クリックメニュー -->
                                     <Grid.ContextFlyout>
                                         <MenuFlyout>
-                                            <MenuFlyoutItem Text="ファイルの場所を開く"/>
+                                            <MenuFlyoutItem Text="ファイルの場所を開く" Click="OpenFileLocation_Click"/>
+                                            <MenuFlyoutItem Text="ファイルを削除"/>
+                                            <MenuFlyoutItem Text="サムネイルを再作成"/>
                                         </MenuFlyout>
                                     </Grid.ContextFlyout>
                                 </Grid>
@@ -319,7 +320,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <!-- 各アーティストの表示形式 -->
-                                    <DataTemplate x:DataType="local:TagItem">
+                                    <DataTemplate x:DataType="local:ArtistItem">
                                         <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0,0,8,5">
                                             <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" IsTextSelectionEnabled="True" Padding="8,3" />
                                         </Border>

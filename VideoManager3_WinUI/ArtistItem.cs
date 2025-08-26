@@ -48,6 +48,7 @@ namespace VideoManager3_WinUI {
                 } else {
                     ArtistColor = new SolidColorBrush( Colors.Pink );
                 }
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsFavorite ) ) );
             }
         }
 

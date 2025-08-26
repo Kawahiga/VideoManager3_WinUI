@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
@@ -8,6 +9,31 @@ using Windows.Storage.Streams;
 
 namespace VideoManager3_WinUI {
     public class VideoItem:INotifyPropertyChanged {
+
+        public VideoItem() {
+            // VideoTagItemsの変更を監視
+            VideoTagItems.CollectionChanged += VideoTagItems_CollectionChanged;
+
+            // ArtistsInVideoの変更を監視
+            ArtistsInVideo.CollectionChanged += ArtistsInVideo_CollectionChanged;
+        }
+
+        public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {
+            // VideoTagItemsの変更を監視
+            VideoTagItems.CollectionChanged += VideoTagItems_CollectionChanged;
+
+            // ArtistsInVideoの変更を監視
+            ArtistsInVideo.CollectionChanged += ArtistsInVideo_CollectionChanged;
+
+            Id = id;
+            FilePath = filePath;
+            FileName = fileName;
+            FileSize = fileSize;
+            LastModified = lastModified;
+            Duration = duration;
+        }
+
+
         public int Id { get; set; } // データベースの主キー
         public string? FileName { get; set; }
         public string? FilePath { get; set; }
@@ -55,27 +81,25 @@ namespace VideoManager3_WinUI {
         }
 
         // ファイルに設定されたタグ情報
-        private ObservableCollection<TagItem> videoTagItems = new ObservableCollection<TagItem>();
-        public ObservableCollection<TagItem> VideoTagItems {
-            get => videoTagItems;
-            set {
-                if ( videoTagItems != value ) {
-                    videoTagItems = value;
-                    OnPropertyChanged( nameof( VideoTagItems ) );
-                }
-            }
+        public ObservableCollection<TagItem> VideoTagItems { get; } = new ObservableCollection<TagItem>();
+
+        /// <summary>
+        /// VideoTagItemsの中身が変更されたときに呼び出されるイベントハンドラ
+        /// </summary>
+        private void VideoTagItems_CollectionChanged( object? sender, NotifyCollectionChangedEventArgs e ) {
+            // TagVideoItemの中身が変更されたら、TagVideoCountプロパティも変更されたことをUIに通知
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( VideoTagItems ) ) );
         }
 
         // ファイルのアーティスト情報
-        private ObservableCollection<ArtistItem> artistsInVideo = new ObservableCollection<ArtistItem>();
-        public ObservableCollection<ArtistItem> ArtistsInVideo {
-            get => artistsInVideo;
-            set {
-                if ( artistsInVideo != value ) {
-                    artistsInVideo = value;
-                    OnPropertyChanged( nameof( ArtistsInVideo ) );
-                }
-            }
+        public ObservableCollection<ArtistItem> ArtistsInVideo { get; } = new ObservableCollection<ArtistItem>();
+
+        /// <summary>
+        /// VideoTagItemsの中身が変更されたときに呼び出されるイベントハンドラ
+        /// </summary>
+        private void ArtistsInVideo_CollectionChanged( object? sender, NotifyCollectionChangedEventArgs e ) {
+            // TagVideoItemの中身が変更されたら、TagVideoCountプロパティも変更されたことをUIに通知
+            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ArtistsInVideo ) ) );
         }
 
         // アーティスト名を除いたファイル名
@@ -88,17 +112,6 @@ namespace VideoManager3_WinUI {
                     OnPropertyChanged( nameof( FileNameWithoutArtists ) );
                 }
             }
-        }
-
-        public VideoItem() { }
-
-        public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {
-            Id = id;
-            FilePath = filePath;
-            FileName = fileName;
-            FileSize = fileSize;
-            LastModified = lastModified;
-            Duration = duration;
         }
 
         // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド

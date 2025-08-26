@@ -11,6 +11,7 @@ namespace VideoManager3_WinUI {
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public TagItem() {
+            // TagVideoItemの変更を監視
             TagVideoItem.CollectionChanged += TagVideoItem_CollectionChanged;
         }
 

@@ -149,8 +149,7 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <!-- 女優のサムネイル画像 -->
-                                        <!-- メモ：矩形をハートマークにして、クリックでお気に入りをトグル設定させる -->
+                                        <!-- 女優のサムネイル画像（現状はハートマーク） -->
                                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB52;" Foreground="{x:Bind ArtistColor, Mode=OneWay}" PointerPressed="FavoriteIcon_PointerPressed" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                         <!-- 女優の名前 -->
                                         <TextBlock Grid.Column="1" Text="{x:Bind Name,Mode=OneWay}" VerticalAlignment="Center" IsTextSelectionEnabled="True"/>
@@ -322,7 +321,10 @@
                                     <!-- 各アーティストの表示形式 -->
                                     <DataTemplate x:DataType="local:ArtistItem">
                                         <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0,0,8,5">
-                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" IsTextSelectionEnabled="True" Padding="8,3" />
+                                            <StackPanel Orientation="Horizontal" Padding="8,3">
+                                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB51;" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{Binding TextColor}" PointerPressed="FavoriteIcon_PointerPressed"/>
+                                                <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" PointerPressed="ArtistName_PointerPressed"/>
+                                            </StackPanel>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

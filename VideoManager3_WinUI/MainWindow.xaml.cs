@@ -123,6 +123,14 @@ namespace VideoManager3_WinUI {
             sortByDateDesc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LastModifiedDescending;
             flyout.Items.Add( sortByDateDesc );
 
+            var sortBySizeAsc = new ToggleMenuFlyoutItem { Text = "ファイルサイズ (小さい順)", IsChecked = ViewModel.SortType == VideoSortType.FileSizeAscending };
+            sortBySizeAsc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.FileSizeAscending;
+            flyout.Items.Add( sortBySizeAsc );
+
+            var sortBySizeDesc = new ToggleMenuFlyoutItem { Text = "ファイルサイズ (大きい順)", IsChecked = ViewModel.SortType == VideoSortType.FileSizeDescending };
+            sortBySizeDesc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.FileSizeDescending;
+            flyout.Items.Add( sortBySizeDesc );
+
             var sortByLikesAsc = new ToggleMenuFlyoutItem { Text = "いいね数 (少ない順)", IsChecked = ViewModel.SortType == VideoSortType.LikeCountAscending };
             sortByLikesAsc.Click += ( s, e ) => ViewModel.SortType = VideoSortType.LikeCountAscending;
             flyout.Items.Add( sortByLikesAsc );
@@ -197,10 +205,20 @@ namespace VideoManager3_WinUI {
             return false;
         }
 
-        // アーティスト一覧でお気に入りアイコンをクリックしたときのイベントハンドラ
+        // アーティストのお気に入りアイコンをクリックしたときのイベントハンドラ
+        // アーティスト一覧ペインと、動画詳細ペインの両方で使用
         private void FavoriteIcon_PointerPressed( object sender, PointerRoutedEventArgs e ) {
             if ( sender is FrameworkElement element && element.DataContext is ArtistItem artist ) {
                 artist.IsFavorite = !artist.IsFavorite;
+                e.Handled = true;
+            }
+        }
+
+        // アーティスト名をクリックしたときのイベントハンドラ 選択状態にする
+        // 動画詳細ペインで使用
+        private void ArtistName_PointerPressed( object sender, PointerRoutedEventArgs e ) {
+            if ( sender is FrameworkElement element && element.DataContext is ArtistItem artist ) {
+                ViewModel.SelectedArtist = artist;
                 e.Handled = true;
             }
         }

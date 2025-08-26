@@ -14,6 +14,8 @@ namespace VideoManager3_WinUI {
         LastModifiedAscending,  // 更新日時昇順
         FileNameAscending,      // ファイル名昇順
         FileNameDescending,      // ファイル名降順
+        FileSizeAscending,     // ファイルサイズ昇順
+        FileSizeDescending,    // ファイルサイズ降順
         LikeCountDescending, // いいね数降順
         LikeCountAscending,  // いいね数昇順
     }
@@ -230,6 +232,12 @@ namespace VideoManager3_WinUI {
                 break;
                 case VideoSortType.FileNameDescending:
                 sortedVideos = Videos.OrderByDescending( v => v.FileName ).ToList();
+                break;
+                case VideoSortType.FileSizeAscending:
+                    sortedVideos = Videos.OrderBy( v => v.FileSize ).ToList();
+                break;
+                case VideoSortType.FileSizeDescending:
+                    sortedVideos = Videos.OrderByDescending( v => v.FileSize ).ToList();
                 break;
                 case VideoSortType.LikeCountDescending:
                 sortedVideos = Videos.OrderByDescending( v => v.LikeCount ).ToList();

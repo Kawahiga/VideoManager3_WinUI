@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 
@@ -37,16 +38,17 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        public ICommand RemoveCommand { get; private set; }
+        // フィルター実行コマンド
+        public ICommand ApplyCommand { get; private set; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public FilterItem( FilterType type, object value, string label, Action<FilterItem> removeAction ) {
+        public FilterItem( FilterType type, object value, string label, Action<FilterItem, ObservableCollection<VideoItem>> apply ) {
             Type = type;
             Value = value;
             _label = label;
             _isActive = true; // デフォルトでアクティブ
-            RemoveCommand = new RelayCommand( () => removeAction( this ) );
+            ApplyCommand = new RelayCommand<ObservableCollection<VideoItem>>( ( videos ) => apply( this, videos ) );
         }
 
         protected virtual void OnPropertyChanged( string propertyName ) {

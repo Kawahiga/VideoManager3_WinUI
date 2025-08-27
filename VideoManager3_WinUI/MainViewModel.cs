@@ -18,21 +18,28 @@ namespace VideoManager3_WinUI {
         public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
+        // フィルター項目リスト（表示用）
+        public ObservableCollection<FilterItem> Filters => _filterService.Filters;
+
         // 絞り込み後の動画（表示用）
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
-        // フィルター項目リスト
-        public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
+        // サービスのインスタンス
+        private readonly DatabaseService _databaseService;
+        private readonly VideoService _videoService;
+        private readonly TagService _tagService;
+        private readonly ArtistService _artistService;
+        private readonly FilterService _filterService; // ★ FilterServiceを追加
 
         // コマンド
         public ICommand AddFolderCommand { get; private set; }
         public ICommand AddFilesCommand { get; private set; }
-        public ICommand ToggleViewCommand { get; private set; }  // ビュー切り替えコマンド（グリッドビューとリストビューの切り替え）
-        public IRelayCommand EditTagCommand { get; private set; }     // タグ編集コマンド
-        public IRelayCommand UpdateVideoTagsCommand { get; private set; } // 動画のタグ情報を更新するコマンド
-        public IRelayCommand DoubleTappedCommand { get; private set; }    // ファイルをダブルクリックしたときのコマンド
-        public ICommand SetHomeFolderCommand { get; private set; } // ホームフォルダを設定するコマンド
-        public IRelayCommand DeleteFileCommand { get; private set; } // ファイルを削除するコマンド（未実装）W
+        public ICommand ToggleViewCommand { get; private set; }
+        public IRelayCommand EditTagCommand { get; private set; }
+        public IRelayCommand UpdateVideoTagsCommand { get; private set; }
+        public IRelayCommand DoubleTappedCommand { get; private set; }
+        public ICommand SetHomeFolderCommand { get; private set; }
+        public IRelayCommand DeleteFileCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -40,18 +47,15 @@ namespace VideoManager3_WinUI {
             get => _selectedItem;
             set {
                 if ( _selectedItem != value ) {
-                    // 古いSelectedItemのPropertyChangedイベントの購読を解除
                     if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
                     }
 
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
-                    // 選択アイテムが変わったらコマンドの実行可否を更新
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     UpdateVideoTagsCommand.NotifyCanExecuteChanged();
 
-                    // 新しいSelectedItemのPropertyChangedイベントを購読
                     if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
                     }
@@ -68,9 +72,11 @@ namespace VideoManager3_WinUI {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
                     if ( _selectedTag != null && _selectedTag.Name.Equals( "全てのファイル" ) )
-                        SelectedArtist = null; // 「全てのファイル」が選択された場合はアーティスト選択を解除
+                        SelectedArtist = null;
                     EditTagCommand.NotifyCanExecuteChanged();
-                    FilterVideos(); // タグが変更されたらフィルタリングを実行
+
+                    _filterService.SetTagFilter( _selectedTag );
+                    ApplyFilters();
                 }
             }
         }
@@ -83,7 +89,9 @@ namespace VideoManager3_WinUI {
                 if ( _selectedArtist != value ) {
                     _selectedArtist = value;
                     OnPropertyChanged( nameof( SelectedArtist ) );
-                    FilterVideos(); // アーティストが変更されたらフィルタリングを実行
+
+                    _filterService.SetArtistFilter( _selectedArtist );
+                    ApplyFilters();
                 }
             }
         }
@@ -108,7 +116,9 @@ namespace VideoManager3_WinUI {
                 if ( _searchText != value ) {
                     _searchText = value;
                     OnPropertyChanged( nameof( SearchText ) );
-                    FilterVideos(); // 検索テキストが変更されたらフィルタリングを実行
+
+                    _filterService.SetSearchTextFilter( _searchText );
+                    ApplyFilters();
                 }
             }
         }
@@ -122,15 +132,10 @@ namespace VideoManager3_WinUI {
                     _sortType = value;
                     OnPropertyChanged( nameof( SortType ) );
                     _videoService.SortVideos( _sortType );
-                    FilterVideos();
+                    ApplyFilters();
                 }
             }
         }
-
-        private readonly DatabaseService _databaseService;
-        private readonly VideoService _videoService;
-        private readonly TagService _tagService;
-        private readonly ArtistService _artistService;
 
         // コンストラクタ
         public MainViewModel() {
@@ -141,11 +146,12 @@ namespace VideoManager3_WinUI {
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
             _artistService = new ArtistService( _databaseService );
+            _filterService = new FilterService(); // ★ FilterServiceをインスタンス化
 
-            // コマンドの初期化
-            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); FilterVideos(); } );
-            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); FilterVideos(); } );
-            DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); FilterVideos(); }, () => SelectedItem != null );
+            // コマンドの初期化 (FilterVideos() を ApplyFilters() に変更)
+            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
+            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
+            DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
             UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
@@ -158,78 +164,33 @@ namespace VideoManager3_WinUI {
 
         // 初期データをDBからロード
         private async Task LoadInitialDataAsync() {
-            // タグと動画の初期データをロード
-            await _videoService.LoadVideosAsync();    // 動画の読み込みを非同期で開始
-            await _tagService.LoadTagsAsync();    // タグの読み込みを非同期で開始
-            await _videoService.LoadVideoTagsAsync(); // 動画のタグ情報を非同期で読み込み
-            await _tagService.LoadTagVideos( _videoService ); // タグに動画を関連付ける
-            await _artistService.LoadArtistsAsync(); // アーティスト情報を非同期で読み込み
-            await _artistService.LoadArtistVideosAsync( Videos ); // アーティストに動画を関連付ける
+            await _videoService.LoadVideosAsync();
+            await _tagService.LoadTagsAsync();
 
-            // ファイルをソート
+            await _videoService.LoadVideoTagsAsync();
+            await _tagService.LoadTagVideos( _videoService );
+            await _artistService.LoadArtistsAsync();
+            await _artistService.LoadArtistVideosAsync( Videos );
+
             _videoService.SortVideos( SortType );
-            FilterVideos();
+            ApplyFilters();
         }
 
         /// <summary>
-        /// ファイルのフィルタリングを行う（タグ、検索テキスト）
+        /// フィルターを適用する
         /// </summary>
-        private void FilterVideos() {
+        private void ApplyFilters() {
             FilteredVideos.Clear();
-            IEnumerable<VideoItem> targetVideos = Videos;
+            var filteredVideos = _filterService.ApplyFilters(Videos);
 
-            // タグによるフィルタリング
-            IEnumerable<VideoItem> videosByTag;
-            if ( SelectedTag == null || SelectedTag.Name.Equals( "全てのファイル" ) ) {
-                // タグが選択されていない、または「全てのファイル」が選択されている場合は、全動画を対象
-                videosByTag = targetVideos;
-            } else if ( SelectedTag.Name.Equals( "タグなし" ) ) {
-                // 「タグなし」だった場合は、タグが紐づいていない動画を全て対象
-                videosByTag = targetVideos.Where( v => !v.VideoTagItems.Any() );
-            } else {
-                // 選択されたタグに紐づく動画を対象
-                var tagIds = new HashSet<int>(SelectedTag.GetAllDescendantIds());
-                videosByTag = targetVideos.Where( v => v.VideoTagItems.Any( t => tagIds.Contains( t.Id ) ) );
-            }
-            targetVideos = videosByTag;
-
-            // アーティストによるフィルタリング
-            IEnumerable<VideoItem> videosByArtist;
-            if ( SelectedArtist == null ) {
-                // アーティストが選択されていない場合は、全動画を対象
-                videosByArtist = targetVideos;
-            } else {
-                // 選択されたアーティストに紐づく動画を対象
-                videosByArtist = targetVideos.Where( v => v.ArtistsInVideo.Any( a => a.Id == SelectedArtist.Id ) );
-            }
-            targetVideos = videosByArtist;
-
-            // 検索テキストによるフィルタリング
-            IEnumerable<VideoItem> videosBySerach;
-            if ( string.IsNullOrWhiteSpace( SearchText ) ) {
-                // 検索テキストが空の場合は、タグでフィルタリングされた結果をそのまま表示
-                videosBySerach = targetVideos;
-            } else {
-                // 検索テキストを半角スペースで分割し、AND検索
-                var searchKeywords = SearchText.ToLower().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                videosBySerach = targetVideos.Where( v => {
-                    if ( string.IsNullOrEmpty( v.FileName ) )
-                        return false;
-                    var fileNameLower = v.FileName.ToLower();
-                    return searchKeywords.All( keyword => fileNameLower.Contains( keyword ) );
-                } );
-            }
-            targetVideos = videosBySerach;
-
-            foreach ( var video in targetVideos ) {
+            foreach ( var video in filteredVideos ) {
                 FilteredVideos.Add( video );
             }
 
-            // 絞り込み後の先頭の動画を選択状態にする
-            if ( FilteredVideos.Count > 0 ) {
-                SelectedItem = FilteredVideos[0];
+            if ( FilteredVideos.Any() ) {
+                SelectedItem = FilteredVideos.First();
             } else {
-                SelectedItem = null; // 絞り込み結果がない場合は選択を解除
+                SelectedItem = null;
             }
         }
 
@@ -261,7 +222,7 @@ namespace VideoManager3_WinUI {
                 tag.IsEditing = false;
 
                 //await _tagService.LoadTagVideos( _videoService );
-                //FilterVideos();
+                //ApplyFilters();
             }
         }
 
@@ -402,7 +363,7 @@ namespace VideoManager3_WinUI {
 
             // 変更後のファイル名でソート
             _videoService.SortVideos( SortType );
-            //FilterVideos();
+            //ApplyFilters();
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ

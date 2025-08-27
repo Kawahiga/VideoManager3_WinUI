@@ -182,6 +182,8 @@ namespace VideoManager3_WinUI {
         /// フィルターを適用する
         /// </summary>
         private void ApplyFilters() {
+            // 選択中のアイテムを覚えておく
+            var previouslySelectedItem = SelectedItem;
             FilteredVideos.Clear();
             var filteredVideos = _filterService.ApplyFilters(Videos);
 
@@ -189,10 +191,11 @@ namespace VideoManager3_WinUI {
                 FilteredVideos.Add( video );
             }
 
-            if ( FilteredVideos.Any() ) {
-                SelectedItem = FilteredVideos.First();
+            // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
+            if ( previouslySelectedItem != null && !FilteredVideos.Contains( previouslySelectedItem ) ) {
+                SelectedItem = FilteredVideos.FirstOrDefault();
             } else {
-                SelectedItem = null;
+                SelectedItem = previouslySelectedItem;
             }
         }
 

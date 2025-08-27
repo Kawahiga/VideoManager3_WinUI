@@ -29,6 +29,7 @@ namespace VideoManager3_WinUI {
             ViewModel = new MainViewModel();
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            ViewModel.ScrollToItemRequested += ViewModel_ScrollToItemRequested;
 
             _settingService = new SettingService();
             IntPtr hWnd = WindowNative.GetWindowHandle(this);
@@ -37,6 +38,19 @@ namespace VideoManager3_WinUI {
             LoadSetting();
 
             FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
+        }
+
+        private void ViewModel_ScrollToItemRequested( VideoItem item ) {
+            if ( item == null )
+                return;
+
+            DispatcherQueue.TryEnqueue( () => {
+                if ( ViewModel.UIManager.IsListView ) {
+                    VideoListView.ScrollIntoView( item, ScrollIntoViewAlignment.Default );
+                } else {
+                    VideoGridView.ScrollIntoView( item, ScrollIntoViewAlignment.Default );
+                }
+            } );
         }
 
         private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {

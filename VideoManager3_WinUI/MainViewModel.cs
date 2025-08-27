@@ -191,27 +191,33 @@ namespace VideoManager3_WinUI {
                 FilteredVideos.Add( video );
             }
 
-            // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
-            if ( previouslySelectedItem != null && !FilteredVideos.Contains( previouslySelectedItem ) ) {
-                SelectedItem = FilteredVideos.FirstOrDefault();
-            } else {
-                SelectedItem = previouslySelectedItem;
+            if ( previouslySelectedItem != null ) {
+                if ( !FilteredVideos.Contains( previouslySelectedItem ) ) {
+                    // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
+                    SelectedItem = FilteredVideos.FirstOrDefault();
+                } else {
+                    // 元の選択中の動画を再選択する
+                    SelectedItem = previouslySelectedItem;
+                    ScrollToItemRequested?.Invoke( previouslySelectedItem );
+                }
             }
         }
 
         // ファイルに対するタグ設定ボタン
+        // ここに実装すべきではない。将来的にはVideoServiceへ移管
         private async Task UpdateVideoTagSelection( VideoItem? targetItem ) {
             if ( targetItem == null )
                 return;
 
+            targetItem.VideoTagItems.Clear();
             var tmpTag = _tagService.GetTagsInOrder();
             foreach ( var tag in tmpTag ) {
                 // チェック状態に応じてDBとViewModelを更新
                 if ( tag.IsChecked ) {
                     // タグが既に追加されていなければ追加
+                    targetItem.VideoTagItems.Add( tag );
                     if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
                         await _databaseService.AddTagToVideoAsync( targetItem, tag );
-                        targetItem.VideoTagItems.Add( tag );
                         tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
                     }
                 } else {
@@ -219,7 +225,7 @@ namespace VideoManager3_WinUI {
                     var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
                     if ( tagToRemove != null ) {
                         await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
-                        targetItem.VideoTagItems.Remove( tagToRemove );
+                        //targetItem.VideoTagItems.Remove( tagToRemove );
                         tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
                     }
                 }
@@ -342,11 +348,15 @@ namespace VideoManager3_WinUI {
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        public event Action<VideoItem>? ScrollToItemRequested;
+
         protected virtual void OnPropertyChanged( string propertyName ) {
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
         }
 
         // ファイル名を変更するメソッド
+        // 将来的にはVideoServiceに移動する
         public async Task RenameFileAsync( string newFileName ) {
             if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) ) {
                 return;

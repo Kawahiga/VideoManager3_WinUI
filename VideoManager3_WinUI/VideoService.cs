@@ -67,7 +67,7 @@ namespace VideoManager3_WinUI {
         }
 
         /// <summary>
-        /// 動画に紐づくタグを設定します。
+        /// データベースから各動画に紐づくタグ情報を非同期にロードし、VideoItemのプロパティを更新します。
         /// </summary>
         public async Task LoadVideoTagsAsync() {
             var orderedAllTags = _tagService.GetTagsInOrder();

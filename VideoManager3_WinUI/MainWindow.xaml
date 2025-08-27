@@ -43,11 +43,12 @@
                 <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
                 <AppBarSeparator/>
                 <!-- 絞り込み範囲を表示 -->
-                <!-- メモ：「絞り込み範囲：」をクリックでフィルター全解除 -->
+                <!-- メモ：「絞り込み範囲：」をクリックでフィルター全解除？ -->
                 <AppBarElementContainer VerticalAlignment="Center">
                     <TextBlock Text="絞り込み範囲：" FontWeight="Bold" Margin="10,0"/>
                 </AppBarElementContainer>
-                <!-- メモ：FilterItemのリストを表示させる タグの複数選択対応時に最大数は決めるべきかも -->
+                <!-- フィルタリング中の文字列を表示（タグ、アーティスト、検索テキスト）-->
+                <!-- メモ：タグの複数選択対応時に最大数は決めるべきかも -->
                 <AppBarElementContainer VerticalAlignment="Center" MaxWidth="550">
                     <ItemsControl ItemsSource="{Binding Filters}">
                         <ItemsControl.ItemsPanel>
@@ -75,6 +76,7 @@
                 <AppBarButton Label="サムネイル" Icon="ViewAll" Command="{Binding ToggleViewCommand}" IsEnabled="{Binding UIManager.IsListView}" Visibility="{Binding UIManager.IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 <AppBarSeparator/>
                 <!-- ソートボタン（フライアウト付き） -->
+                <!-- メモ：ソート内容（択一）と昇降順は別にしてもよかったかも -->
                 <AppBarButton Icon="Sort" Click="SortButton_Click"/>
                 <!-- 検索ボックス -->
                 <AppBarElementContainer>
@@ -203,6 +205,7 @@
                 <Grid Grid.Row="0">
                     <!-- 詳細表示 (リスト形式) -->
                     <ListView
+                        x:Name="VideoListView"
                         ItemsSource="{Binding FilteredVideos}"
                         Visibility="{Binding UIManager.IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"
                         DoubleTapped="GridView_DoubleTapped"
@@ -216,6 +219,7 @@
 
                     <!-- サムネイル表示 (グリッド形式) -->
                     <GridView
+                        x:Name="VideoGridView"
                         ItemsSource="{Binding FilteredVideos}"
                         SelectionMode="Single"
                         IsItemClickEnabled="True"

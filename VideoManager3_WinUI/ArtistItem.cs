@@ -55,6 +55,16 @@ namespace VideoManager3_WinUI {
         // アイコンパス (例: "icon.png")
         public string IconPath { get; set; } = string.Empty;
 
+        // 表示用の文字色
+        private Brush _textColor = new SolidColorBrush( Colors.Black );
+        public Brush TextColor {
+            get => _textColor;
+            set {
+                _textColor = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TextColor ) ) );
+            }
+        }
+
         // 表示用の色
         private Brush _artistColor = new SolidColorBrush( Colors.DarkGray );
         public Brush ArtistColor {
@@ -64,16 +74,6 @@ namespace VideoManager3_WinUI {
                 // Colorプロパティが変更されたときにに文字色も更新
                 TextColor = GetContrastingTextBrush( value );
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( ArtistColor ) ) );
-            }
-        }
-
-        // 表示用の文字色
-        private Brush _textColor = new SolidColorBrush( Colors.Black );
-        public Brush TextColor {
-            get => _textColor;
-            set {
-                _textColor = value;
-                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( TextColor ) ) );
             }
         }
 

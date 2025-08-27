@@ -48,7 +48,7 @@
                     <TextBlock Text="絞り込み範囲：" FontWeight="Bold" Margin="10,0"/>
                 </AppBarElementContainer>
                 <!-- メモ：FilterItemのリストを表示させる タグの複数選択対応時に最大数は決めるべきかも -->
-                <AppBarElementContainer>
+                <AppBarElementContainer VerticalAlignment="Center" MaxWidth="550">
                     <ItemsControl ItemsSource="{Binding Filters}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -57,7 +57,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="local:FilterItem">
-                                <AppBarToggleButton Label="{x:Bind Label}" Background="LightGray" FontWeight="Bold" Foreground="DarkBlue" MaxHeight="50" VerticalContentAlignment="Center"/>
+                                <ToggleButton Content="{x:Bind Label}" IsChecked="{x:Bind IsActive,Mode=TwoWay}" Foreground="{x:Bind TextColor}" Background="{x:Bind BackColor}" FontWeight="Bold" Padding="8,4" Margin="2,0"/>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

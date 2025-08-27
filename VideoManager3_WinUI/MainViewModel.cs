@@ -146,9 +146,11 @@ namespace VideoManager3_WinUI {
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
             _artistService = new ArtistService( _databaseService );
-            _filterService = new FilterService(); // ★ FilterServiceをインスタンス化
+            _filterService = new FilterService();
+            // FilterServiceのイベントを購読
+            _filterService.FilterStateChanged += ApplyFilters;
 
-            // コマンドの初期化 (FilterVideos() を ApplyFilters() に変更)
+            // コマンドの初期化
             AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );

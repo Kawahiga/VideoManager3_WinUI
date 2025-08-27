@@ -1,38 +1,60 @@
-﻿using System;
+﻿using Microsoft.UI;
+using Microsoft.UI.Xaml.Media;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 
 namespace VideoManager3_WinUI {
     class FilterService {
         public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
 
+        /// フィルター状態が変更されたときに発生するイベント
+        public event Action? FilterStateChanged;
+
         public void SetTagFilter( TagItem? tag ) {
             // 「全てのファイル」またはnullの場合は、タグフィルターを解除
-            UpdateFilter( FilterType.Tag, tag, tag?.Name, tag == null || tag.Name == "全てのファイル" );
+            UpdateFilter( FilterType.Tag, tag, tag?.Name, tag?.TextColor, tag?.Color, tag == null || tag.Name == "全てのファイル" );
         }
 
         public void SetArtistFilter( ArtistItem? artist ) {
             // artistがnullの場合は、アーティストフィルターを解除
-            UpdateFilter( FilterType.Artist, artist, artist?.Name, artist == null );
+            UpdateFilter( FilterType.Artist, artist, artist?.Name, artist?.TextColor, artist?.ArtistColor, artist == null );
         }
 
         public void SetSearchTextFilter( string? searchText ) {
             // searchTextが空の場合は、検索フィルターを解除
-            UpdateFilter( FilterType.SearchText, searchText, searchText, string.IsNullOrWhiteSpace( searchText ) );
+            UpdateFilter( FilterType.SearchText, searchText, searchText, new SolidColorBrush( Colors.Black ), new SolidColorBrush( Colors.LightGray ), string.IsNullOrWhiteSpace( searchText ) );
         }
 
         /// <summary>
         /// フィルターの更新（追加または削除）を行う
         /// </summary>
-        private void UpdateFilter( FilterType type, object? value, string? label, bool shouldRemove ) {
+        private void UpdateFilter( FilterType type, object? value, string? label, Brush? textColor, Brush? backColor,  bool shouldRemove ) {
             var existingFilter = Filters.FirstOrDefault(f => f.Type == type);
             if ( existingFilter != null ) {
+                // イベントハンドラの購読を解除
+                existingFilter.PropertyChanged -= FilterItem_PropertyChanged;
                 Filters.Remove( existingFilter );
             }
 
             if ( !shouldRemove && value != null && label != null ) {
-                Filters.Add( new FilterItem( type, value, label, ( item, videos ) => { } ) );
+                var newFilter = new FilterItem( type, value, label, textColor, backColor );
+                // 新しいフィルターのPropertyChangedイベントを購読
+                newFilter.PropertyChanged += FilterItem_PropertyChanged;
+
+                // フィルター種別に基づいてソートされたリストを作成
+                var sortedFilters = Filters.Append(newFilter).OrderBy(f => f.Type).ToList();
+                // 新しいフィルターを正しい位置に挿入
+                Filters.Insert(sortedFilters.IndexOf(newFilter), newFilter);
+            }
+        }
+
+        private void FilterItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
+            // IsActiveプロパティが変更された場合のみイベントを発行
+            if ( e.PropertyName == nameof( FilterItem.IsActive ) ) {
+                FilterStateChanged?.Invoke();
             }
         }
 
@@ -40,7 +62,7 @@ namespace VideoManager3_WinUI {
         /// 動画リストにフィルターを適用する
         /// </summary>
         public IEnumerable<VideoItem> ApplyFilters( IEnumerable<VideoItem> videos ) {
-            var activeFilters = Filters.Where(f => f.IsActive).ToList();
+            var activeFilters = Filters.Where(f => f.IsActive == false).ToList();
             if ( !activeFilters.Any() ) {
                 return videos;
             }

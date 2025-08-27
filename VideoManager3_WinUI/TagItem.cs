@@ -43,8 +43,8 @@ namespace VideoManager3_WinUI {
         }
 
         // 表示用のタグ/グループの色
-        private Brush? _color;
-        public Brush? Color {
+        private Brush _color = new SolidColorBrush( Colors.Pink );
+        public Brush Color {
             get => _color;
             set {
                 _color = value;
@@ -59,7 +59,7 @@ namespace VideoManager3_WinUI {
         }
 
         // DB保存用のタグ/グループのカラーコード（例: "#FF0000"）
-        private string? _colorCode;
+        private string? _colorCode = "";
         public string? ColorCode {
             get => _colorCode;
             set {
@@ -198,10 +198,9 @@ namespace VideoManager3_WinUI {
         }
 
         // DB用のカラーコードを表示用Brushに変換する
-        private static Brush? ConvertStringToBrush( string? colorString ) {
-            // 文字列がnull、空、または正しい形式でない場合はnullを返します
+        private static Brush ConvertStringToBrush( string? colorString ) {
             if ( string.IsNullOrEmpty( colorString ) || !colorString.StartsWith( "#" ) || (colorString.Length != 7 && colorString.Length != 9) ) {
-                return null;
+                return new SolidColorBrush( Colors.Black );
             }
 
             try {
@@ -223,7 +222,7 @@ namespace VideoManager3_WinUI {
                 return new SolidColorBrush( ColorHelper.FromArgb( a, r, g, b ) );
             } catch ( System.Exception ) {
                 // パースに失敗した場合（例：不正な16進数文字）はnullを返します
-                return null;
+                return new SolidColorBrush( Colors.Black );
             }
         }
     }

@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -27,6 +29,8 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // フィルターの有効/無効状態
+        // ON/OFFとTrue/Falseを逆にしているので注意
         private bool _isActive;
         public bool IsActive {
             get => _isActive;
@@ -38,17 +42,41 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // フィルター実行コマンド
-        public ICommand ApplyCommand { get; private set; }
+        private Brush _textColor = new SolidColorBrush( Colors.Pink );
+        public Brush TextColor {
+            get => _textColor;
+            set {
+                if ( _textColor != value ) {
+                    _textColor = value;
+                    OnPropertyChanged( nameof( TextColor ) );
+                }
+            }
+        }
+
+        private Brush _backColor = new SolidColorBrush( Colors.Pink );
+        public Brush BackColor {
+            get => _backColor;
+            set {
+                if ( _backColor != value ) {
+                    _backColor = value;
+                    OnPropertyChanged( nameof( BackColor ) );
+                }
+            }
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public FilterItem( FilterType type, object value, string label, Action<FilterItem, ObservableCollection<VideoItem>> apply ) {
+        public FilterItem( FilterType type, object value, string label, Brush? textColor, Brush? backgroundColor ) {
             Type = type;
             Value = value;
             _label = label;
-            _isActive = true; // デフォルトでアクティブ
-            ApplyCommand = new RelayCommand<ObservableCollection<VideoItem>>( ( videos ) => apply( this, videos ) );
+            _isActive = false; // デフォルトでアクティブ
+            if ( textColor != null ) {
+                _textColor = textColor;
+            }
+            if ( backgroundColor != null ) {
+                _backColor = backgroundColor;
+            }
         }
 
         protected virtual void OnPropertyChanged( string propertyName ) {

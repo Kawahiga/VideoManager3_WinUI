@@ -198,6 +198,7 @@ namespace VideoManager3_WinUI {
                 } else {
                     // 元の選択中の動画を再選択する
                     SelectedItem = previouslySelectedItem;
+                    // 元の選択ファイルの位置までスクロール
                     ScrollToItemRequested?.Invoke( previouslySelectedItem );
                 }
             }
@@ -231,9 +232,6 @@ namespace VideoManager3_WinUI {
                 }
                 // タグの編集モードを解除
                 tag.IsEditing = false;
-
-                //await _tagService.LoadTagVideos( _videoService );
-                //ApplyFilters();
             }
         }
 

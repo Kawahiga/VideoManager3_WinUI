@@ -404,5 +404,19 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void TreeViewItem_PointerPressed( object sender, PointerRoutedEventArgs e ) {
+            if ( e.GetCurrentPoint( sender as UIElement ).Properties.IsMiddleButtonPressed ) {
+                if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
+                    ViewModel.TagMiddleClicked( selectedTag );
+                }
+
+                // イベントを処理済みとしてマークし、親要素へのルーティングを停止
+                e.Handled = true;
+            }
+        }
     }
 }

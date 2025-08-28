@@ -118,7 +118,7 @@
                         <!-- 各タグアイテムの表示形式を定義 -->
                         <DataTemplate x:DataType="local:TagItem">
                             <TreeViewItem ItemsSource="{x:Bind Children}" IsExpanded="{x:Bind IsExpanded, Mode=TwoWay}">
-                                <Grid Height="20" Margin="0,0,10,0">
+                                <Grid Height="20" Margin="0,0,10,0" PointerPressed="TreeViewItem_PointerPressed" Background="Transparent">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>

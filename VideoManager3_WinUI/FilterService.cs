@@ -10,6 +10,9 @@ namespace VideoManager3_WinUI {
     class FilterService {
         public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
 
+        // 複数フィルターを有効にするかどうかの設定
+        public bool MultiFilterEnabled { get; set; } = false;
+
         /// フィルター状態が変更されたときに発生するイベント
         public event Action? FilterStateChanged;
 
@@ -32,11 +35,21 @@ namespace VideoManager3_WinUI {
         /// フィルターの更新（追加または削除）を行う
         /// </summary>
         private void UpdateFilter( FilterType type, object? value, string? label, Brush? textColor, Brush? backColor,  bool shouldRemove ) {
-            var existingFilter = Filters.FirstOrDefault(f => f.Type == type);
-            if ( existingFilter != null ) {
-                // イベントハンドラの購読を解除
-                existingFilter.PropertyChanged -= FilterItem_PropertyChanged;
-                Filters.Remove( existingFilter );
+            if ( type.Equals( FilterType.Tag ) && MultiFilterEnabled ) {
+                // 複数フィルターが有効な場合、同種フィルターを削除せずに追加のみ行う
+                if ( Filters.Any( f => f.Value == value ) ) { 
+                    // 同じ値のフィルターが既に存在する場合は追加しない
+                    return;
+                }
+
+            } else {
+                // 複数フィルターが無効な場合、既存の同種フィルターを削除                 
+                var existingFilter = Filters.FirstOrDefault(f => f.Type == type);
+                if ( existingFilter != null ) {
+                    // イベントハンドラの購読を解除
+                    existingFilter.PropertyChanged -= FilterItem_PropertyChanged;
+                    Filters.Remove( existingFilter );
+                }
             }
 
             if ( !shouldRemove && value != null && label != null ) {
@@ -45,7 +58,7 @@ namespace VideoManager3_WinUI {
                 newFilter.PropertyChanged += FilterItem_PropertyChanged;
 
                 // フィルター種別に基づいてソートされたリストを作成
-                var sortedFilters = Filters.Append(newFilter).OrderBy(f => f.Type).ToList();
+                var sortedFilters = Filters.Append(newFilter).OrderBy(f => f.Type).ThenBy(f => f.Label).ToList();
                 // 新しいフィルターを正しい位置に挿入
                 Filters.Insert(sortedFilters.IndexOf(newFilter), newFilter);
             }

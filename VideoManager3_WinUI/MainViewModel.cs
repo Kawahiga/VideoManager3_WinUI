@@ -294,6 +294,14 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // タグを中クリックしたときのコマンド
+        public void TagMiddleClicked( TagItem tag ) {
+            // タグの複数選択モードを切り替え
+            _filterService.MultiFilterEnabled = !_filterService.MultiFilterEnabled;
+            // 選択中のタグを設定
+            SelectedTag = tag;
+        }
+
         // ホームフォルダを設定するコマンド
         private async Task SetHomeFolderAsync() {
             var folderPicker = new FolderPicker

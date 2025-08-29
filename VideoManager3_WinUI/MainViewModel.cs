@@ -35,6 +35,7 @@ namespace VideoManager3_WinUI {
         public ICommand AddFolderCommand { get; private set; }
         public ICommand AddFilesCommand { get; private set; }
         public ICommand ToggleViewCommand { get; private set; }
+        public IRelayCommand ToggleFilterCommand { get; private set; }
         public IRelayCommand EditTagCommand { get; private set; }
         public IRelayCommand UpdateVideoTagsCommand { get; private set; }
         public IRelayCommand DoubleTappedCommand { get; private set; }
@@ -155,6 +156,7 @@ namespace VideoManager3_WinUI {
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
+            ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
             EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
             UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
             DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );

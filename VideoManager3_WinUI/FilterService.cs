@@ -10,11 +10,16 @@ namespace VideoManager3_WinUI {
     class FilterService {
         public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
 
-        // 複数フィルターを有効にするかどうかの設定
+        // 複数フィルターを有効にするかどうか
         public bool MultiFilterEnabled { get; set; } = false;
 
-        /// フィルター状態が変更されたときに発生するイベント
+        // フィルター状態が変更されたときに発生するイベント
         public event Action? FilterStateChanged;
+
+        // タグの複数選択モードを切り替え
+        public void ToggleFilterMulti() {
+            MultiFilterEnabled = !MultiFilterEnabled;
+        }
 
         public void SetTagFilter( TagItem? tag ) {
             // 「全てのファイル」またはnullの場合は、タグフィルターを解除

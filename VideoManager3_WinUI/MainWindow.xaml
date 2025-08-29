@@ -44,9 +44,14 @@
                 <AppBarSeparator/>
                 <!-- 絞り込み範囲を表示 -->
                 <!-- メモ：「絞り込み範囲：」をクリックでフィルター全解除？ -->
+                <!--
                 <AppBarElementContainer VerticalAlignment="Center">
                     <TextBlock Text="絞り込み範囲：" FontWeight="Bold" Margin="10,0"/>
                 </AppBarElementContainer>
+                -->
+
+                <AppBarButton Label="絞り込み範囲：" Command="{Binding ToggleFilterCommand}" FontWeight="Bold" Margin="10,0"/>
+
                 <!-- フィルタリング中の文字列を表示（タグ、アーティスト、検索テキスト）-->
                 <!-- メモ：タグの複数選択対応時に最大数は決めるべきかも -->
                 <AppBarElementContainer VerticalAlignment="Center" MaxWidth="550">

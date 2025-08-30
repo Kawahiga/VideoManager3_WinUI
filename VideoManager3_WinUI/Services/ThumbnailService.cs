@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
     public class ThumbnailService {
 
         // サムネイルをキャッシュするフォルダのパス
@@ -20,32 +20,22 @@ namespace VideoManager3_WinUI {
 
         // サムネイル画像を生成し、バイト配列として返す
         public async Task<byte[]?> GetThumbnailBytesAsync( string videoPath ) {
-            if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
-                return null;
-            }
+            if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) )                 return null;
 
-            if ( !Directory.Exists( TempCacheFolder ) ) {
-                Directory.CreateDirectory( TempCacheFolder );
-            }
+            if ( !Directory.Exists( TempCacheFolder ) )                 Directory.CreateDirectory( TempCacheFolder );
 
             // ファイルパスからキャッシュキーを生成
             string tempThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
 
-            if ( File.Exists( tempThumbnailPath ) ) {
-                // キャッシュが存在する場合はそれを返す
+            if ( File.Exists( tempThumbnailPath ) )                 // キャッシュが存在する場合はそれを返す
                 return await File.ReadAllBytesAsync( tempThumbnailPath );
-            }
 
-            if ( count++ > limit ) {
-                return null; // 【暫定処理】30回以上呼び出された場合はもうサムネイル作らない
-            }
+            if ( count++ > limit )                 return null; // 【暫定処理】30回以上呼び出された場合はもうサムネイル作らない
 
             try {
                 await FFMpeg.SnapshotAsync( videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds( ThumbnailWait ) );
 
-                if ( !File.Exists( tempThumbnailPath ) ) {
-                    return null;
-                }
+                if ( !File.Exists( tempThumbnailPath ) )                     return null;
 
                 // 一時ファイルをバイト配列として読み込む
                 var imageBytes = await File.ReadAllBytesAsync(tempThumbnailPath);

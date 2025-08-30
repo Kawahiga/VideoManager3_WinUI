@@ -10,9 +10,11 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using VideoManager3_WinUI.Models;
+using VideoManager3_WinUI.Services;
 using Windows.Storage.Pickers;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
@@ -52,18 +54,14 @@ namespace VideoManager3_WinUI {
             get => _selectedItem;
             set {
                 if ( _selectedItem != value ) {
-                    if ( _selectedItem != null ) {
-                        _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
-                    }
+                    if ( _selectedItem != null )                         _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
 
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     UpdateVideoTagsCommand.NotifyCanExecuteChanged();
 
-                    if ( _selectedItem != null ) {
-                        _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
-                    }
+                    if ( _selectedItem != null )                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
                 }
             }
         }
@@ -78,9 +76,7 @@ namespace VideoManager3_WinUI {
                     OnPropertyChanged( nameof( SelectedTag ) );
                     EditTagCommand.NotifyCanExecuteChanged();
 
-                    if ( _filterService.SetTagFilter( _selectedTag ) ) {
-                        ApplyFilters();
-                    }
+                    if ( _filterService.SetTagFilter( _selectedTag ) )                         ApplyFilters();
                 }
             }
         }
@@ -94,9 +90,7 @@ namespace VideoManager3_WinUI {
                     _selectedArtist = value;
                     OnPropertyChanged( nameof( SelectedArtist ) );
 
-                    if ( _filterService.SetArtistFilter( _selectedArtist ) ) {
-                        ApplyFilters();
-                    }
+                    if ( _filterService.SetArtistFilter( _selectedArtist ) )                         ApplyFilters();
                 }
             }
         }
@@ -110,9 +104,7 @@ namespace VideoManager3_WinUI {
                     _searchText = value;
                     OnPropertyChanged( nameof( SearchText ) );
 
-                    if ( _filterService.SetSearchTextFilter( _searchText ) ) {
-                        ApplyFilters();
-                    }
+                    if ( _filterService.SetSearchTextFilter( _searchText ) )                         ApplyFilters();
                 }
             }
         }
@@ -157,15 +149,15 @@ namespace VideoManager3_WinUI {
             _filterService.FilterStateChanged += ApplyFilters;
 
             // コマンドの初期化
-            AddFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
+            AddFolderCommand = new RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
-            EditTagCommand = new CommunityToolkit.Mvvm.Input.RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
+            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
             UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
-            DoubleTappedCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
-            SetHomeFolderCommand = new CommunityToolkit.Mvvm.Input.RelayCommand( async () => await SetHomeFolderAsync() );
+            DoubleTappedCommand = new RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
+            SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -313,9 +305,7 @@ namespace VideoManager3_WinUI {
 
             // フォルダを選択
             var folder = await folderPicker.PickSingleFolderAsync();
-            if ( folder != null ) {
-                HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
-            }
+            if ( folder != null )                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
         }
 
         // アプリを閉じるときのイベント
@@ -329,12 +319,8 @@ namespace VideoManager3_WinUI {
             try {
                 ObservableCollection<TagItem> tempTags = new ObservableCollection<TagItem>(tags);
                 foreach ( var tag in tempTags ) {
-                    if ( tag.IsModified ) {
-                        await _tagService.AddOrUpdateTagAsync( tag );
-                    }
-                    if ( tag.Children.Any() ) {
-                        await SaveTagsInClose( tag.Children );
-                    }
+                    if ( tag.IsModified )                         await _tagService.AddOrUpdateTagAsync( tag );
+                    if ( tag.Children.Any() )                         await SaveTagsInClose( tag.Children );
                 }
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error saving tags: {ex.Message}" );
@@ -363,9 +349,7 @@ namespace VideoManager3_WinUI {
         // ファイル名を変更するメソッド
         // 将来的にはVideoServiceに移動する
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) ) {
-                return;
-            }
+            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) )                 return;
 
             // 変更前のアーティスト名を取得
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);
@@ -375,11 +359,9 @@ namespace VideoManager3_WinUI {
             await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
 
             string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
-            if ( !(String.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
-                // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
+            if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) )                 // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
                 // 新しい名前でアーティスト情報を更新
                 await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
-            }
 
             // 変更後のファイル名でソート
             _videoService.SortVideos( SortType );
@@ -388,10 +370,8 @@ namespace VideoManager3_WinUI {
 
         // SelectedItemのプロパティ変更イベントハンドラ
         private async void SelectedItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
-            if ( SelectedItem != null ) {
-                // データベースを更新
+            if ( SelectedItem != null )                 // データベースを更新
                 await _databaseService.UpdateVideoAsync( SelectedItem );
-            }
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Models {
     public class VideoItem:INotifyPropertyChanged {
 
         public VideoItem() {
@@ -117,9 +117,7 @@ namespace VideoManager3_WinUI {
         // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド
         public async Task LoadThumbnailImageAsync() {
             // 既に画像がある、または元データがない場合は何もしない
-            if ( ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0 ) {
-                return;
-            }
+            if ( ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0 )                 return;
 
             try {
                 var bitmapImage = new BitmapImage();

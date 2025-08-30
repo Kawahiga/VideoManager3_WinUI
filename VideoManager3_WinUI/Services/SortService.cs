@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VideoManager3_WinUI
+namespace VideoManager3_WinUI.Services
 {
     class SortService
     {

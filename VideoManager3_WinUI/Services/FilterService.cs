@@ -7,8 +7,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Xml.Linq;
+using VideoManager3_WinUI.Models;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
     public class FilterService:INotifyPropertyChanged {
         public ObservableCollection<FilterItem> Filters { get; } = new ObservableCollection<FilterItem>();
 
@@ -125,9 +126,7 @@ namespace VideoManager3_WinUI {
         /// </summary>
         public IEnumerable<VideoItem> ApplyFilters( IEnumerable<VideoItem> videos ) {
             var activeFilters = Filters.Where(f => f.IsActive == false).ToList();
-            if ( !activeFilters.Any() ) {
-                return videos;
-            }
+            if ( !activeFilters.Any() )                 return videos;
             return videos.Where( video => activeFilters.All( filter => IsVideoMatch( video, filter ) ) );
         }
 
@@ -148,9 +147,7 @@ namespace VideoManager3_WinUI {
         /// 動画が指定されたタグにマッチするかどうかを判定します。 
         /// </summary>
         private bool IsMatchByTag( VideoItem video, TagItem selectedTag ) {
-            if ( selectedTag.Name.Equals( "タグなし" ) ) {
-                return !video.VideoTagItems.Any();
-            }
+            if ( selectedTag.Name.Equals( "タグなし" ) )                 return !video.VideoTagItems.Any();
             var tagIds = new HashSet<int>(selectedTag.GetAllDescendantIds());
             return video.VideoTagItems.Any( videoTag => tagIds.Contains( videoTag.Id ) );
         }
@@ -177,9 +174,7 @@ namespace VideoManager3_WinUI {
         public event Action? FilterStateChanged;
         private void FilterItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
             // IsActiveプロパティが変更された場合のみイベントを発行
-            if ( e.PropertyName == nameof( FilterItem.IsActive ) ) {
-                FilterStateChanged?.Invoke();
-            }
+            if ( e.PropertyName == nameof( FilterItem.IsActive ) )                 FilterStateChanged?.Invoke();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

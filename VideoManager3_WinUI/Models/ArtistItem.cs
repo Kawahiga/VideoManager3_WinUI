@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Models {
     public class ArtistItem:INotifyPropertyChanged {
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -43,9 +43,8 @@ namespace VideoManager3_WinUI {
             get => _isFavorite;
             set {
                 _isFavorite = value;
-                if ( _isFavorite == false ) {
-                    ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
-                } else {
+                if ( _isFavorite == false )                     ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
+else {
                     ArtistColor = new SolidColorBrush( Colors.Pink );
                 }
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsFavorite ) ) );

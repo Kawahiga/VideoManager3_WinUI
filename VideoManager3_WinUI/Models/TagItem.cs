@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Models {
     // Tagを表すデータモデル
     public class TagItem:INotifyPropertyChanged {
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -199,9 +199,7 @@ namespace VideoManager3_WinUI {
 
         // DB用のカラーコードを表示用Brushに変換する
         private static Brush ConvertStringToBrush( string? colorString ) {
-            if ( string.IsNullOrEmpty( colorString ) || !colorString.StartsWith( "#" ) || (colorString.Length != 7 && colorString.Length != 9) ) {
-                return new SolidColorBrush( Colors.Black );
-            }
+            if ( string.IsNullOrEmpty( colorString ) || !colorString.StartsWith( "#" ) || colorString.Length != 7 && colorString.Length != 9 )                 return new SolidColorBrush( Colors.Black );
 
             try {
                 var s = colorString.Substring(1);

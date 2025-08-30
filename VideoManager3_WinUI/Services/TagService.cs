@@ -4,8 +4,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using VideoManager3_WinUI.Models;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
     /// <summary>
     /// タグ関連のデータ操作とビジネスロジックを管理するサービスクラス
     /// </summary>
@@ -72,9 +73,7 @@ namespace VideoManager3_WinUI {
             }
 
             var allVideos = videoService.Videos;
-            if ( allVideos == null || !allVideos.Any() ) {
-                return Task.CompletedTask;
-            }
+            if ( allVideos == null || !allVideos.Any() )                 return Task.CompletedTask;
 
             var tagDictionary = GetAllTagsAsDictionary();
 
@@ -95,15 +94,12 @@ namespace VideoManager3_WinUI {
 
             // 動画リストをループしてタグに割り当てる
             foreach ( var video in allVideos ) {
-                if ( video.VideoTagItems == null || !video.VideoTagItems.Any() ) {
-                    // タグがない動画を「タグなし」に追加
+                if ( video.VideoTagItems == null || !video.VideoTagItems.Any() )                     // タグがない動画を「タグなし」に追加
                     untaggedTag.TagVideoItem.Add( video );
-                } else {
+else {
                     // 既存のタグに動画を割り当てる
                     foreach ( var videoTag in video.VideoTagItems ) {
-                        if ( tagDictionary.TryGetValue( videoTag.Id, out var targetTag ) ) {
-                            targetTag.TagVideoItem.Add( video );
-                        }
+                        if ( tagDictionary.TryGetValue( videoTag.Id, out var targetTag ) )                             targetTag.TagVideoItem.Add( video );
                     }
                 }
             }
@@ -132,14 +128,10 @@ namespace VideoManager3_WinUI {
 
         // UI上のタグ階層からタグを再帰的に削除
         private bool RemoveTagFromHierarchy( ObservableCollection<TagItem> tags, TagItem tagToRemove ) {
-            if ( tags.Remove( tagToRemove ) ) {
-                return true;
-            }
+            if ( tags.Remove( tagToRemove ) )                 return true;
 
             foreach ( var tag in tags ) {
-                if ( RemoveTagFromHierarchy( tag.Children, tagToRemove ) ) {
-                    return true;
-                }
+                if ( RemoveTagFromHierarchy( tag.Children, tagToRemove ) )                     return true;
             }
 
             return false;

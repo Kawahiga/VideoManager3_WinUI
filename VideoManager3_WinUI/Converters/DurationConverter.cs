@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace VideoManager3_WinUI
+namespace VideoManager3_WinUI.Converters
 {
     public class DurationConverter : IValueConverter
     {

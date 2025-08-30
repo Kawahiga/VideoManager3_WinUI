@@ -5,10 +5,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VideoManager3_WinUI.Models;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
     public enum VideoSortType {
         LastModifiedDescending, // 更新日時降順
         LastModifiedAscending,  // 更新日時昇順
@@ -61,9 +62,7 @@ namespace VideoManager3_WinUI {
 
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
-            if ( imageBytes != null && imageBytes.Length > 0 ) {
-                videoItem.Thumbnail = imageBytes;
-            }
+            if ( imageBytes != null && imageBytes.Length > 0 )                 videoItem.Thumbnail = imageBytes;
         }
 
         /// <summary>
@@ -80,9 +79,7 @@ namespace VideoManager3_WinUI {
 
                 // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
                 foreach ( var tag in orderedAllTags ) {
-                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
-                        video.VideoTagItems.Add( tag );
-                    }
+                    if ( tagsForVideoIds.Contains( tag.Id ) )                         video.VideoTagItems.Add( tag );
                 }
             }
         }
@@ -131,9 +128,7 @@ namespace VideoManager3_WinUI {
         /// 指定されたパスから動画やフォルダを追加する共通メソッド
         /// </summary>
         private async Task AddVideoFromPathAsync( string path ) {
-            if ( Videos.Any( v => v.FilePath == path ) ) {
-                return; // 既に存在する場合はスキップ
-            }
+            if ( Videos.Any( v => v.FilePath == path ) )                 return; // 既に存在する場合はスキップ
 
             try {
                 // パスがディレクトリかファイルかを確認
@@ -260,23 +255,15 @@ namespace VideoManager3_WinUI {
         /// 動画ファイルの名前を変更します。
         /// </summary>
         public async Task RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
-            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals(videoItem.FileName) ) {
-                return;
-            }
+            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals(videoItem.FileName) )                 return;
 
             var oldPath = videoItem.FilePath;
-            if ( string.IsNullOrEmpty( oldPath ) ) {
-                return;
-            }
+            if ( string.IsNullOrEmpty( oldPath ) )                 return;
             var directory = Path.GetDirectoryName(oldPath);
-            if ( string.IsNullOrEmpty( directory ) ) {
-                return;
-            }
+            if ( string.IsNullOrEmpty( directory ) )                 return;
             var newPath = Path.Combine(directory, newFileName);
-            if ( string.IsNullOrEmpty( newPath ) ||  File.Exists( newPath ) ) {
-                // 新しいファイル名が既に存在する場合は処理しない
+            if ( string.IsNullOrEmpty( newPath ) ||  File.Exists( newPath ) )                 // 新しいファイル名が既に存在する場合は処理しない
                 return;
-            }
 
 
             try {

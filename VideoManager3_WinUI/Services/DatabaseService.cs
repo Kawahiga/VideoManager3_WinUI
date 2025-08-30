@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VideoManager3_WinUI.Models;
 
 // 未実装項目
 // ・動画をデータベースから削除
@@ -16,7 +17,7 @@ using System.Threading.Tasks;
 // ・ファイル名の変更により、アーティストとその関連付けが残ったままになる
 // ・ファイルへのリンク切れにより、動画とその関連付けが残ったままになる
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
     public class DatabaseService {
         private readonly string _dbPath;
 

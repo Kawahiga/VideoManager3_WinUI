@@ -53,7 +53,8 @@
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="command\" />
+    <Folder Include="Command\" />
+    <Folder Include="Views\" />
   </ItemGroup>
 
   <!--

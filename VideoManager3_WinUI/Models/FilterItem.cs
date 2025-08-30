@@ -6,7 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Models {
     // フィルターの種類
     public enum FilterType {
         Tag,
@@ -69,12 +69,8 @@ namespace VideoManager3_WinUI {
             Value = value;
             _label = label;
             _isActive = false; // デフォルトでアクティブ
-            if ( textColor != null ) {
-                _textColor = textColor;
-            }
-            if ( backgroundColor != null ) {
-                _backColor = backgroundColor;
-            }
+            if ( textColor != null )                 _textColor = textColor;
+            if ( backgroundColor != null )                 _backColor = backgroundColor;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

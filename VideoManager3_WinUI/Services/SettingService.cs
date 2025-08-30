@@ -3,7 +3,7 @@ using Windows.Storage;
 
 // ソート条件やUIの状態（各ペインの幅やサムネイルの拡大状態など）を保存・復元する。
 
-namespace VideoManager3_WinUI {
+namespace VideoManager3_WinUI.Services {
 
     public class SettingItem {
         public int VideoSortType { get; set; }      // 動画のソート条件

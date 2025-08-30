@@ -227,7 +227,7 @@ namespace VideoManager3_WinUI {
             if ( !match.Success ) {
                 return String.Empty;
             }
-            return match.Groups[1].Value;
+            return match.Groups[1].Value.Trim();
         }
 
         /// <summary>

@@ -64,8 +64,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
         public FilterItem( FilterType type, object value, string label, Brush? textColor, Brush? backgroundColor ) {
             Type = type;
             Value = value;
@@ -79,6 +77,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged( string propertyName ) {
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
         }

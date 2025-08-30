@@ -50,7 +50,10 @@
                 </AppBarElementContainer>
                 -->
 
-                <AppBarButton Label="絞り込み範囲：" Command="{Binding ToggleFilterCommand}" FontWeight="Bold" Margin="10,0"/>
+
+
+                <AppBarButton Label="{Binding FilterText}"  FontWeight="Bold" Margin="10,0" Command="{Binding ToggleFilterCommand}"/>
+
 
                 <!-- フィルタリング中の文字列を表示（タグ、アーティスト、検索テキスト）-->
                 <!-- メモ：タグの複数選択対応時に最大数は決めるべきかも -->

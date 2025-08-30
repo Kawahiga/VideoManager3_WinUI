@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,6 +21,9 @@ namespace VideoManager3_WinUI {
 
         // フィルター項目リスト（表示用）
         public ObservableCollection<FilterItem> Filters => _filterService.Filters;
+
+        public Brush FilterButtonColor => _filterService.ButtonColor;
+        public string FilterText => _filterService.ButtonText;
 
         // 絞り込み後の動画（表示用）
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
@@ -72,12 +76,11 @@ namespace VideoManager3_WinUI {
                 if ( _selectedTag != value && !UIManager.IsTagSetting ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
-                    if ( _selectedTag != null && _selectedTag.Name.Equals( "全てのファイル" ) )
-                        SelectedArtist = null;
                     EditTagCommand.NotifyCanExecuteChanged();
 
-                    _filterService.SetTagFilter( _selectedTag );
-                    ApplyFilters();
+                    if ( _filterService.SetTagFilter( _selectedTag ) ) {
+                        ApplyFilters();
+                    }
                 }
             }
         }
@@ -91,20 +94,9 @@ namespace VideoManager3_WinUI {
                     _selectedArtist = value;
                     OnPropertyChanged( nameof( SelectedArtist ) );
 
-                    _filterService.SetArtistFilter( _selectedArtist );
-                    ApplyFilters();
-                }
-            }
-        }
-
-        // ホームフォルダのパスを保持するプロパティ
-        private string _homeFolderPath = "";
-        public string HomeFolderPath {
-            get => _homeFolderPath;
-            set {
-                if ( _homeFolderPath != value ) {
-                    _homeFolderPath = value;
-                    OnPropertyChanged( nameof( HomeFolderPath ) );
+                    if ( _filterService.SetArtistFilter( _selectedArtist ) ) {
+                        ApplyFilters();
+                    }
                 }
             }
         }
@@ -118,8 +110,21 @@ namespace VideoManager3_WinUI {
                     _searchText = value;
                     OnPropertyChanged( nameof( SearchText ) );
 
-                    _filterService.SetSearchTextFilter( _searchText );
-                    ApplyFilters();
+                    if ( _filterService.SetSearchTextFilter( _searchText ) ) {
+                        ApplyFilters();
+                    }
+                }
+            }
+        }
+
+        // ホームフォルダのパスを保持するプロパティ
+        private string _homeFolderPath = "";
+        public string HomeFolderPath {
+            get => _homeFolderPath;
+            set {
+                if ( _homeFolderPath != value ) {
+                    _homeFolderPath = value;
+                    OnPropertyChanged( nameof( HomeFolderPath ) );
                 }
             }
         }
@@ -204,6 +209,8 @@ namespace VideoManager3_WinUI {
                     ScrollToItemRequested?.Invoke( previouslySelectedItem );
                 }
             }
+            OnPropertyChanged( nameof( FilterText ) );
+            OnPropertyChanged( nameof( FilterButtonColor ) );
         }
 
         // ファイルに対するタグ設定ボタン
@@ -373,7 +380,7 @@ namespace VideoManager3_WinUI {
             // 変更前のアーティスト名を取得
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);
 
-            // アーティスト名を除いたファイル名を取得
+            // 新しいファイル名（アーティスト名を除外）を取得
             string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
             await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
 

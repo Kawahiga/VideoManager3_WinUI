@@ -44,18 +44,7 @@
                 <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
                 <AppBarSeparator/>
                 <!-- 絞り込み範囲を表示 -->
-                <!-- メモ：「絞り込み範囲：」をクリックでフィルター全解除？ -->
-                <!--
-                <AppBarElementContainer VerticalAlignment="Center">
-                    <TextBlock Text="絞り込み範囲：" FontWeight="Bold" Margin="10,0"/>
-                </AppBarElementContainer>
-                -->
-
-
-
                 <AppBarButton Label="{Binding FilterText}" Background="{Binding FilterButtonColor}"  FontWeight="Bold" Margin="10,0" Command="{Binding ToggleFilterCommand}"/>
-
-
                 <!-- フィルタリング中の文字列を表示（タグ、アーティスト、検索テキスト）-->
                 <!-- メモ：タグの複数選択対応時に最大数は決めるべきかも -->
                 <AppBarElementContainer VerticalAlignment="Center" MaxWidth="550">
@@ -269,7 +258,7 @@
                                     </Image>
 
                                     <!-- いいね数 -->
-                                    <Border Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                    <Border Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Top" Visibility="{Binding LikeCount,Converter={StaticResource LikeCountConverter}}">
                                         <Grid Width="32" Height="32">
                                             <TextBlock Text="&#xEB52;" FontFamily="Segoe MDL2 Assets" Foreground="DeepPink" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding LikeCount}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" FontWeight="Bold" Padding="0,0,0,5"/>
@@ -333,13 +322,26 @@
                     <!-- 選択されたアイテム(SelectedItem)の情報を表示するパネル -->
                     <StackPanel DataContext="{Binding SelectedItem}">
 
-                        <!-- ファイル名 -->
-                        <TextBox x:Name="FileNameTextBox" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,10" LostFocus="FileNameTextBox_LostFocus" KeyDown="FileNameTextBox_KeyDown" GotFocus="FileNameTextBox_GotFocus" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" BorderBrush="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"/>
+                        <!-- ファイル名（いいねカウント付き） -->
+                        <Grid  Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                         <!-- ファイルに設定されたアーティスト一覧 -->
+                            <Border Grid.Column="0" Tapped="LikeButton_Click" RightTapped="LikeButton_RightTapped">
+                                <Grid Width="32" Height="32">
+                                    <TextBlock Text="&#xEB52;" FontFamily="Segoe MDL2 Assets" Foreground="DeepPink" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding LikeCount}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" Padding="0,0,0,5"/>
+                                </Grid>
+                            </Border>
+                            <TextBox Grid.Column="1" x:Name="FileNameTextBox" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" LostFocus="FileNameTextBox_LostFocus" KeyDown="FileNameTextBox_KeyDown" GotFocus="FileNameTextBox_GotFocus" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" BorderBrush="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"/>
+                        </Grid>
+
+                        <!-- ファイルに設定されたアーティスト一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="出演：" FontWeight="SemiBold" Margin="0,5,10,5" HorizontalTextAlignment="Right" VerticalAlignment="Top"/>
@@ -367,7 +369,7 @@
                         <!-- ファイルに設定されたタグ一覧 -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="50"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="0" Text="タグ：" FontWeight="SemiBold" Margin="0,5,10,5" HorizontalTextAlignment="Right" VerticalAlignment="Top"/>

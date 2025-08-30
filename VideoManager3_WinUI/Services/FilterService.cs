@@ -22,17 +22,17 @@ namespace VideoManager3_WinUI.Services {
                     _multiFilterEnabled = value;
                     if ( _multiFilterEnabled ) {
                         ButtonColor = new SolidColorBrush( Colors.Pink );
-                        ButtonText = "ON";
+                        ButtonText = "絞り込み範囲(複)：";
                     } else {
-                        ButtonColor = new SolidColorBrush( Colors.Blue );
-                        ButtonText = "OFFだよ";
+                        ButtonColor = new SolidColorBrush( Colors.Transparent );
+                        ButtonText = "絞り込み範囲(単)：";
                     }
                 }
             }
         }
 
         // タグの複数選択モード制御用ボタンの背景色
-        private Brush _buttonColor = new SolidColorBrush(Colors.Blue);
+        private Brush _buttonColor = new SolidColorBrush(Colors.Transparent);
         public Brush ButtonColor {
             get => _buttonColor;
             set {
@@ -44,7 +44,7 @@ namespace VideoManager3_WinUI.Services {
         }
 
         // タグの複数選択モードのテキスト
-        private string _buttonText = "aaaaa";
+        private string _buttonText = "絞り込み範囲(単)：";
         public string ButtonText {
             get => _buttonText;
             set {

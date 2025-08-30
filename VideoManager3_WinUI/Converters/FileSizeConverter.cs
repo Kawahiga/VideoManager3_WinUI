@@ -1,19 +1,18 @@
 using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace VideoManager3_WinUI.Converters
-{
-    public class FileSizeConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            if (value is long bytes)
-            {
+namespace VideoManager3_WinUI.Converters {
+
+    /// <summary>
+    /// ファイルサイズをわかり易い表現に変換するコンバーター
+    /// </summary>
+    public class FileSizeConverter:IValueConverter {
+        public object Convert( object value, Type targetType, object parameter, string language ) {
+            if ( value is long bytes ) {
                 string[] sizes = { "B", "KB", "MB", "GB", "TB" };
                 int order = 0;
                 double len = bytes;
-                while (len >= 1024 && order < sizes.Length - 1)
-                {
+                while ( len >= 1024 && order < sizes.Length - 1 ) {
                     order++;
                     len /= 1024;
                 }
@@ -22,8 +21,7 @@ namespace VideoManager3_WinUI.Converters
             return "0 B";
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
+        public object ConvertBack( object value, Type targetType, object parameter, string language ) {
             throw new NotImplementedException();
         }
     }

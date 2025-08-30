@@ -55,16 +55,6 @@ namespace VideoManager3_WinUI {
                 }
             } );
         }
-        /// <summary>
-        /// ファイル名編集中に選択アイテムが変更されたときに、変更を確定させる
-        /// </summary>
-        private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {
-            if ( e.PropertyName == nameof( ViewModel.SelectedItem ) ) {
-                if ( FileNameTextBox.FocusState == FocusState.Unfocused ) {
-                    FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
-                }
-            }
-        }
 
         // GridViewのUI仮想化と連携してサムネイルを遅延読み込みする
         private void GridView_ContainerContentChanging( ListViewBase sender, ContainerContentChangingEventArgs args ) {
@@ -369,6 +359,15 @@ namespace VideoManager3_WinUI {
         }
 
         // ファイル名テキストボックスのイベントハンドラー
+        // テキストボックスがフォーカスを得たときに元のファイル名を表示する
+        private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
+                textBox.Text = selectedItem.FileName;
+            }
+        }
+
+        // ファイル名テキストボックスのイベントハンドラー
+        // テキストボックスがフォーカスを失ったときに変更を確定する
         private async void FileNameTextBox_LostFocus( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
                 if ( selectedItem.FileName != textBox.Text ) {
@@ -393,12 +392,17 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // フォーカスを得たときに元のファイル名を表示する
-        private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {
-            if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
-                textBox.Text = selectedItem.FileName;
+        /// <summary>
+        /// ファイル名編集中に選択アイテムが変更されたときに、変更を確定させる
+        /// </summary>
+        private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {
+            if ( e.PropertyName == nameof( ViewModel.SelectedItem ) ) {
+                if ( FileNameTextBox.FocusState == FocusState.Unfocused ) {
+                    FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
+                }
             }
         }
+
 
         // ファイルの保存場所をエクスプローラーで開く
         private void OpenFileLocation_Click( object sender, RoutedEventArgs e ) {
@@ -407,20 +411,6 @@ namespace VideoManager3_WinUI {
                 if ( !string.IsNullOrEmpty( path ) && File.Exists( path ) ) {
                     Process.Start( "explorer.exe", $"/select, \"{path}\"" );
                 }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private void TreeViewItem_PointerPressed( object sender, PointerRoutedEventArgs e ) {
-            if ( e.GetCurrentPoint( sender as UIElement ).Properties.IsMiddleButtonPressed ) {
-                if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
-                    ViewModel.TagMiddleClicked( selectedTag );
-                }
-
-                // イベントを処理済みとしてマークし、親要素へのルーティングを停止
-                e.Handled = true;
             }
         }
     }

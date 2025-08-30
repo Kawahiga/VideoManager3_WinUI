@@ -198,16 +198,14 @@ namespace VideoManager3_WinUI {
                 FilteredVideos.Add( video );
             }
 
-            if ( previouslySelectedItem != null ) {
-                if ( !FilteredVideos.Contains( previouslySelectedItem ) ) {
-                    // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
-                    SelectedItem = FilteredVideos.FirstOrDefault();
-                } else {
-                    // 元の選択中の動画を再選択する
-                    SelectedItem = previouslySelectedItem;
-                    // 元の選択ファイルの位置までスクロール
-                    ScrollToItemRequested?.Invoke( previouslySelectedItem );
-                }
+            if ( previouslySelectedItem != null && FilteredVideos.Contains( previouslySelectedItem ) ) {
+                // 元の選択中の動画を再選択する
+                SelectedItem = previouslySelectedItem;
+                // 元の選択ファイルの位置までスクロール
+                ScrollToItemRequested?.Invoke( previouslySelectedItem );
+            } else {
+                // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
+                SelectedItem = FilteredVideos.FirstOrDefault();
             }
             OnPropertyChanged( nameof( FilterText ) );
             OnPropertyChanged( nameof( FilterButtonColor ) );

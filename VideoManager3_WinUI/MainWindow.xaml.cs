@@ -37,9 +37,12 @@ namespace VideoManager3_WinUI {
             _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId( wndId );
             LoadSetting();
 
+            // 初期の選択ファイルの文字列を設定
             FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
         }
-
+        /// <summary>
+        /// 選択されているアイテムまでスクロールする
+        /// </summary>
         private void ViewModel_ScrollToItemRequested( VideoItem item ) {
             if ( item == null )
                 return;
@@ -52,7 +55,9 @@ namespace VideoManager3_WinUI {
                 }
             } );
         }
-
+        /// <summary>
+        /// ファイル名編集中に選択アイテムが変更されたときに、変更を確定させる
+        /// </summary>
         private void ViewModel_PropertyChanged( object? sender, System.ComponentModel.PropertyChangedEventArgs e ) {
             if ( e.PropertyName == nameof( ViewModel.SelectedItem ) ) {
                 if ( FileNameTextBox.FocusState == FocusState.Unfocused ) {

@@ -9,7 +9,7 @@ namespace VideoManager3_WinUI {
     /// <summary>
     /// タグ関連のデータ操作とビジネスロジックを管理するサービスクラス
     /// </summary>
-    public class TagService:INotifyPropertyChanged {
+    public class TagService {
         private readonly DatabaseService _databaseService;
 
         /// <summary>
@@ -21,9 +21,6 @@ namespace VideoManager3_WinUI {
         /// すべてのタグをフラットなリストで保持
         /// </summary>
         private List<TagItem> _allTags = new List<TagItem>();
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
 
         public TagService( DatabaseService databaseService ) {
             _databaseService = databaseService;
@@ -60,7 +57,6 @@ namespace VideoManager3_WinUI {
                 // 3. UIのタグツリーを更新
                 TagItems.Clear();
                 sortedRootTags.ForEach( TagItems.Add );
-                OnPropertyChanged( nameof( TagItems ) );
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
             }
@@ -132,7 +128,6 @@ namespace VideoManager3_WinUI {
             foreach ( var video in tag.TagVideoItem ) {
                 video.VideoTagItems.Remove( tag );
             }
-            OnPropertyChanged( nameof( TagItems ) );
         }
 
         // UI上のタグ階層からタグを再帰的に削除
@@ -184,10 +179,6 @@ namespace VideoManager3_WinUI {
             }
             Traverse( TagItems );
             return orderedTags;
-        }
-
-        protected virtual void OnPropertyChanged( string propertyName ) {
-            PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
         }
     }
 }

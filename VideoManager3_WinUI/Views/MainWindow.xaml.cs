@@ -111,7 +111,7 @@ namespace VideoManager3_WinUI {
         // ファイルをダブルクリックしたときのイベントハンドラー
         private void GridView_DoubleTapped( object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e ) {
             if ( e.OriginalSource is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
-                ViewModel.DoubleTappedCommand.Execute( null );
+                ViewModel.DoubleTappedCommand.Execute( videoItem );
             }
         }
 
@@ -171,7 +171,7 @@ namespace VideoManager3_WinUI {
 
             if ( ViewModel.UIManager.IsTagSetting == false ) {
                 // 現在選択中の動画に合わせてタグのチェック状態を設定
-                ViewModel.PrepareTagsForEditing();
+                ViewModel.PrepareTagsForEditing( ViewModel.SelectedItem );
                 ViewModel.UIManager.IsTagSetting = true;
                 _editTargetItem = ViewModel.SelectedItem;
             } else {

@@ -171,7 +171,7 @@ namespace VideoManager3_WinUI.ViewModels {
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
             EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await _tagTreeViewModel.EditTagAsync( tag ) );
             UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await _tagTreeViewModel.UpdateVideoTagSelection( video ) );
-            DoubleTappedCommand = new RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
+            DoubleTappedCommand = new RelayCommand<VideoItem>( (video) => _videoService.OpenFile( video ) );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
 
             // 動画とタグの初期読み込み
@@ -219,8 +219,8 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         // ファイルに対するタグ設定ボタン
-        public void PrepareTagsForEditing() {
-            _tagTreeViewModel.PrepareTagsForEditing( SelectedItem );
+        public void PrepareTagsForEditing( VideoItem? targetVideo) {
+            _tagTreeViewModel.PrepareTagsForEditing( targetVideo );
         }
 
         // ホームフォルダを設定するコマンド

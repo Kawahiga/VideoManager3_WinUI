@@ -11,6 +11,8 @@ using VideoManager3_WinUI.Models;
 // ・例外処理の実装
 // ・タグから動画を取得（タグからの絞り込みで必要？）
 // ・リンク切れになった動画を探して削除
+// ・タググループ削除時に配下も削除
+// ・Transaction CommitAsync RollbackAsyncの仕組み
 // そもそも起動時のDBアクセスは1つのメソッドにまとめた方がいい？
 //
 // DBにゴミが溜まるケース

@@ -44,9 +44,13 @@ namespace VideoManager3_WinUI {
         private bool _isTagSetting = false;
         public bool IsTagSetting {
             get => _isTagSetting;
-            set => SetProperty( ref _isTagSetting, value );
+            set {
+                if ( SetProperty( ref _isTagSetting, value ) ) {
+                    //OnPropertyChanged( nameof( IsNotTagSetting ) );
+                }
+            }
         }
-
+        //public bool IsNotTagSetting => !IsTagSetting;
 
         [RelayCommand]
         private void ToggleView() {

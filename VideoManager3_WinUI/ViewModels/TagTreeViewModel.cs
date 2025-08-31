@@ -11,159 +11,229 @@ using VideoManager3_WinUI.Services;
 
 namespace VideoManager3_WinUI.ViewModels {
     public partial class TagTreeViewModel:ObservableObject {
-    //    private readonly TagService _tagService;
-    //    private readonly DatabaseService _databaseService; // EditTagAsyncのために必要
+        private readonly TagService _tagService;
+        private readonly DatabaseService _databaseService; // EditTagAsyncのために必要
 
-    //    public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
+        public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
 
-    //    [ObservableProperty]
-    //    private TagItem? _selectedTag;
+        [ObservableProperty]
+        private TagItem? _selectedTag;
 
-    //    public IRelayCommand<TagItem> EditTagCommand { get; }
+        public IRelayCommand<TagItem> EditTagCommand { get; }
 
-    //    public event Action<TagItem?>? SelectedTagChanged;
+        public event Action<TagItem?>? SelectedTagChanged;
 
-    //    public TagTreeViewModel( TagService tagService, DatabaseService databaseService ) {
-    //        _tagService = tagService;
-    //        _databaseService = databaseService; // インスタンスを受け取る
+        public TagTreeViewModel( TagService tagService, DatabaseService databaseService ) {
+            _tagService = tagService;
+            _databaseService = databaseService; // インスタンスを受け取る
 
-    //        EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
+            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
 
-    //        // SelectedTagプロパティの変更を監視
-    //        PropertyChanged += ( sender, e ) => {
-    //            if ( e.PropertyName == nameof( SelectedTag ) ) {
-    //                SelectedTagChanged?.Invoke( SelectedTag );
-    //            }
-    //        };
-    //    }
+            // SelectedTagプロパティの変更を監視
+            PropertyChanged += ( sender, e ) => {
+                if ( e.PropertyName == nameof( _selectedTag ) ) {
+                    SelectedTagChanged?.Invoke( _selectedTag );
+                }
+            };
+        }
 
-    //    public async Task LoadTagsAsync() {
-    //        // TagServiceからルートタグを取得してUIコレクションを構築
-    //        var rootTags = await _tagService.GetRootTagsAsync();
-    //        TagItems.Clear();
-    //        foreach ( var tag in rootTags ) {
-    //            TagItems.Add( tag );
-    //        }
-    //    }
+        /// <summary>
+        /// 全てのタグをロードする
+        /// </summary>
+        public async Task LoadTagsAsync() {
+            // TagServiceからルートタグを取得してUIコレクションを構築
+            var rootTags = await _tagService.LoadTagsAsync();
+            TagItems.Clear();
+            foreach ( var tag in rootTags ) {
+                TagItems.Add( tag );
+            }
+        }
 
-    //    // MainViewModelから移管
-    //    public async Task EditTagAsync( TagItem? tag ) {
-    //        if ( App.MainWindow == null || tag == null )
-    //            return;
+        /// <summary>
+        /// タグに紐づく動画情報を取得する。
+        /// </summary>
+        public Task LoadTagVideos( ObservableCollection<VideoItem>? allVideos ) {
+            if ( allVideos == null || !allVideos.Any() ) {
+                return Task.CompletedTask;
+            }
 
-    //        var inputTextBox = new TextBox
-    //        {
-    //            AcceptsReturn = false,
-    //            Height = 32,
-    //            Text = tag.Name,
-    //            SelectionStart = tag.Name.Length
-    //        };
+            // 最初に全タグの動画リストをクリア
+            var allTags = GetTagsInOrder();
+            foreach ( var tag in allTags ) {
+                tag.TagVideoItem.Clear();
+            }
 
-    //        var dialog = new ContentDialog
-    //        {
-    //            Title = "タグの編集",
-    //            Content = inputTextBox,
-    //            PrimaryButtonText = "OK",
-    //            SecondaryButtonText = "削除",
-    //            CloseButtonText = "キャンセル",
-    //            DefaultButton = ContentDialogButton.Primary,
-    //            XamlRoot = App.MainWindow.Content.XamlRoot
-    //        };
+            // すべてのタグのIDをキーとする辞書を取得
+            var tagDictionary = allTags.ToDictionary( t => t.Id );
 
-    //        var result = await dialog.ShowAsync();
+            // 「タグなし」タグを探す。
+            var untaggedTag = TagItems.FirstOrDefault(t => t.Name == "タグなし");
+            untaggedTag?.TagVideoItem.Clear();
 
-    //        if ( result == ContentDialogResult.Primary ) {
-    //            if ( !string.IsNullOrWhiteSpace( inputTextBox.Text ) && tag.Name != inputTextBox.Text ) {
-    //                tag.Name = inputTextBox.Text;
-    //                await _tagService.AddOrUpdateTagAsync( tag );
-    //            }
-    //        } else if ( result == ContentDialogResult.Secondary ) {
-    //            await _tagService.DeleteTagAsync( tag );
-    //            // UIからタグを削除する処理が必要
-    //            RemoveTagFromUI( TagItems, tag );
-    //        }
-    //    }
+            // 動画リストをループしてタグに割り当てる
+            foreach ( var video in allVideos ) {
+                if ( video.VideoTagItems == null || !video.VideoTagItems.Any() ) {
+                    // タグがない動画を「タグなし」に追加
+                    untaggedTag?.TagVideoItem.Add( video );
+                } else {
+                    // 既存のタグに動画を割り当てる
+                    foreach ( var videoTag in video.VideoTagItems ) {
+                        if ( tagDictionary.TryGetValue( videoTag.Id, out var targetTag ) ) {
+                            targetTag.TagVideoItem.Add( video );
+                        }
+                    }
+                }
+            }
+            return Task.CompletedTask;
+        }
 
-    //    private bool RemoveTagFromUI( ObservableCollection<TagItem> tags, TagItem tagToRemove ) {
-    //        if ( tags.Remove( tagToRemove ) ) {
-    //            return true;
-    //        }
+        /// <summary>
+        /// タグの編集ダイアログを表示
+        /// </summary>
+        public async Task EditTagAsync( TagItem? tag ) {
+            if ( App.MainWindow == null || tag == null )
+                return;
 
-    //        foreach ( var tag in tags ) {
-    //            if ( RemoveTagFromUI( tag.Children, tagToRemove ) ) {
-    //                return true;
-    //            }
-    //        }
-    //        return false;
-    //    }
+            var inputTextBox = new TextBox
+            {
+                AcceptsReturn = false,
+                Height = 32,
+                Text = tag.Name,
+                SelectionStart = tag.Name.Length
+            };
 
+            var dialog = new ContentDialog
+            {
+                Title = "タグの編集",
+                Content = inputTextBox,
+                PrimaryButtonText = "OK",
+                SecondaryButtonText = "削除",
+                CloseButtonText = "キャンセル",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = App.MainWindow.Content.XamlRoot
+            };
 
-    //    // MainViewModelから移管
-    //    public async Task SaveTagsInClose() {
-    //        await SaveTagsRecursively( TagItems );
-    //    }
+            var result = await dialog.ShowAsync();
 
-    //    private async Task SaveTagsRecursively( ObservableCollection<TagItem> tags ) {
-    //        try {
-    //            foreach ( var tag in tags ) {
-    //                if ( tag.IsModified )
-    //                    await _tagService.AddOrUpdateTagAsync( tag );
-    //                if ( tag.Children.Any() )
-    //                    await SaveTagsRecursively( tag.Children );
-    //            }
-    //        } catch ( Exception ex ) {
-    //            System.Diagnostics.Debug.WriteLine( $"Error saving tags: {ex.Message}" );
-    //        }
-    //    }
+            if ( result == ContentDialogResult.Primary ) {
+                // 「OK」
+                if ( !string.IsNullOrWhiteSpace( inputTextBox.Text ) && tag.Name != inputTextBox.Text ) {
+                    tag.Name = inputTextBox.Text;
+                    await _tagService.AddOrUpdateTagAsync( tag );
+                }
+            } else if ( result == ContentDialogResult.Secondary ) {
+                // 「削除」
+                RemoveTagFromUI( TagItems, tag );
+                foreach ( var video in tag.TagVideoItem ) {
+                    video.VideoTagItems.Remove( tag );
+                }
+                await _tagService.DeleteTagAsync( tag );
+            }
+        }
+        // タグリストから再帰的にタグを削除する
+        private bool RemoveTagFromUI( ObservableCollection<TagItem> tags, TagItem tagToRemove ) {
+            if ( tags.Remove( tagToRemove ) ) {
+                return true;
+            }
 
-    //    // MainViewModelから移管
-    //    public void PrepareTagsForEditing( VideoItem? selectedItem ) {
-    //        if ( selectedItem == null )
-    //            return;
+            foreach ( var tag in tags ) {
+                if ( RemoveTagFromUI( tag.Children, tagToRemove ) ) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
-    //        var allTags = _tagService.GetTagsInOrder();
-    //        var checkedTagIds = new HashSet<int>(selectedItem.VideoTagItems.Select(t => t.Id));
+        /// <summary>
+        /// アプリを終了する際にタグ情報を保存する
+        /// </summary>
+        public async Task SaveTagsInClose() {
+            await SaveTagsRecursively( TagItems );
+        }
+        private async Task SaveTagsRecursively( ObservableCollection<TagItem> tags ) {
+            try {
+                foreach ( var tag in tags ) {
+                    if ( tag.IsModified )
+                        await _tagService.AddOrUpdateTagAsync( tag );
+                    if ( tag.Children.Any() )
+                        await SaveTagsRecursively( tag.Children );
+                }
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Error saving tags: {ex.Message}" );
+            }
+        }
 
-    //        foreach ( var tag in allTags ) {
-    //            tag.IsChecked = checkedTagIds.Contains( tag.Id );
-    //            tag.IsEditing = true;
-    //        }
-    //    }
+        /// <summary>
+        /// ファイルに対するタグ設定コマンドの前準備
+        /// </summary>
+        public void PrepareTagsForEditing( VideoItem? selectedItem ) {
+            if ( selectedItem == null ) {
+                return;
+            }
 
-    //    // MainViewModelから移管
-    //    public async Task UpdateVideoTagSelection( VideoItem? targetItem ) {
-    //        if ( targetItem == null )
-    //            return;
+            // 現在選択されている動画が持っているタグIDのリストを作成
+            var checkedTagIds = new HashSet<int>(selectedItem.VideoTagItems.Select(t => t.Id));
+            // 全てのタグを表示順で取得
+            var allTags = GetTagsInOrder();
 
-    //        targetItem.VideoTagItems.Clear();
-    //        var tmpTag = _tagService.GetTagsInOrder();
-    //        foreach ( var tag in tmpTag ) {
-    //            if ( tag.IsChecked ) {
-    //                targetItem.VideoTagItems.Add( tag );
-    //                if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
-    //                    await _databaseService.AddTagToVideoAsync( targetItem, tag );
-    //                    tag.TagVideoItem.Add( targetItem );
-    //                }
-    //            } else {
-    //                var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
-    //                if ( tagToRemove != null ) {
-    //                    await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
-    //                    tag.TagVideoItem.Remove( targetItem );
-    //                }
-    //            }
-    //            tag.IsEditing = false;
-    //        }
-    //    }
-    //    public List<TagItem> GetTagsInOrder() {
-    //        var orderedTags = new List<TagItem>();
-    //        void Traverse( IEnumerable<TagItem> tags ) {
-    //            foreach ( var tag in tags ) {
-    //                orderedTags.Add( tag );
-    //                Traverse( tag.Children );
-    //            }
-    //        }
-    //        Traverse( TagItems );
-    //        return orderedTags;
-    //    }
+            foreach ( var tag in allTags ) {
+                if ( !tag.IsGroup ) {
+                    tag.IsChecked = checkedTagIds.Contains( tag.Id );
+                    tag.IsEditing = true;
+                } else {
+                    // グループは設定不可
+                    tag.IsEditing = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// ファイルに対するタグ設定コマンド
+        /// </summary>
+        public async Task UpdateVideoTagSelection( VideoItem? targetItem ) {
+            if ( targetItem == null ) {
+                return;
+            }
+
+            targetItem.VideoTagItems.Clear();
+            var tmpTag = GetTagsInOrder();
+            foreach ( var tag in tmpTag ) {
+                // チェック状態に応じてDBとViewModelを更新
+                if ( tag.IsChecked ) {
+                    // タグが既に追加されていなければ追加
+                    targetItem.VideoTagItems.Add( tag );
+                    if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
+                        await _databaseService.AddTagToVideoAsync( targetItem, tag );
+                        tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
+                    }
+                } else {
+                    // タグが既に存在すれば削除
+                    var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
+                    if ( tagToRemove != null ) {
+                        await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
+                        //targetItem.VideoTagItems.Remove( tagToRemove );
+                        tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
+                    }
+                }
+                // タグの編集モードを解除
+                tag.IsEditing = false;
+            }
+        }
+
+        /// <summary>
+        /// すべてのタグをツリーの表示順でフラットなリストとして取得します。
+        /// </summary>
+        /// <returns>順序付けされたタグのリスト</returns>
+        public List<TagItem> GetTagsInOrder() {
+            var orderedTags = new List<TagItem>();
+            void Traverse( IEnumerable<TagItem> tags ) {
+                foreach ( var tag in tags ) {
+                    orderedTags.Add( tag );
+                    Traverse( tag.Children );
+                }
+            }
+            Traverse( TagItems );
+            return orderedTags;
+        }
     }
 }

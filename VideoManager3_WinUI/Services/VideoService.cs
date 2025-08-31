@@ -62,14 +62,15 @@ namespace VideoManager3_WinUI.Services {
 
             var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
 
-            if ( imageBytes != null && imageBytes.Length > 0 )                 videoItem.Thumbnail = imageBytes;
+            if ( imageBytes != null && imageBytes.Length > 0 )
+                videoItem.Thumbnail = imageBytes;
         }
 
         /// <summary>
         /// データベースから各動画に紐づくタグ情報を非同期にロードし、VideoItemのプロパティを更新します。
         /// </summary>
-        public async Task LoadVideoTagsAsync() {
-            var orderedAllTags = _tagService.GetTagsInOrder();
+        public async Task LoadVideoTagsAsync( ObservableCollection<TagItem> Tags ) {
+            var orderedAllTags = GetTagsInOrder(Tags);
             var allTagsLookup = orderedAllTags.ToDictionary(t => t.Id);
 
             foreach ( var video in Videos ) {
@@ -79,9 +80,25 @@ namespace VideoManager3_WinUI.Services {
 
                 // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
                 foreach ( var tag in orderedAllTags ) {
-                    if ( tagsForVideoIds.Contains( tag.Id ) )                         video.VideoTagItems.Add( tag );
+                    if ( tagsForVideoIds.Contains( tag.Id ) )
+                        video.VideoTagItems.Add( tag );
                 }
             }
+        }
+        /// <summary>
+        /// すべてのタグをツリーの表示順でフラットなリストとして取得します。
+        /// TagTreeViewModelと同じ実装 1本化したい・・・
+        /// </summary>
+        private List<TagItem> GetTagsInOrder( ObservableCollection<TagItem> TagItems ) {
+            var orderedTags = new List<TagItem>();
+            void Traverse( IEnumerable<TagItem> tags ) {
+                foreach ( var tag in tags ) {
+                    orderedTags.Add( tag );
+                    Traverse( tag.Children );
+                }
+            }
+            Traverse( TagItems );
+            return orderedTags;
         }
 
         /// <summary>
@@ -128,7 +145,8 @@ namespace VideoManager3_WinUI.Services {
         /// 指定されたパスから動画やフォルダを追加する共通メソッド
         /// </summary>
         private async Task AddVideoFromPathAsync( string path ) {
-            if ( Videos.Any( v => v.FilePath == path ) )                 return; // 既に存在する場合はスキップ
+            if ( Videos.Any( v => v.FilePath == path ) )
+                return; // 既に存在する場合はスキップ
 
             try {
                 // パスがディレクトリかファイルかを確認
@@ -229,10 +247,10 @@ namespace VideoManager3_WinUI.Services {
                 sortedVideos = Videos.OrderByDescending( v => v.FileName ).ToList();
                 break;
                 case VideoSortType.FileSizeAscending:
-                    sortedVideos = Videos.OrderBy( v => v.FileSize ).ToList();
+                sortedVideos = Videos.OrderBy( v => v.FileSize ).ToList();
                 break;
                 case VideoSortType.FileSizeDescending:
-                    sortedVideos = Videos.OrderByDescending( v => v.FileSize ).ToList();
+                sortedVideos = Videos.OrderByDescending( v => v.FileSize ).ToList();
                 break;
                 case VideoSortType.LikeCountDescending:
                 sortedVideos = Videos.OrderByDescending( v => v.LikeCount ).ToList();
@@ -255,14 +273,17 @@ namespace VideoManager3_WinUI.Services {
         /// 動画ファイルの名前を変更します。
         /// </summary>
         public async Task RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
-            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals(videoItem.FileName) )                 return;
+            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals( videoItem.FileName ) )
+                return;
 
             var oldPath = videoItem.FilePath;
-            if ( string.IsNullOrEmpty( oldPath ) )                 return;
+            if ( string.IsNullOrEmpty( oldPath ) )
+                return;
             var directory = Path.GetDirectoryName(oldPath);
-            if ( string.IsNullOrEmpty( directory ) )                 return;
+            if ( string.IsNullOrEmpty( directory ) )
+                return;
             var newPath = Path.Combine(directory, newFileName);
-            if ( string.IsNullOrEmpty( newPath ) ||  File.Exists( newPath ) )                 // 新しいファイル名が既に存在する場合は処理しない
+            if ( string.IsNullOrEmpty( newPath ) || File.Exists( newPath ) )                 // 新しいファイル名が既に存在する場合は処理しない
                 return;
 
 

@@ -18,7 +18,7 @@ namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
-        public ObservableCollection<TagItem> TagItems => _tagService.TagItems;
+        public ObservableCollection<TagItem> TagItems => _tagTreeViewModel.TagItems;
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
         // フィルター項目リスト（表示用）
@@ -35,7 +35,9 @@ namespace VideoManager3_WinUI.ViewModels {
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
         private readonly ArtistService _artistService;
-        private readonly FilterService _filterService; // ★ FilterServiceを追加
+        private readonly FilterService _filterService;
+
+        private readonly TagTreeViewModel _tagTreeViewModel;
 
         // コマンド
         public ICommand AddFolderCommand { get; private set; }
@@ -54,14 +56,16 @@ namespace VideoManager3_WinUI.ViewModels {
             get => _selectedItem;
             set {
                 if ( _selectedItem != value ) {
-                    if ( _selectedItem != null )                         _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
+                    if ( _selectedItem != null )
+                        _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
 
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     UpdateVideoTagsCommand.NotifyCanExecuteChanged();
 
-                    if ( _selectedItem != null )                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
+                    if ( _selectedItem != null )
+                        _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
                 }
             }
         }
@@ -71,12 +75,16 @@ namespace VideoManager3_WinUI.ViewModels {
         public TagItem? SelectedTag {
             get => _selectedTag;
             set {
-                if ( _selectedTag != value && !UIManager.IsTagSetting ) {
+                if ( _selectedTag != value
+                    && !UIManager.IsTagSetting
+                    ) {
                     _selectedTag = value;
                     OnPropertyChanged( nameof( SelectedTag ) );
                     EditTagCommand.NotifyCanExecuteChanged();
 
-                    if ( _filterService.SetTagFilter( _selectedTag ) )                         ApplyFilters();
+                    if ( _filterService.SetTagFilter( _selectedTag ) ) {
+                        ApplyFilters();
+                    }
                 }
             }
         }
@@ -90,7 +98,9 @@ namespace VideoManager3_WinUI.ViewModels {
                     _selectedArtist = value;
                     OnPropertyChanged( nameof( SelectedArtist ) );
 
-                    if ( _filterService.SetArtistFilter( _selectedArtist ) )                         ApplyFilters();
+                    if ( _filterService.SetArtistFilter( _selectedArtist ) ) {
+                        ApplyFilters();
+                    }
                 }
             }
         }
@@ -104,7 +114,9 @@ namespace VideoManager3_WinUI.ViewModels {
                     _searchText = value;
                     OnPropertyChanged( nameof( SearchText ) );
 
-                    if ( _filterService.SetSearchTextFilter( _searchText ) )                         ApplyFilters();
+                    if ( _filterService.SetSearchTextFilter( _searchText ) ) {
+                        ApplyFilters();
+                    }
                 }
             }
         }
@@ -145,6 +157,9 @@ namespace VideoManager3_WinUI.ViewModels {
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
             _artistService = new ArtistService( _databaseService );
             _filterService = new FilterService();
+
+            _tagTreeViewModel = new TagTreeViewModel( _tagService, _databaseService );
+
             // FilterServiceのイベントを購読
             _filterService.FilterStateChanged += ApplyFilters;
 
@@ -154,8 +169,8 @@ namespace VideoManager3_WinUI.ViewModels {
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
-            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
-            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await UpdateVideoTagSelection( video ) );
+            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await _tagTreeViewModel.EditTagAsync( tag ) );
+            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await _tagTreeViewModel.UpdateVideoTagSelection( video ) );
             DoubleTappedCommand = new RelayCommand( () => _videoService.OpenFile( SelectedItem ), () => SelectedItem != null );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
 
@@ -166,10 +181,10 @@ namespace VideoManager3_WinUI.ViewModels {
         // 初期データをDBからロード
         private async Task LoadInitialDataAsync() {
             await _videoService.LoadVideosAsync();
-            await _tagService.LoadTagsAsync();
+            await _tagTreeViewModel.LoadTagsAsync();
 
-            await _videoService.LoadVideoTagsAsync();
-            await _tagService.LoadTagVideos( _videoService );
+            await _videoService.LoadVideoTagsAsync(TagItems);
+            await _tagTreeViewModel.LoadTagVideos( Videos );
             await _artistService.LoadArtistsAsync();
             await _artistService.LoadArtistVideosAsync( Videos );
 
@@ -204,93 +219,8 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         // ファイルに対するタグ設定ボタン
-        // ここに実装すべきではない。将来的にはVideoServiceへ移管
-        private async Task UpdateVideoTagSelection( VideoItem? targetItem ) {
-            if ( targetItem == null )
-                return;
-
-            targetItem.VideoTagItems.Clear();
-            var tmpTag = _tagService.GetTagsInOrder();
-            foreach ( var tag in tmpTag ) {
-                // チェック状態に応じてDBとViewModelを更新
-                if ( tag.IsChecked ) {
-                    // タグが既に追加されていなければ追加
-                    targetItem.VideoTagItems.Add( tag );
-                    if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
-                        await _databaseService.AddTagToVideoAsync( targetItem, tag );
-                        tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
-                    }
-                } else {
-                    // タグが既に存在すれば削除
-                    var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
-                    if ( tagToRemove != null ) {
-                        await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
-                        //targetItem.VideoTagItems.Remove( tagToRemove );
-                        tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
-                    }
-                }
-                // タグの編集モードを解除
-                tag.IsEditing = false;
-            }
-        }
-
-        // ファイルに対するタグ設定ボタン
-        // フライアウトが開かれる直前に、選択中の動画に合わせてタグのチェック状態を更新する
         public void PrepareTagsForEditing() {
-            if ( SelectedItem == null )
-                return;
-
-            // すべてのタグを再帰的に取得
-            var allTags = _tagService.GetTagsInOrder();
-
-            // 現在選択されている動画が持っているタグIDのリストを作成
-            var checkedTagIds = new HashSet<int>(SelectedItem.VideoTagItems.Select(t => t.Id));
-
-            // 全てのタグをループし、選択状態に応じてIsCheckedプロパティを設定
-            foreach ( var tag in allTags ) {
-                tag.IsChecked = checkedTagIds.Contains( tag.Id );
-                tag.IsEditing = true; // 設定モードに設定
-            }
-        }
-
-        // タグ編集コマンド
-        public async Task EditTagAsync( TagItem? tag ) {
-            if ( App.MainWindow == null || tag == null )
-                return;
-
-            // 編集用のTextBoxを作成
-            var inputTextBox = new TextBox
-            {
-                AcceptsReturn = false,
-                Height = 32,
-                Text = tag.Name, // 現在のタグ名を設定
-                SelectionStart = tag.Name.Length // テキスト末尾にカーソルを配置
-            };
-
-            // ContentDialogを作成
-            var dialog = new ContentDialog
-            {
-                Title = "タグの編集",
-                Content = inputTextBox,
-                PrimaryButtonText = "OK",
-                SecondaryButtonText = "削除",
-                CloseButtonText = "キャンセル",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = App.MainWindow.Content.XamlRoot // ダイアログを表示するために必要
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if ( result == ContentDialogResult.Primary ) {
-                // OKボタンが押された場合、タグ名を更新
-                if ( !string.IsNullOrWhiteSpace( inputTextBox.Text ) && tag.Name != inputTextBox.Text ) {
-                    tag.Name = inputTextBox.Text; // ViewModelのプロパティを更新
-                    await _tagService.AddOrUpdateTagAsync( tag );
-                }
-            } else if ( result == ContentDialogResult.Secondary ) {
-                // 削除ボタンが押された場合、タグを削除
-                await _tagService.DeleteTagAsync( tag );
-            }
+            _tagTreeViewModel.PrepareTagsForEditing( SelectedItem );
         }
 
         // ホームフォルダを設定するコマンド
@@ -305,26 +235,14 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // フォルダを選択
             var folder = await folderPicker.PickSingleFolderAsync();
-            if ( folder != null )                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
+            if ( folder != null )
+                HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
         }
 
         // アプリを閉じるときのイベント
         public async Task WindowCloseAsync() {
-            await SaveTagsInClose( TagItems );
+            await _tagTreeViewModel.SaveTagsInClose();
             await SaveArtistsInClose( ArtistItems );
-        }
-
-        // タグ情報を保存
-        private async Task SaveTagsInClose( ObservableCollection<TagItem> tags ) {
-            try {
-                ObservableCollection<TagItem> tempTags = new ObservableCollection<TagItem>(tags);
-                foreach ( var tag in tempTags ) {
-                    if ( tag.IsModified )                         await _tagService.AddOrUpdateTagAsync( tag );
-                    if ( tag.Children.Any() )                         await SaveTagsInClose( tag.Children );
-                }
-            } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error saving tags: {ex.Message}" );
-            }
         }
 
         // アーティスト情報を保存
@@ -349,7 +267,8 @@ namespace VideoManager3_WinUI.ViewModels {
         // ファイル名を変更するメソッド
         // 将来的にはVideoServiceに移動する
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) )                 return;
+            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) )
+                return;
 
             // 変更前のアーティスト名を取得
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);

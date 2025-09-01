@@ -163,7 +163,10 @@
 
                                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                                     <!-- 女優のサムネイル画像（現状はハートマーク） -->
-                                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB52;" Foreground="{x:Bind ArtistColor, Mode=OneWay}" PointerPressed="FavoriteIcon_PointerPressed" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <Grid PointerPressed="FavoriteIcon_PointerPressed" Margin="0,0,10,0">
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB52;" Foreground="{x:Bind ArtistColor, Mode=OneWay}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{x:Bind LikeCount,Mode=OneWay}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" FontWeight="Bold" Padding="0,0,0,5"/>
+                                    </Grid>
                                     <!-- 女優の名前 -->
                                     <TextBlock Grid.Column="1" Text="{x:Bind Name,Mode=OneWay}" VerticalAlignment="Center" IsTextSelectionEnabled="True"/>
                                 </StackPanel>
@@ -357,7 +360,10 @@
                                     <DataTemplate x:DataType="models:ArtistItem">
                                         <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0,0,8,5">
                                             <StackPanel Orientation="Horizontal" Padding="8,3">
-                                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB51;" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{Binding TextColor}" PointerPressed="FavoriteIcon_PointerPressed"/>
+                                                <Grid PointerPressed="FavoriteIcon_PointerPressed" Margin="0,0,5,0">
+                                                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEB51;" Foreground="{x:Bind TextColor,Mode=OneWay}" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{x:Bind LikeCount,Mode=OneWay}" Foreground="{x:Bind TextColor,Mode=OneWay}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="9" FontWeight="Bold" Padding="0,0,0,3"/>
+                                                </Grid>
                                                 <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" PointerPressed="ArtistName_PointerPressed"/>
                                             </StackPanel>
                                         </Border>

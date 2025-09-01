@@ -91,6 +91,9 @@ namespace VideoManager3_WinUI {
         private void LikeButton_Click( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem != null ) {
                 ViewModel.SelectedItem.LikeCount++;
+                foreach ( var artist in ViewModel.SelectedItem.ArtistsInVideo ) {
+                    artist.LikeCount++;
+                }
             }
         }
 
@@ -99,6 +102,9 @@ namespace VideoManager3_WinUI {
             if ( ViewModel.SelectedItem != null ) {
                 if ( ViewModel.SelectedItem.LikeCount > 0 ) {
                     ViewModel.SelectedItem.LikeCount--;
+                    foreach ( var artist in ViewModel.SelectedItem.ArtistsInVideo ) {
+                        artist.LikeCount--;
+                    }
                 }
             }
         }

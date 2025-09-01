@@ -73,6 +73,7 @@ namespace VideoManager3_WinUI.Services {
                     ArtistID INTEGER PRIMARY KEY AUTOINCREMENT,
                     ArtistName TEXT NOT NULL,
                     IsFavorite BOOLEAN DEFAULT 0,
+                    LikeCount INTEGER DEFAULT 0,
                     IconPath TEXT
                 );
 
@@ -439,11 +440,12 @@ namespace VideoManager3_WinUI.Services {
             if ( artist.Id == 0 ) {
                 // 新規追加
                 command.CommandText = @"
-                    INSERT INTO Artists (ArtistName, IsFavorite, IconPath)
-                    VALUES ($name, $isFavorite, $iconPath);
+                    INSERT INTO Artists (ArtistName, IsFavorite, LikeCount, IconPath) 
+                    ($artistName, $isFavorite, $likeCount, $iconPath)
                 ";
                 command.Parameters.AddWithValue( "$name", artist.Name );
                 command.Parameters.AddWithValue( "$isFavorite", artist.IsFavorite ? 1 : 0 );
+                command.Parameters.AddWithValue( "$likeCount", artist.LikeCount );
                 command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
                 await command.ExecuteNonQueryAsync();
                 // 新しく生成されたIDを取得してセット
@@ -456,12 +458,14 @@ namespace VideoManager3_WinUI.Services {
                     UPDATE Artists SET
                         ArtistName = $name,
                         IsFavorite = $isFavorite,
+                        LikeCount = $likeCount,
                         IconPath = $iconPath
                     WHERE ArtistID = $id;
                 ";
                 command.Parameters.AddWithValue( "$id", artist.Id );
                 command.Parameters.AddWithValue( "$name", artist.Name );
                 command.Parameters.AddWithValue( "$isFavorite", artist.IsFavorite ? 1 : 0 );
+                command.Parameters.AddWithValue( "$likeCount", artist.LikeCount );
                 command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
                 await command.ExecuteNonQueryAsync();
             }
@@ -492,18 +496,20 @@ namespace VideoManager3_WinUI.Services {
             await connection.OpenAsync();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT ArtistID, ArtistName, IsFavorite, IconPath
+                SELECT ArtistID, ArtistName, IsFavorite, LikeCount, IconPath
                 FROM Artists";
             using var reader = await command.ExecuteReaderAsync();
             while ( await reader.ReadAsync() ) {
                 var id = reader.GetInt32(0);
                 var name = reader.GetString(1);
                 var isFavorite = reader.GetBoolean(2);
-                var iconPath = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
+                var likeCount = reader.GetInt32(3);
+                var iconPath = reader.IsDBNull(4) ? string.Empty : reader.GetString(3);
                 var artist = new ArtistItem {
                     Id = id,
                     Name = name,
                     IsFavorite = isFavorite,
+                    LikeCount = likeCount,
                     IconPath = iconPath
                 };
                 artists.Add( artist );

@@ -43,11 +43,24 @@ namespace VideoManager3_WinUI.Models {
             get => _isFavorite;
             set {
                 _isFavorite = value;
-                if ( _isFavorite == false )                     ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
-else {
+                if ( _isFavorite == false )
+                    ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
+                else {
                     ArtistColor = new SolidColorBrush( Colors.Pink );
                 }
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsFavorite ) ) );
+            }
+        }
+
+        // いいね数
+        private int _likeCount = 0;
+        public int LikeCount {
+            get => _likeCount;
+            set {
+                if ( _likeCount != value ) {
+                    _likeCount = value;
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( LikeCount ) ) );
+                }
             }
         }
 

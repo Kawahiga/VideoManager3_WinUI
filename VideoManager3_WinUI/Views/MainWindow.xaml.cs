@@ -121,6 +121,17 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ランダム再生ボタンをクリックしたときのイベントハンドラー
+        private void RandomButton_Click( object sender, RoutedEventArgs e ) {
+            if ( ViewModel.FilteredVideos.Count > 0 ) {
+                var random = new Random().Next( ViewModel.FilteredVideos.Count );
+                var videoItem = ViewModel.FilteredVideos[random];
+                ViewModel.DoubleTappedCommand.Execute( videoItem );
+
+                ViewModel.SelectedItem = videoItem;
+            }
+        }
+
         // ソートボタンをクリックしたときのイベントハンドラー
         private void SortButton_Click( object sender, RoutedEventArgs e ) {
             var flyout = new MenuFlyout();

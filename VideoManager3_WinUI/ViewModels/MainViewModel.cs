@@ -64,6 +64,9 @@ namespace VideoManager3_WinUI.ViewModels {
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     UpdateVideoTagsCommand.NotifyCanExecuteChanged();
 
+                    // 選択ファイルの位置までスクロール
+                    ScrollToItemRequested?.Invoke( _selectedItem );
+
                     if ( _selectedItem != null )
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
                 }
@@ -208,8 +211,6 @@ namespace VideoManager3_WinUI.ViewModels {
             if ( previouslySelectedItem != null && FilteredVideos.Contains( previouslySelectedItem ) ) {
                 // 元の選択中の動画を再選択する
                 SelectedItem = previouslySelectedItem;
-                // 元の選択ファイルの位置までスクロール
-                ScrollToItemRequested?.Invoke( previouslySelectedItem );
             } else {
                 // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
                 SelectedItem = FilteredVideos.FirstOrDefault();

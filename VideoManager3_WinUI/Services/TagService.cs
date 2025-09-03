@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using VideoManager3_WinUI.Models;
+using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI.Services {
     /// <summary>
@@ -13,17 +14,12 @@ namespace VideoManager3_WinUI.Services {
     public class TagService {
         private readonly DatabaseService _databaseService;
 
-        /// <summary>
-        /// UIにバインドされる階層化されたタグのコレクション
-        /// </summary>
-        //public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
-
         public TagService( DatabaseService databaseService ) {
             _databaseService = databaseService;
         }
 
         /// <summary>
-        /// データベースから非同期にタグをロードし、階層構造を構築してUIを更新します。
+        /// データベースから非同期にタグをロードし、階層構造を構築します。
         /// </summary>
         public async Task<List<TagItem>> LoadTagsAsync() {
             try {
@@ -50,10 +46,6 @@ namespace VideoManager3_WinUI.Services {
                 }
                 var sortedRootTags = rootTags.OrderBy(t => t.OrderInGroup).ToList();
 
-                //// 3. UIのタグツリーを更新
-                //TagItems.Clear();
-                //sortedRootTags.ForEach( TagItems.Add );
-
                 return sortedRootTags;
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading tags from database: {ex.Message}" );
@@ -61,6 +53,38 @@ namespace VideoManager3_WinUI.Services {
             }
         }
 
+        /// <summary>
+        /// データベースから非同期に動画とタグの紐づけ情報をロードします。
+        /// </summary>
+        public async Task LoadVideoTagAsync( List<VideoItem> videos, List<TagItem> orderedAllTags ) {
+            var allTagsLookup = orderedAllTags.ToDictionary(t => t.Id);
+
+            foreach ( var tag in orderedAllTags ) {
+                tag.TagVideoItem.Clear();
+            }
+            // 「タグなし」タグを探す。
+            var untaggedTag = orderedAllTags.FirstOrDefault(t => t.Name == "タグなし");
+            untaggedTag?.TagVideoItem.Clear();
+
+            foreach ( var video in videos ) {
+                video.VideoTagItems.Clear();
+                var tagsForVideoFromDb = await _databaseService.GetTagsForVideoAsync(video);
+                if ( tagsForVideoFromDb.Count == 0 ) {
+                    // タグが1つも設定されていない場合、「タグなし」に設定
+                    untaggedTag?.TagVideoItem.Add( video );
+                    continue;
+                }
+
+                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
+                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
+                foreach ( var tag in orderedAllTags ) {
+                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
+                        video.VideoTagItems.Add( tag );
+                        tag.TagVideoItem.Add( video );
+                    }
+                }
+            }
+        }
 
 
         /// <summary>

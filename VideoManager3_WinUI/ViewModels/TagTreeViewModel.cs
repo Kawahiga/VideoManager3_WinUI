@@ -88,6 +88,30 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         /// <summary>
+        /// タグに紐づく動画情報を取得する。
+        /// </summary>
+        public async Task LoadTagVideos( ObservableCollection<VideoItem>? videos, ObservableCollection<TagItem>? tags ) {
+            if ( videos == null || tags == null ) {
+                return;
+            }
+
+            var allVideos = new List<VideoItem>();
+            foreach ( var video in videos ) {
+                allVideos.Add( video );
+            }
+
+            var orderedAllTags = GetTagsInOrder();
+            await _tagService.LoadVideoTagAsync( allVideos, orderedAllTags );
+
+            videos.Clear();
+            foreach ( var video in allVideos ) {
+                videos.Add( video );
+            }
+
+            return;
+        }
+
+        /// <summary>
         /// タグの編集ダイアログを表示
         /// </summary>
         public async Task EditTagAsync( TagItem? tag ) {

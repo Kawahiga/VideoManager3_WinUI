@@ -186,8 +186,9 @@ namespace VideoManager3_WinUI.ViewModels {
             await _videoService.LoadVideosAsync();
             await _tagTreeViewModel.LoadTagsAsync();
 
-            await _videoService.LoadVideoTagsAsync(TagItems);
-            await _tagTreeViewModel.LoadTagVideos( Videos );
+            //await _videoService.LoadVideoTagsAsync(TagItems);
+            //await _tagTreeViewModel.LoadTagVideos( Videos );
+            await _tagTreeViewModel.LoadTagVideos( Videos, TagItems );
             await _artistService.LoadArtistsAsync();
             await _artistService.LoadArtistVideosAsync( Videos );
 

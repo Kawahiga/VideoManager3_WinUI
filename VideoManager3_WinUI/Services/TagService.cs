@@ -86,6 +86,13 @@ namespace VideoManager3_WinUI.Services {
             }
         }
 
+        /// <summary>
+        /// データベースから非同期に動画とタグの紐づけ情報をロードします。
+        /// </summary>
+        public async Task<List<TagItem>> LoadVideoTagAsync( VideoItem video ) {
+            return await _databaseService.GetTagsForVideoAsync( video );
+        }
+
 
         /// <summary>
         /// タグをデータベースに追加または更新します。

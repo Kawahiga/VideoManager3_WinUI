@@ -95,18 +95,41 @@ namespace VideoManager3_WinUI.ViewModels {
                 return;
             }
 
+            var orderedAllTags = GetTagsInOrder();
+            foreach ( var tag in orderedAllTags ) {
+                tag.TagVideoItem.Clear();
+            }
+            foreach ( var video in videos ) {
+                video.VideoTagItems?.Clear();
+            }
+            // 「タグなし」タグを探す。
+            var untaggedTag = orderedAllTags.FirstOrDefault(t => t.Name == "タグなし");
+            untaggedTag?.TagVideoItem.Clear();
+            
             var allVideos = new List<VideoItem>();
             foreach ( var video in videos ) {
                 allVideos.Add( video );
             }
 
-            var orderedAllTags = GetTagsInOrder();
-            await _tagService.LoadVideoTagAsync( allVideos, orderedAllTags );
-
-            videos.Clear();
             foreach ( var video in allVideos ) {
-                videos.Add( video );
+                var tagsForVideoFromDb = await _tagService.LoadVideoTagAsync( video );
+                if ( tagsForVideoFromDb.Count == 0 ) {
+                    // タグが1つも設定されていない場合、「タグなし」に設定
+                    untaggedTag?.TagVideoItem.Add( video );
+                    continue;
+                }
+
+                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
+                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
+                foreach ( var tag in orderedAllTags ) {
+                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
+                        video.VideoTagItems.Add( tag );
+                        tag.TagVideoItem.Add( video );
+                    }
+                }
             }
+
+
 
             return;
         }
@@ -219,15 +242,15 @@ namespace VideoManager3_WinUI.ViewModels {
                 return;
             }
 
-            targetItem.VideoTagItems.Clear();
+            //targetItem.VideoTagItems.Clear();
             var tmpTag = GetTagsInOrder();
             foreach ( var tag in tmpTag ) {
                 // チェック状態に応じてDBとViewModelを更新
                 if ( tag.IsChecked ) {
                     // タグが既に追加されていなければ追加
-                    targetItem.VideoTagItems.Add( tag );
                     if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
                         await _databaseService.AddTagToVideoAsync( targetItem, tag );
+                        targetItem.VideoTagItems.Add( tag );
                         tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
                     }
                 } else {
@@ -235,7 +258,7 @@ namespace VideoManager3_WinUI.ViewModels {
                     var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
                     if ( tagToRemove != null ) {
                         await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
-                        //targetItem.VideoTagItems.Remove( tagToRemove );
+                        targetItem.VideoTagItems.Remove( tagToRemove );
                         tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
                     }
                 }

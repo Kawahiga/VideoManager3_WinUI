@@ -132,7 +132,7 @@ namespace VideoManager3_WinUI.ViewModels {
             UIManager = new UIManager();
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
-            
+
             // サービス層のインスタンスを作成
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
@@ -144,10 +144,9 @@ namespace VideoManager3_WinUI.ViewModels {
             TagTreeViewModel = new TagTreeViewModel( _tagService );
 
             // 操作イベントの購読
-            // タグ選択
-            TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;
-            // フィルターの有効/無効切り替え
-            _filterService.FilterStateChanged += ApplyFilters;
+            TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;    // タグ選択
+            _filterService.FilterStateChanged += ApplyFilters;  // フィルターの有効/無効切り替え
+            _filterService.PropertyChanged += FilterService_PropertyChanged;    // 複数選択ボタンの有効/無効切り替え
 
             // コマンドの初期化
             AddFolderCommand = new RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
@@ -155,7 +154,7 @@ namespace VideoManager3_WinUI.ViewModels {
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
-            DoubleTappedCommand = new RelayCommand<VideoItem>( (video) => _videoService.OpenFile( video ) );
+            DoubleTappedCommand = new RelayCommand<VideoItem>( ( video ) => _videoService.OpenFile( video ) );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
 
             // 動画とタグの初期読み込み
@@ -211,8 +210,14 @@ namespace VideoManager3_WinUI.ViewModels {
                 // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
                 SelectedItem = FilteredVideos.FirstOrDefault();
             }
-            OnPropertyChanged( nameof( FilterText ) );
-            OnPropertyChanged( nameof( FilterButtonColor ) );
+        }
+
+        private void FilterService_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
+            if ( e.PropertyName == nameof( FilterService.ButtonColor ) ) {
+                OnPropertyChanged( nameof( FilterButtonColor ) );
+            } else if ( e.PropertyName == nameof( FilterService.ButtonText ) ) {
+                OnPropertyChanged( nameof( FilterText ) );
+            }
         }
 
         // ホームフォルダを設定するコマンド

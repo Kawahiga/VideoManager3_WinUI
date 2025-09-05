@@ -57,7 +57,12 @@ namespace VideoManager3_WinUI.Services {
 
         // タグの複数選択モードを有効にするコマンド
         public void ToggleFilterMulti() {
-            MultiFilterEnabled = true;
+            if ( MultiFilterEnabled ) {
+                Filters.Clear();
+                MultiFilterEnabled = false;
+            } else { 
+                MultiFilterEnabled = true;
+            }
         }
 
         public bool SetTagFilter( TagItem? tag ) {
@@ -180,8 +185,5 @@ namespace VideoManager3_WinUI.Services {
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        //protected virtual void OnPropertyChanged( string propertyName ) {
-        //    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( propertyName ) );
-        //}
     }
 }

@@ -60,6 +60,37 @@ namespace VideoManager3_WinUI.Services {
             return await _databaseService.GetTagsForVideoAsync( video );
         }
 
+        /// <summary>
+        /// メモリ上の動画リストとタグリストを、データベースの情報に基づいて関連付けます。
+        /// </summary>
+        public async Task LinkVideosAndTagsAsync( IEnumerable<VideoItem> videos, IEnumerable<TagItem> allTags ) {
+            // タグ側の動画リストを初期化
+            foreach ( var tag in allTags ) {
+                tag.TagVideoItem.Clear();
+            }
+            // 「タグなし」タグを特別扱い
+            var untaggedTag = allTags.FirstOrDefault(t => t.Name == "タグなし");
+
+            foreach ( var video in videos ) {
+                // 動画側のタグリストを初期化
+                video.VideoTagItems.Clear();
+
+                var tagsForVideo = await LoadVideoTagAsync(video);
+
+                if ( !tagsForVideo.Any() ) {
+                    untaggedTag?.TagVideoItem.Add( video );
+                    continue;
+                }
+
+                var tagIdsForVideo = new HashSet<int>(tagsForVideo.Select(t => t.Id));
+
+                // allTags の中から該当するタグを探して相互にリンクする
+                foreach ( var tag in allTags.Where( t => tagIdsForVideo.Contains( t.Id ) ) ) {
+                    video.VideoTagItems.Add( tag );
+                    tag.TagVideoItem.Add( video );
+                }
+            }
+        }
 
         /// <summary>
         /// タグをデータベースに追加または更新します。
@@ -73,6 +104,20 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public async Task DeleteTagAsync( TagItem tag ) {
             await _databaseService.DeleteTagAsync( tag );
+        }
+
+        /// <summary>
+        /// 動画とタグの紐づけ情報を追加します。
+        /// </summary>
+        public async Task AddTagToVideoAsync( VideoItem video, TagItem tag ) {
+            await _databaseService.AddTagToVideoAsync( video, tag );
+        }
+
+        /// <summary>
+        /// 動画とタグの紐づけ情報を削除します。
+        /// </summary>
+        public async Task DeleteTagToVideoAsync( VideoItem video, TagItem tag ) {
+            await _databaseService.RemoveTagFromVideoAsync( video, tag );
         }
     }
 }

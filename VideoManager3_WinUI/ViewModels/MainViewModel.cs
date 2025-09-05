@@ -139,7 +139,7 @@ namespace VideoManager3_WinUI.ViewModels {
             _artistService = new ArtistService( _databaseService );
             _filterService = new FilterService();
 
-            TagTreeViewModel = new TagTreeViewModel( _tagService, _databaseService );
+            TagTreeViewModel = new TagTreeViewModel( _tagService );
 
             // タグ選択のイベントを購読
             TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;
@@ -160,14 +160,21 @@ namespace VideoManager3_WinUI.ViewModels {
             _ = LoadInitialDataAsync();
         }
 
-        // 初期データをDBからロード
+        /// <summary>
+        /// 初期データをDBからロード
+        /// </summary>
         private async Task LoadInitialDataAsync() {
+            // 1. 各データを個別にロード
             await _videoService.LoadVideosAsync();
             await TagTreeViewModel.LoadTagsAsync();
-            await TagTreeViewModel.LoadTagVideos( Videos, TagItems );
             await _artistService.LoadArtistsAsync();
+
+            // 2. サービスを使って、ロードしたデータ同士を関連付ける
+            var allTags = TagTreeViewModel.GetTagsInOrder();    // 全てのタグをフラットなリストとして取得
+            await _tagService.LinkVideosAndTagsAsync( Videos, allTags );
             await _artistService.LoadArtistVideosAsync( Videos );
 
+            // 3. 最後にソートとフィルタリング
             _videoService.SortVideos( SortType );
             ApplyFilters();
         }

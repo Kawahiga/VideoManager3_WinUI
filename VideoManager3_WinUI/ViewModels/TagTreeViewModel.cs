@@ -12,7 +12,6 @@ using VideoManager3_WinUI.Services;
 namespace VideoManager3_WinUI.ViewModels {
     public partial class TagTreeViewModel:ObservableObject {
         private readonly TagService _tagService;
-        private readonly DatabaseService _databaseService; // EditTagAsyncのために必要
 
         public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
 
@@ -33,9 +32,8 @@ namespace VideoManager3_WinUI.ViewModels {
 
         public bool IsTagSetting = false;
 
-        public TagTreeViewModel( TagService tagService, DatabaseService databaseService ) {
+        public TagTreeViewModel( TagService tagService ) {
             _tagService = tagService;
-            _databaseService = databaseService; // インスタンスを受け取る
 
             EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
         }
@@ -50,50 +48,6 @@ namespace VideoManager3_WinUI.ViewModels {
             foreach ( var tag in rootTags ) {
                 TagItems.Add( tag );
             }
-        }
-
-        /// <summary>
-        /// タグに紐づく動画情報を取得する。
-        /// </summary>
-        public async Task LoadTagVideos( ObservableCollection<VideoItem>? videos, ObservableCollection<TagItem>? tags ) {
-            if ( videos == null || tags == null ) {
-                return;
-            }
-
-            var orderedAllTags = GetTagsInOrder();
-            foreach ( var tag in orderedAllTags ) {
-                tag.TagVideoItem.Clear();
-            }
-            foreach ( var video in videos ) {
-                video.VideoTagItems?.Clear();
-            }
-            // 「タグなし」タグを探す。
-            var untaggedTag = orderedAllTags.FirstOrDefault(t => t.Name == "タグなし");
-            untaggedTag?.TagVideoItem.Clear();
-
-            var allVideos = new List<VideoItem>();
-            foreach ( var video in videos ) {
-                allVideos.Add( video );
-            }
-
-            foreach ( var video in allVideos ) {
-                var tagsForVideoFromDb = await _tagService.LoadVideoTagAsync( video );
-                if ( tagsForVideoFromDb.Count == 0 ) {
-                    // タグが1つも設定されていない場合、「タグなし」に設定
-                    untaggedTag?.TagVideoItem.Add( video );
-                    continue;
-                }
-
-                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
-                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
-                foreach ( var tag in orderedAllTags ) {
-                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
-                        video.VideoTagItems.Add( tag );
-                        tag.TagVideoItem.Add( video );
-                    }
-                }
-            }
-            return;
         }
 
         /// <summary>
@@ -125,13 +79,13 @@ namespace VideoManager3_WinUI.ViewModels {
             var result = await dialog.ShowAsync();
 
             if ( result == ContentDialogResult.Primary ) {
-                // 「OK」
+                // 「OK」ボタンが押された
                 if ( !string.IsNullOrWhiteSpace( inputTextBox.Text ) && tag.Name != inputTextBox.Text ) {
                     tag.Name = inputTextBox.Text;
                     await _tagService.AddOrUpdateTagAsync( tag );
                 }
             } else if ( result == ContentDialogResult.Secondary ) {
-                // 「削除」
+                // 「削除」ボタンが押された
                 RemoveTagFromUI( TagItems, tag );
                 foreach ( var video in tag.TagVideoItem ) {
                     video.VideoTagItems.Remove( tag );
@@ -204,14 +158,13 @@ namespace VideoManager3_WinUI.ViewModels {
                 return;
             }
 
-            //targetItem.VideoTagItems.Clear();
             var tmpTag = GetTagsInOrder();
             foreach ( var tag in tmpTag ) {
                 // チェック状態に応じてDBとViewModelを更新
                 if ( tag.IsChecked ) {
-                    // タグが既に追加されていなければ追加
+                    // ビデオが既にタグを持っていなければ追加
                     if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
-                        await _databaseService.AddTagToVideoAsync( targetItem, tag );
+                        await _tagService.AddTagToVideoAsync( targetItem, tag );
                         targetItem.VideoTagItems.Add( tag );
                         tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
                     }
@@ -219,8 +172,8 @@ namespace VideoManager3_WinUI.ViewModels {
                     // タグが既に存在すれば削除
                     var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
                     if ( tagToRemove != null ) {
-                        await _databaseService.RemoveTagFromVideoAsync( targetItem, tagToRemove );
-                        targetItem.VideoTagItems.Remove( tagToRemove );
+                        await _tagService.DeleteTagToVideoAsync( targetItem, tag );
+                        targetItem.VideoTagItems.Remove( tag );
                         tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
                     }
                 }

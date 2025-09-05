@@ -55,44 +55,6 @@ namespace VideoManager3_WinUI.ViewModels {
         /// <summary>
         /// タグに紐づく動画情報を取得する。
         /// </summary>
-        public Task LoadTagVideos( ObservableCollection<VideoItem>? allVideos ) {
-            if ( allVideos == null || !allVideos.Any() ) {
-                return Task.CompletedTask;
-            }
-
-            // 最初に全タグの動画リストをクリア
-            var allTags = GetTagsInOrder();
-            foreach ( var tag in allTags ) {
-                tag.TagVideoItem.Clear();
-            }
-
-            // すべてのタグのIDをキーとする辞書を取得
-            var tagDictionary = allTags.ToDictionary( t => t.Id );
-
-            // 「タグなし」タグを探す。
-            var untaggedTag = TagItems.FirstOrDefault(t => t.Name == "タグなし");
-            untaggedTag?.TagVideoItem.Clear();
-
-            // 動画リストをループしてタグに割り当てる
-            foreach ( var video in allVideos ) {
-                if ( video.VideoTagItems == null || !video.VideoTagItems.Any() ) {
-                    // タグがない動画を「タグなし」に追加
-                    untaggedTag?.TagVideoItem.Add( video );
-                } else {
-                    // 既存のタグに動画を割り当てる
-                    foreach ( var videoTag in video.VideoTagItems ) {
-                        if ( tagDictionary.TryGetValue( videoTag.Id, out var targetTag ) ) {
-                            targetTag.TagVideoItem.Add( video );
-                        }
-                    }
-                }
-            }
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// タグに紐づく動画情報を取得する。
-        /// </summary>
         public async Task LoadTagVideos( ObservableCollection<VideoItem>? videos, ObservableCollection<TagItem>? tags ) {
             if ( videos == null || tags == null ) {
                 return;

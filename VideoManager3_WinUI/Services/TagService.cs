@@ -56,39 +56,6 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// データベースから非同期に動画とタグの紐づけ情報をロードします。
         /// </summary>
-        public async Task LoadVideoTagAsync( List<VideoItem> videos, List<TagItem> orderedAllTags ) {
-            var allTagsLookup = orderedAllTags.ToDictionary(t => t.Id);
-
-            foreach ( var tag in orderedAllTags ) {
-                tag.TagVideoItem.Clear();
-            }
-            // 「タグなし」タグを探す。
-            var untaggedTag = orderedAllTags.FirstOrDefault(t => t.Name == "タグなし");
-            untaggedTag?.TagVideoItem.Clear();
-
-            foreach ( var video in videos ) {
-                video.VideoTagItems.Clear();
-                var tagsForVideoFromDb = await _databaseService.GetTagsForVideoAsync(video);
-                if ( tagsForVideoFromDb.Count == 0 ) {
-                    // タグが1つも設定されていない場合、「タグなし」に設定
-                    untaggedTag?.TagVideoItem.Add( video );
-                    continue;
-                }
-
-                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
-                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
-                foreach ( var tag in orderedAllTags ) {
-                    if ( tagsForVideoIds.Contains( tag.Id ) ) {
-                        video.VideoTagItems.Add( tag );
-                        tag.TagVideoItem.Add( video );
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// データベースから非同期に動画とタグの紐づけ情報をロードします。
-        /// </summary>
         public async Task<List<TagItem>> LoadVideoTagAsync( VideoItem video ) {
             return await _databaseService.GetTagsForVideoAsync( video );
         }
@@ -107,33 +74,5 @@ namespace VideoManager3_WinUI.Services {
         public async Task DeleteTagAsync( TagItem tag ) {
             await _databaseService.DeleteTagAsync( tag );
         }
-
-        ///// <summary>
-        ///// 選択中の動画が持つタグ情報に基づき、全タグのチェック状態を更新します。
-        ///// </summary>
-        ///// <param name="checkedVideoTags">動画に紐づくタグのコレクション</param>
-        //public void UpdateTagCheckedState( IEnumerable<TagItem> checkedVideoTags ) {
-        //    var checkedTagIds = new HashSet<int>(checkedVideoTags.Select(t => t.Id));
-
-        //    foreach ( var tag in _allTags ) {
-        //        tag.IsChecked = checkedTagIds.Contains( tag.Id );
-        //    }
-        //}
-
-        ///// <summary>
-        ///// すべてのタグをツリーの表示順でフラットなリストとして取得します。
-        ///// </summary>
-        ///// <returns>順序付けされたタグのリスト</returns>
-        //public List<TagItem> GetTagsInOrder() {
-        //    var orderedTags = new List<TagItem>();
-        //    void Traverse( IEnumerable<TagItem> tags ) {
-        //        foreach ( var tag in tags ) {
-        //            orderedTags.Add( tag );
-        //            Traverse( tag.Children );
-        //        }
-        //    }
-        //    Traverse( TagItems );
-        //    return orderedTags;
-        //}
     }
 }

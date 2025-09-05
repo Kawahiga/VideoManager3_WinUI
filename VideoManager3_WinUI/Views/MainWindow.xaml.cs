@@ -175,8 +175,7 @@ namespace VideoManager3_WinUI {
         private void TagEdit( object sender, RoutedEventArgs e ) {
             // sender（クリックされたMenuFlyoutItem）のDataContextを取得
             if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
-                // DataContextがTagItemであれば、それをコマンドのパラメータとして渡す
-                ViewModel.EditTagCommand.Execute( selectedTag );
+                ViewModel.TagTreeViewModel.EditTagCommand.Execute( selectedTag );
             }
         }
 
@@ -184,22 +183,22 @@ namespace VideoManager3_WinUI {
         private VideoItem? _editTargetItem;
 
         // 動画に対するタグ設定イベントハンドラ
-        private void TagEditFlyout_Opening( object sender, object e ) {
+        private async void TagEditFlyout_Opening( object sender, object e ) {
 
             if ( ViewModel.TagTreeViewModel.IsTagSetting == false ) {
                 // 現在選択中の動画に合わせてタグのチェック状態を設定
-                ViewModel.PrepareTagsForEditing( ViewModel.SelectedItem );
+                ViewModel.TagTreeViewModel.PrepareTagsForEditing( ViewModel.SelectedItem );
                 ViewModel.TagTreeViewModel.IsTagSetting = true;
                 _editTargetItem = ViewModel.SelectedItem;
             } else {
                 // 変更を確定させDBに保存
-                ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
+                await ViewModel.TagTreeViewModel.UpdateVideoTagSelection( _editTargetItem );
                 ViewModel.TagTreeViewModel.IsTagSetting = false;
             }
         }
 
         // タグ設定モード中に画面の他の部分をタップしたときのイベントハンドラ
-        private void RootGrid_Tapped( object sender, TappedRoutedEventArgs e ) {
+        private async void RootGrid_Tapped( object sender, TappedRoutedEventArgs e ) {
             if ( !ViewModel.TagTreeViewModel.IsTagSetting ) {
                 return;
             }
@@ -217,7 +216,7 @@ namespace VideoManager3_WinUI {
             }
 
             // それ以外の場合は変更を確定
-            ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
+            await ViewModel.TagTreeViewModel.UpdateVideoTagSelection( _editTargetItem );
             ViewModel.TagTreeViewModel.IsTagSetting = false;
         }
 

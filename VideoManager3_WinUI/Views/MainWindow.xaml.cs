@@ -186,21 +186,21 @@ namespace VideoManager3_WinUI {
         // 動画に対するタグ設定イベントハンドラ
         private void TagEditFlyout_Opening( object sender, object e ) {
 
-            if ( ViewModel.UIManager.IsTagSetting == false ) {
+            if ( ViewModel.TagTreeViewModel.IsTagSetting == false ) {
                 // 現在選択中の動画に合わせてタグのチェック状態を設定
                 ViewModel.PrepareTagsForEditing( ViewModel.SelectedItem );
-                ViewModel.UIManager.IsTagSetting = true;
+                ViewModel.TagTreeViewModel.IsTagSetting = true;
                 _editTargetItem = ViewModel.SelectedItem;
             } else {
                 // 変更を確定させDBに保存
                 ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
-                ViewModel.UIManager.IsTagSetting = false;
+                ViewModel.TagTreeViewModel.IsTagSetting = false;
             }
         }
 
         // タグ設定モード中に画面の他の部分をタップしたときのイベントハンドラ
         private void RootGrid_Tapped( object sender, TappedRoutedEventArgs e ) {
-            if ( !ViewModel.UIManager.IsTagSetting ) {
+            if ( !ViewModel.TagTreeViewModel.IsTagSetting ) {
                 return;
             }
 
@@ -218,7 +218,7 @@ namespace VideoManager3_WinUI {
 
             // それ以外の場合は変更を確定
             ViewModel.UpdateVideoTagsCommand.Execute( _editTargetItem );
-            ViewModel.UIManager.IsTagSetting = false;
+            ViewModel.TagTreeViewModel.IsTagSetting = false;
         }
 
         // 指定した型および名前の親要素が存在するかどうかを確認するヘルパーメソッド

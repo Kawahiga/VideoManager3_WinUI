@@ -18,7 +18,7 @@ namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
-        public ObservableCollection<TagItem> TagItems => _tagTreeViewModel.TagItems;
+        public ObservableCollection<TagItem> TagItems => TagTreeViewModel.TagItems;
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
         // フィルター項目リスト（表示用）
@@ -37,7 +37,7 @@ namespace VideoManager3_WinUI.ViewModels {
         private readonly ArtistService _artistService;
         private readonly FilterService _filterService;
 
-        private readonly TagTreeViewModel _tagTreeViewModel;
+        public TagTreeViewModel TagTreeViewModel { get; }
 
         // コマンド
         public ICommand AddFolderCommand { get; private set; }
@@ -73,24 +73,24 @@ namespace VideoManager3_WinUI.ViewModels {
             }
         }
 
-        // TreeViewで選択されているタグを保持するためのプロパティ
-        private TagItem? _selectedTag;
-        public TagItem? SelectedTag {
-            get => _selectedTag;
-            set {
-                if ( _selectedTag != value
-                    && !UIManager.IsTagSetting
-                    ) {
-                    _selectedTag = value;
-                    OnPropertyChanged( nameof( SelectedTag ) );
-                    EditTagCommand.NotifyCanExecuteChanged();
+        //// TreeViewで選択されているタグを保持するためのプロパティ
+        //private TagItem? _selectedTag;
+        //public TagItem? SelectedTag {
+        //    get => _selectedTag;
+        //    set {
+        //        if ( _selectedTag != value
+        //            && !TagTreeViewModel.IsTagSetting
+        //            ) {
+        //            _selectedTag = value;
+        //            OnPropertyChanged( nameof( SelectedTag ) );
+        //            EditTagCommand.NotifyCanExecuteChanged();
 
-                    if ( _filterService.SetTagFilter( _selectedTag ) ) {
-                        ApplyFilters();
-                    }
-                }
-            }
-        }
+        //            if ( _filterService.SetTagFilter( _selectedTag ) ) {
+        //                ApplyFilters();
+        //            }
+        //        }
+        //    }
+        //}
 
         // アーティストツリーで選択されているアーティストを保持するためのプロパティ
         private ArtistItem? _selectedArtist;
@@ -161,7 +161,10 @@ namespace VideoManager3_WinUI.ViewModels {
             _artistService = new ArtistService( _databaseService );
             _filterService = new FilterService();
 
-            _tagTreeViewModel = new TagTreeViewModel( _tagService, _databaseService );
+            TagTreeViewModel = new TagTreeViewModel( _tagService, _databaseService );
+
+            // タグ選択のイベントを購読
+            TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;
 
             // FilterServiceのイベントを購読
             _filterService.FilterStateChanged += ApplyFilters;
@@ -172,8 +175,8 @@ namespace VideoManager3_WinUI.ViewModels {
             DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
-            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await _tagTreeViewModel.EditTagAsync( tag ) );
-            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await _tagTreeViewModel.UpdateVideoTagSelection( video ) );
+            EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await TagTreeViewModel.EditTagAsync( tag ) );
+            UpdateVideoTagsCommand = new RelayCommand<VideoItem>( async ( video ) => await TagTreeViewModel.UpdateVideoTagSelection( video ) );
             DoubleTappedCommand = new RelayCommand<VideoItem>( (video) => _videoService.OpenFile( video ) );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
 
@@ -184,16 +187,26 @@ namespace VideoManager3_WinUI.ViewModels {
         // 初期データをDBからロード
         private async Task LoadInitialDataAsync() {
             await _videoService.LoadVideosAsync();
-            await _tagTreeViewModel.LoadTagsAsync();
+            await TagTreeViewModel.LoadTagsAsync();
 
             //await _videoService.LoadVideoTagsAsync(TagItems);
-            //await _tagTreeViewModel.LoadTagVideos( Videos );
-            await _tagTreeViewModel.LoadTagVideos( Videos, TagItems );
+            //await TagTreeViewModel.LoadTagVideos( Videos );
+            await TagTreeViewModel.LoadTagVideos( Videos, TagItems );
             await _artistService.LoadArtistsAsync();
             await _artistService.LoadArtistVideosAsync( Videos );
 
             _videoService.SortVideos( SortType );
             ApplyFilters();
+        }
+
+        /// <summary>
+        /// タグを選択した場合のイベント
+        /// 選択したタグをフィルターに設定する
+        /// </summary>
+        private void OnSelectedTagChanged( TagItem? newSelectedTag ) {
+            if ( _filterService.SetTagFilter( newSelectedTag ) ) {
+                ApplyFilters();
+            }
         }
 
         /// <summary>
@@ -222,7 +235,7 @@ namespace VideoManager3_WinUI.ViewModels {
 
         // ファイルに対するタグ設定ボタン
         public void PrepareTagsForEditing( VideoItem? targetVideo) {
-            _tagTreeViewModel.PrepareTagsForEditing( targetVideo );
+            TagTreeViewModel.PrepareTagsForEditing( targetVideo );
         }
 
         // ホームフォルダを設定するコマンド
@@ -243,7 +256,7 @@ namespace VideoManager3_WinUI.ViewModels {
 
         // アプリを閉じるときのイベント
         public async Task WindowCloseAsync() {
-            await _tagTreeViewModel.SaveTagsInClose();
+            await TagTreeViewModel.SaveTagsInClose();
             await SaveArtistsInClose( ArtistItems );
         }
 

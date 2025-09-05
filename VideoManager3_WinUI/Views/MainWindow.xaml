@@ -110,8 +110,8 @@
 
                 <!-- タグを表示するTreeView -->
                 <TreeView Grid.Row="1" x:Name="TagsTreeView" Margin="5,0,5,5"
-                    ItemsSource="{Binding TagItems, Mode=TwoWay}"
-                    SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
+                    ItemsSource="{Binding TagTreeViewModel.TagItems, Mode=TwoWay}"
+                    SelectedItem="{Binding TagTreeViewModel.SelectedTag, Mode=TwoWay}"
                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                     Visibility="{Binding UIManager.IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TreeView.ItemTemplate>

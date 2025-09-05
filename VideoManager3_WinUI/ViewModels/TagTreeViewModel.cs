@@ -16,25 +16,28 @@ namespace VideoManager3_WinUI.ViewModels {
 
         public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
 
-        [ObservableProperty]
+        // TreeViewで選択されているタグを保持するためのプロパティ
         private TagItem? _selectedTag;
+        public TagItem? SelectedTag {
+            get => _selectedTag;
+            set {
+                if ( SetProperty( ref _selectedTag, value ) && !IsTagSetting ) {
+                    SelectedTagChanged?.Invoke( value );
+                }
+            }
+        }
 
         public IRelayCommand<TagItem> EditTagCommand { get; }
 
         public event Action<TagItem?>? SelectedTagChanged;
+
+        public bool IsTagSetting = false;
 
         public TagTreeViewModel( TagService tagService, DatabaseService databaseService ) {
             _tagService = tagService;
             _databaseService = databaseService; // インスタンスを受け取る
 
             EditTagCommand = new RelayCommand<TagItem>( async ( tag ) => await EditTagAsync( tag ) );
-
-            // SelectedTagプロパティの変更を監視
-            PropertyChanged += ( sender, e ) => {
-                if ( e.PropertyName == nameof( _selectedTag ) ) {
-                    SelectedTagChanged?.Invoke( _selectedTag );
-                }
-            };
         }
 
         /// <summary>
@@ -105,7 +108,7 @@ namespace VideoManager3_WinUI.ViewModels {
             // 「タグなし」タグを探す。
             var untaggedTag = orderedAllTags.FirstOrDefault(t => t.Name == "タグなし");
             untaggedTag?.TagVideoItem.Clear();
-            
+
             var allVideos = new List<VideoItem>();
             foreach ( var video in videos ) {
                 allVideos.Add( video );
@@ -128,9 +131,6 @@ namespace VideoManager3_WinUI.ViewModels {
                     }
                 }
             }
-
-
-
             return;
         }
 

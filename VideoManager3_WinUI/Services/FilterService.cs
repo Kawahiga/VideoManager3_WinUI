@@ -174,7 +174,9 @@ namespace VideoManager3_WinUI.Services {
         public event Action? FilterStateChanged;
         private void FilterItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
             // IsActiveプロパティが変更された場合のみイベントを発行
-            if ( e.PropertyName == nameof( FilterItem.IsActive ) )                 FilterStateChanged?.Invoke();
+            if ( e.PropertyName == nameof( FilterItem.IsActive ) ) {
+                FilterStateChanged?.Invoke();
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

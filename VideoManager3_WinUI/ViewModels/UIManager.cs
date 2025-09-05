@@ -41,17 +41,6 @@ namespace VideoManager3_WinUI {
         }
         public double ThumbnailHeight => ThumbnailSize * 9.0 / 16.0;
 
-        private bool _isTagSetting = false;
-        public bool IsTagSetting {
-            get => _isTagSetting;
-            set {
-                if ( SetProperty( ref _isTagSetting, value ) ) {
-                    //OnPropertyChanged( nameof( IsNotTagSetting ) );
-                }
-            }
-        }
-        //public bool IsNotTagSetting => !IsTagSetting;
-
         [RelayCommand]
         private void ToggleView() {
             IsGridView = !IsGridView;

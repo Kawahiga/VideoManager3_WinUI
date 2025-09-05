@@ -18,7 +18,6 @@ namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
         public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
-        public ObservableCollection<TagItem> TagItems => TagTreeViewModel.TagItems;
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
         // フィルター項目リスト（表示用）
@@ -61,11 +60,11 @@ namespace VideoManager3_WinUI.ViewModels {
                     OnPropertyChanged( nameof( SelectedItem ) );
                     DoubleTappedCommand.NotifyCanExecuteChanged();
 
-                    // 選択ファイルの位置までスクロール
-                    ScrollToItemRequested?.Invoke( _selectedItem );
-
-                    if ( _selectedItem != null )
+                    if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
+                        // 選択ファイルの位置までスクロール
+                        ScrollToItemRequested?.Invoke( _selectedItem );
+                    }
                 }
             }
         }
@@ -133,18 +132,21 @@ namespace VideoManager3_WinUI.ViewModels {
             UIManager = new UIManager();
             var dbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VideoManager3", "videos.db");
             Directory.CreateDirectory( Path.GetDirectoryName( dbPath )! );
+            
+            // サービス層のインスタンスを作成
             _databaseService = new DatabaseService( dbPath );
             _tagService = new TagService( _databaseService );
             _videoService = new VideoService( _databaseService, _tagService, new ThumbnailService() );
             _artistService = new ArtistService( _databaseService );
             _filterService = new FilterService();
 
+            // ViewModel層のインスタンスを作成
             TagTreeViewModel = new TagTreeViewModel( _tagService );
 
-            // タグ選択のイベントを購読
+            // 操作イベントの購読
+            // タグ選択
             TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;
-
-            // FilterServiceのイベントを購読
+            // フィルターの有効/無効切り替え
             _filterService.FilterStateChanged += ApplyFilters;
 
             // コマンドの初期化
@@ -257,8 +259,9 @@ namespace VideoManager3_WinUI.ViewModels {
         // ファイル名を変更するメソッド
         // 将来的にはVideoServiceに移動する
         public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) )
+            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) ) {
                 return;
+            }
 
             // 変更前のアーティスト名を取得
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);
@@ -268,19 +271,22 @@ namespace VideoManager3_WinUI.ViewModels {
             await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
 
             string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
-            if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) )                 // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
+            if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
+                // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
                 // 新しい名前でアーティスト情報を更新
                 await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
+            }
 
             // 変更後のファイル名でソート
             _videoService.SortVideos( SortType );
-            //ApplyFilters();
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ
         private async void SelectedItem_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
-            if ( SelectedItem != null )                 // データベースを更新
+            if ( SelectedItem != null ) {
+                // データベースを更新
                 await _databaseService.UpdateVideoAsync( SelectedItem );
+            }
         }
     }
 }

@@ -422,7 +422,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-
         // ファイルの保存場所をエクスプローラーで開く
         private void OpenFileLocation_Click( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem != null ) {

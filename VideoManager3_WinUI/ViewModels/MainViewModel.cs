@@ -16,7 +16,6 @@ using Windows.Storage.Pickers;
 
 namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
-        public UIManager UIManager { get; }
         public ObservableCollection<VideoItem> Videos => _videoService.Videos;
         public ObservableCollection<ArtistItem> ArtistItems => _artistService.Artists;
 
@@ -29,14 +28,17 @@ namespace VideoManager3_WinUI.ViewModels {
         // 絞り込み後の動画（表示用）
         public ObservableCollection<VideoItem> FilteredVideos { get; } = new ObservableCollection<VideoItem>();
 
+        // ViewModelのインスタンス
+        public UIManager UIManager { get; }
+        public TagTreeViewModel TagTreeViewModel { get; }
+        public ArtistViewModel ArtistViewModel { get; }
+
         // サービスのインスタンス
         private readonly DatabaseService _databaseService;
         private readonly VideoService _videoService;
         private readonly TagService _tagService;
         private readonly ArtistService _artistService;
         private readonly FilterService _filterService;
-
-        public TagTreeViewModel TagTreeViewModel { get; }
 
         // コマンド
         public ICommand AddFolderCommand { get; private set; }
@@ -142,9 +144,11 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // ViewModel層のインスタンスを作成
             TagTreeViewModel = new TagTreeViewModel( _tagService );
+            ArtistViewModel = new ArtistViewModel( _artistService );
 
             // 操作イベントの購読
             TagTreeViewModel.SelectedTagChanged += OnSelectedTagChanged;    // タグ選択
+            ArtistViewModel.SelectedArtistChanged += OnSelectedArtistChanged; // アーティスト選択
             _filterService.FilterStateChanged += ApplyFilters;  // フィルターの有効/無効切り替え
             _filterService.PropertyChanged += FilterService_PropertyChanged;    // 複数選択ボタンの有効/無効切り替え
 
@@ -168,12 +172,12 @@ namespace VideoManager3_WinUI.ViewModels {
             // 1. 各データを個別にロード
             await _videoService.LoadVideosAsync();
             await TagTreeViewModel.LoadTagsAsync();
-            await _artistService.LoadArtistsAsync();
+            await ArtistViewModel.LoadArtists();
 
             // 2. サービスを使って、ロードしたデータ同士を関連付ける
             var allTags = TagTreeViewModel.GetTagsInOrder();    // 全てのタグをフラットなリストとして取得
             await _tagService.LinkVideosAndTagsAsync( Videos, allTags );
-            await _artistService.LoadArtistVideosAsync( Videos );
+            await _artistService.LoadArtistVideosAsync( Videos, ArtistItems );
 
             // 3. 最後にソートとフィルタリング
             _videoService.SortVideos( SortType );
@@ -182,13 +186,22 @@ namespace VideoManager3_WinUI.ViewModels {
 
         /// <summary>
         /// タグを選択した場合のイベント
-        /// 選択したタグをフィルターに設定する
         /// </summary>
-        private void OnSelectedTagChanged( TagItem? newSelectedTag ) {
-            if ( _filterService.SetTagFilter( newSelectedTag ) ) {
+        private void OnSelectedTagChanged( TagItem? newSelected ) {
+            if ( _filterService.SetTagFilter( newSelected ) ) {
                 ApplyFilters();
             }
         }
+
+        /// <summary>
+        /// アーティストを選択した場合のイベント
+        /// </summary>
+        private void OnSelectedArtistChanged( ArtistItem? newSelected ) {
+            if ( _filterService.SetArtistFilter( newSelected ) ) {
+                ApplyFilters();
+            }
+        }
+
 
         /// <summary>
         /// フィルターを適用する
@@ -279,7 +292,7 @@ namespace VideoManager3_WinUI.ViewModels {
             if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
                 // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
                 // 新しい名前でアーティスト情報を更新
-                await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
+                await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem, ArtistItems );
             }
 
             // 変更後のファイル名でソート

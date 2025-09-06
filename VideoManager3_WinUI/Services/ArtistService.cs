@@ -1,11 +1,12 @@
+using Microsoft.UI;
+using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.UI;
-using Microsoft.UI.Xaml.Media;
 using VideoManager3_WinUI.Models;
 
 namespace VideoManager3_WinUI.Services {
@@ -27,9 +28,9 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// データベースからアーティスト情報を非同期にロードします。
         /// </summary>
-        public async Task LoadArtistsAsync() {
+        public async Task<List<ArtistItem>> LoadArtistsAsync() {
+            List<ArtistItem> artistList = new List<ArtistItem>();
             try {
-                Artists.Clear();
                 var artistsFromDb = await _databaseService.GetAllArtistsAsync();
                 foreach ( var artist in artistsFromDb ) {
                     // 名前の正規化
@@ -47,19 +48,20 @@ namespace VideoManager3_WinUI.Services {
                     } else {
                         artist.AliaseNames = new List<string> { artist.Name };
                     }
-                    Artists.Add( artist );
+                    artistList.Add( artist );
                 }
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error loading artists: {ex.Message}" );
             }
+            return artistList;
         }
 
         /// <summary>
         /// データベースからアーティストと動画の関連情報を非同期にロードします。
         /// </summary>
-        public async Task LoadArtistVideosAsync( ObservableCollection<VideoItem> videos ) {
+        public async Task LoadArtistVideosAsync( IEnumerable<VideoItem> videos, IEnumerable<ArtistItem> artists ) {
             try {
-                foreach ( var artist in Artists ) {
+                foreach ( var artist in artists ) {
                     // 既存の関連動画リストをクリア
                     artist.VideosInArtist.Clear();
                 }
@@ -72,10 +74,10 @@ namespace VideoManager3_WinUI.Services {
                     var artistsFromDb = await _databaseService.GetArtistsForVideoAsync(video);
                     foreach ( var artist in artistsFromDb ) {
                         // Artistsから同じIDのアーティストを探す
-                        ArtistItem? existingArtist = Artists.FirstOrDefault(a => a.Id == artist.Id);
+                        ArtistItem? existingArtist = artists.FirstOrDefault(a => a.Id == artist.Id);
                         if ( existingArtist != null ) {
                             video.ArtistsInVideo.Add( existingArtist );
-                            Artists.Where( a => a.Id == artist.Id ).FirstOrDefault()?.VideosInArtist.Add( video );
+                            artists.Where( a => a.Id == artist.Id ).FirstOrDefault()?.VideosInArtist.Add( video );
                         }
                     }
                 }
@@ -90,8 +92,7 @@ namespace VideoManager3_WinUI.Services {
         /// 関連するアーティスト情報が既にあれば更新、なければ追加します。
         /// （アーティスト情報が変更されている場合、古い情報が残る）
         /// </summary>
-        /// <param name="video">追加または更新するビデオ。</param>
-        public async Task AddOrUpdateArtistFromVideoAsync( VideoItem video ) {
+        public async Task AddOrUpdateArtistFromVideoAsync( VideoItem video, IEnumerable<ArtistItem> artists ) {
             // ビデオとアーティストの双方向リンクを解除、データベースからも削除
             foreach ( var artist in video.ArtistsInVideo ) {
                 _databaseService.RemoveArtistFromVideoAsync( video, artist ).Wait();
@@ -101,7 +102,9 @@ namespace VideoManager3_WinUI.Services {
 
             // ビデオのファイル名を解析し、アーティスト情報を抽出して内部状態を更新する。
             string artistsString = GetArtistNameWithoutFileName( video.FileName ?? string.Empty );
-            if ( string.IsNullOrEmpty( artistsString ) )                 return;
+            if ( string.IsNullOrEmpty( artistsString ) ) {
+                return;
+            }
 
             // アーティストを分別（別名義を考慮）
             // 例: "浜崎りお(篠原絵梨香、森下えりか) 吉沢明歩" → ["浜崎りお(篠原絵梨香、森下えりか)", "吉沢明歩"]
@@ -134,7 +137,7 @@ namespace VideoManager3_WinUI.Services {
             // アーティスト名をもとに、既存のArtistItemを検索または新規作成
             foreach ( var nameGroup in artistGroups ) {
                 // nameGroup内のいずれかの名前を持つ既存のArtistItemを探す
-                ArtistItem? existingArtist = Artists.FirstOrDefault(a => a.AliaseNames.Intersect(nameGroup, StringComparer.OrdinalIgnoreCase).Any());
+                ArtistItem? existingArtist = artists.FirstOrDefault(a => a.AliaseNames.Intersect(nameGroup, StringComparer.OrdinalIgnoreCase).Any());
 
                 if ( existingArtist != null ) {
                     // --- 既存のアーティストが見つかった場合 ---
@@ -148,15 +151,21 @@ namespace VideoManager3_WinUI.Services {
 
                     // 表示名を更新
                     string displayName = mainName;
-                    if ( otherAliases.Any() )                         displayName += $"({string.Join( "、", otherAliases )})";
+                    if ( otherAliases.Any() ) {
+                        displayName += $"({string.Join( "、", otherAliases )})";
+                    }
 
                     // ArtistItemを更新
                     existingArtist.Name = displayName;
                     existingArtist.AliaseNames = updatedAliases;
 
                     // ビデオとの関連付け
-                    if ( !existingArtist.VideosInArtist.Contains( video ) )                         existingArtist.VideosInArtist.Add( video );
-                    if ( !video.ArtistsInVideo.Contains( existingArtist ) )                         video.ArtistsInVideo.Add( existingArtist );
+                    if ( !existingArtist.VideosInArtist.Contains( video ) ) {
+                        existingArtist.VideosInArtist.Add( video );
+                    }
+                    if ( !video.ArtistsInVideo.Contains( existingArtist ) ) {
+                        video.ArtistsInVideo.Add( existingArtist );
+                    }
 
                     // データベース更新
                     await _databaseService.AddOrUpdateArtistAsync( existingArtist );
@@ -170,7 +179,9 @@ namespace VideoManager3_WinUI.Services {
 
                     // 表示名を作成
                     string displayName = mainName;
-                    if ( aliases.Any() )                         displayName += $"({string.Join( "、", aliases )})";
+                    if ( aliases.Any() ) {
+                        displayName += $"({string.Join( "、", aliases )})";
+                    }
 
                     var newArtist = new ArtistItem
                     {
@@ -215,7 +226,9 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public static string GetArtistNameWithoutFileName( string fileName ) {
             var match = Regex.Match( fileName, @"^[\[【](.*?)[\]】]" );
-            if ( !match.Success )                 return string.Empty;
+            if ( !match.Success ) {
+                return string.Empty;
+            }
             return match.Groups[1].Value.Trim();
         }
 
@@ -224,7 +237,9 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public static string GetFileNameWithoutArtist( string fileName ) {
             var match = Regex.Match( fileName, @"^[\[【](.*?)[\]】]\s*(.*)" );
-            if ( match.Success )                 return match.Groups[2].Value.Trim();
+            if ( match.Success ) {
+                return match.Groups[2].Value.Trim();
+            }
             return fileName;
         }
     }

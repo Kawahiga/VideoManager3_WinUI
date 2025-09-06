@@ -246,6 +246,7 @@ namespace VideoManager3_WinUI {
         // 動画詳細ペインで使用
         private void ArtistName_PointerPressed( object sender, PointerRoutedEventArgs e ) {
             if ( sender is FrameworkElement element && element.DataContext is ArtistItem artist ) {
+                //ViewModel.ArtistViewModel.SelectedArtist = artist;
                 ViewModel.SelectedArtist = artist;
                 e.Handled = true;
             }

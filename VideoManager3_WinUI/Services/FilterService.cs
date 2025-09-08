@@ -60,7 +60,7 @@ namespace VideoManager3_WinUI.Services {
             if ( MultiFilterEnabled ) {
                 Filters.Clear();
                 MultiFilterEnabled = false;
-            } else { 
+            } else {
                 MultiFilterEnabled = true;
             }
         }
@@ -100,7 +100,7 @@ namespace VideoManager3_WinUI.Services {
             }
 
             if ( !MultiFilterEnabled ) {
-                // 複数フィルターが無効な場合、既存の同種フィルターを削除                 
+                // 複数フィルターが無効な場合、既存の同種フィルターを削除
                 var existingFilterType = Filters.FirstOrDefault(f => f.Type == type);
                 if ( existingFilterType != null ) {
                     // イベントハンドラの購読を解除
@@ -129,10 +129,19 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// 動画リストにフィルターを適用する
         /// </summary>
-        public IEnumerable<VideoItem> ApplyFilters( IEnumerable<VideoItem> videos ) {
-            var activeFilters = Filters.Where(f => f.IsActive == false).ToList();
-            if ( !activeFilters.Any() )                 return videos;
-            return videos.Where( video => activeFilters.All( filter => IsVideoMatch( video, filter ) ) );
+        public IEnumerable<VideoItem> ApplyFilters( IEnumerable<VideoItem> videos, FilterType? filterType = null ) {
+            var activeFilters = Filters.Where(f => f.IsActive == false);
+
+            if ( filterType.HasValue ) {
+                activeFilters = activeFilters.Where( f => f.Type == filterType.Value );
+            }
+
+            var filterList = activeFilters.ToList();
+            if ( !filterList.Any() ) {
+                return videos;
+            }
+
+            return videos.Where( video => filterList.All( filter => IsVideoMatch( video, filter ) ) );
         }
 
         private bool IsVideoMatch( VideoItem video, FilterItem filter ) {

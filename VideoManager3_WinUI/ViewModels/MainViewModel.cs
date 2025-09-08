@@ -210,6 +210,53 @@ namespace VideoManager3_WinUI.ViewModels {
                 // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
                 SelectedItem = FilteredVideos.FirstOrDefault();
             }
+            UpdateFilteredTagCounts();
+        }
+
+        private void UpdateFilteredTagCounts() {
+            var allTags = TagTreeViewModel.GetTagsInOrder();
+
+            // アーティストフィルターが有効な場合、フィルタリング後のタグ数にする
+            if ( Filters.Any( f => f.Type == FilterType.Artist && f.IsActive == false ) ) {
+                var tagMap = allTags.ToDictionary( t => t.Id );
+                foreach ( var tag in allTags ) {
+                    tag.TempFilteredCount = 0;
+                }
+
+                var filtered = _filterService.ApplyFilters( Videos, FilterType.Artist );
+                foreach ( var video in filtered ) {
+                    foreach ( var videoTag in video.VideoTagItems ) {
+                        if ( tagMap.TryGetValue( videoTag.Id, out var tag ) ) {
+                            tag.TempFilteredCount++;
+                        }
+                    }
+                }
+            } else {
+                foreach ( var tag in allTags ) {
+                    tag.TempFilteredCount = tag.TagVideoItem.Count;
+                }
+            }
+
+            // タグフィルターが有効な場合、フィルタリング後のアーティスト数にする
+            if ( Filters.Any( f => f.Type == FilterType.Tag && f.IsActive == false ) ) {
+                var artistMap = ArtistItems.ToDictionary( a => a.Id );
+                foreach ( var artist in ArtistItems ) {
+                    artist.TempFilteredCount = 0;
+                }
+
+                var filtered = _filterService.ApplyFilters( Videos, FilterType.Tag );
+                foreach ( var video in filtered ) {
+                    foreach ( var artistInVideo in video.ArtistsInVideo ) {
+                        if ( artistMap.TryGetValue( artistInVideo.Id, out var artist ) ) {
+                            artist.TempFilteredCount++;
+                        }
+                    }
+                }
+            } else {
+                foreach ( var artist in ArtistItems ) {
+                    artist.TempFilteredCount = artist.VideoCount;
+                }
+            }
         }
 
         private void FilterService_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {

@@ -132,7 +132,7 @@
                                     </StackPanel>
                                     <!-- タグの動画数を表示するボーダー -->
                                     <Border Grid.Column="1" Background="LightSlateGray"  CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
-                                        <TextBlock Text="{x:Bind TagVideoCount, Mode=OneWay}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{x:Bind FilteredTagVideoCount, Mode=OneWay}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
 
                                     </Border>
                                 </Grid>
@@ -174,7 +174,7 @@
                                 </StackPanel>
                                 <!-- 女優の動画数を表示するボーダー -->
                                 <Border Grid.Column="1" Background="LightSlateGray" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="DarkBlue" BorderThickness="1">
-                                    <TextBlock Text="{x:Bind VideoCount,Mode=OneWay}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="{x:Bind FilteredVideoCount,Mode=OneWay}" Foreground="White" Margin="5,0" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                 </Border>
 
                                 <!-- 右クリックメニュー -->

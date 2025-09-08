@@ -104,7 +104,8 @@ namespace VideoManager3_WinUI.Models {
         public bool IsEditing {
             get => _isEditing;
             set {
-                if ( _isGroup == true ) return; // グループは設定不可
+                if ( _isGroup == true )
+                    return; // グループは設定不可
                 _isEditing = value;
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsEditing ) ) );
             }
@@ -149,6 +150,28 @@ namespace VideoManager3_WinUI.Models {
                     tagVideoCount += child.TagVideoCount; // 子タグの動画数を合算
                 }
                 return tagVideoCount;
+            }
+        }
+
+        // フィルター適用後の動画数
+        public int FilteredTagVideoCount {
+            get {
+                int count = TempFilteredCount;
+                foreach ( var child in Children ) {
+                    count += child.FilteredTagVideoCount;
+                }
+                return count;
+            }
+        }
+
+        private int _tempFilteredCount = 0;
+        public int TempFilteredCount {
+            get => _tempFilteredCount;
+            set {
+                if ( _tempFilteredCount != value ) {
+                    _tempFilteredCount = value;
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( FilteredTagVideoCount ) ) );
+                }
             }
         }
 
@@ -199,7 +222,8 @@ namespace VideoManager3_WinUI.Models {
 
         // DB用のカラーコードを表示用Brushに変換する
         private static Brush ConvertStringToBrush( string? colorString ) {
-            if ( string.IsNullOrEmpty( colorString ) || !colorString.StartsWith( "#" ) || colorString.Length != 7 && colorString.Length != 9 )                 return new SolidColorBrush( Colors.Black );
+            if ( string.IsNullOrEmpty( colorString ) || !colorString.StartsWith( "#" ) || colorString.Length != 7 && colorString.Length != 9 )
+                return new SolidColorBrush( Colors.Black );
 
             try {
                 var s = colorString.Substring(1);

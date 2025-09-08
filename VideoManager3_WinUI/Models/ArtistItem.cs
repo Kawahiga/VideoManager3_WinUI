@@ -95,6 +95,20 @@ namespace VideoManager3_WinUI.Models {
         // VideoCountはVideosInArtistの要素数を返す読み取り専用プロパティ
         public int VideoCount => VideosInArtist.Count;
 
+        // フィルター適用後の動画数
+        public int FilteredVideoCount => TempFilteredCount;
+
+        private int _tempFilteredCount = 0;
+        public int TempFilteredCount {
+            get => _tempFilteredCount;
+            set {
+                if ( _tempFilteredCount != value ) {
+                    _tempFilteredCount = value;
+                    PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( FilteredVideoCount ) ) );
+                }
+            }
+        }
+
         private void VideosInArtist_CollectionChanged( object? sender, NotifyCollectionChangedEventArgs e ) {
             // VideosInArtistの中身が変更されたら、VideoCountプロパティも変更されたことをUIに通知
             PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( VideoCount ) ) );

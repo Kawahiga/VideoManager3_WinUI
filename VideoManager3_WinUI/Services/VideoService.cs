@@ -272,19 +272,22 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// 動画ファイルの名前を変更します。
         /// </summary>
-        public async Task RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
-            if ( videoItem == null || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals( videoItem.FileName ) )
-                return;
+        /// <returns>成功した場合は true、ファイルが既に存在する場合などは false。</returns>
+        public async Task<bool> RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
+            if ( videoItem == null || string.IsNullOrWhiteSpace( videoItem.FilePath ) || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals( videoItem.FileName ) ) {
+                return false;
+            }
 
             var oldPath = videoItem.FilePath;
-            if ( string.IsNullOrEmpty( oldPath ) )
-                return;
             var directory = Path.GetDirectoryName(oldPath);
-            if ( string.IsNullOrEmpty( directory ) )
-                return;
+            if ( string.IsNullOrEmpty( directory ) ) {
+                return false;
+            }
+
             var newPath = Path.Combine(directory, newFileName);
-            if ( string.IsNullOrEmpty( newPath ) || File.Exists( newPath ) )                 // 新しいファイル名が既に存在する場合は処理しない
-                return;
+            if (File.Exists(newPath) || Videos.Any(v => v.FilePath == newPath)) {
+                return false;
+            }
 
 
             try {
@@ -293,12 +296,14 @@ namespace VideoManager3_WinUI.Services {
                 videoItem.FileName = newFileName;
                 videoItem.FileNameWithoutArtists = newFileNameWithoutArtists;
                 await _databaseService.UpdateVideoAsync( videoItem );
+                return true;
 
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error renaming file: {ex.Message}" );
                 // エラーが発生した場合は、プロパティを元に戻すことを検討
                 videoItem.FilePath = oldPath;
                 videoItem.FileName = Path.GetFileName( oldPath );
+                return false;
             }
         }
     }

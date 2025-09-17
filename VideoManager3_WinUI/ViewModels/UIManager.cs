@@ -45,5 +45,20 @@ namespace VideoManager3_WinUI {
         private void ToggleView() {
             IsGridView = !IsGridView;
         }
+
+        public async Task ShowMessageDialogAsync( string title, string message ) {
+            if ( App.m_window == null ) {
+                return;
+            }
+
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = App.m_window.Content.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
     }
 }

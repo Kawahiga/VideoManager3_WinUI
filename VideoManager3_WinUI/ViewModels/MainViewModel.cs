@@ -210,10 +210,13 @@ namespace VideoManager3_WinUI.ViewModels {
                 // 選択中の動画がフィルター後のリストに存在しない場合、最初の動画を選択する
                 SelectedItem = FilteredVideos.FirstOrDefault();
             }
-            UpdateFilteredTagCounts();
+            UpdateFilteredCounts();
         }
 
-        private void UpdateFilteredTagCounts() {
+        /// <summary>
+        /// フィルタリングに合わせて動画数を変更
+        /// </summary>
+        private void UpdateFilteredCounts() {
             var allTags = TagTreeViewModel.GetTagsInOrder();
 
             // アーティストフィルターが有効な場合、フィルタリング後のタグ数にする
@@ -259,6 +262,9 @@ namespace VideoManager3_WinUI.ViewModels {
             }
         }
 
+        /// <summary>
+        /// フィルターの複数選択モードの切り替え時
+        /// </summary>
         private void FilterService_PropertyChanged( object? sender, PropertyChangedEventArgs e ) {
             if ( e.PropertyName == nameof( FilterService.ButtonColor ) ) {
                 OnPropertyChanged( nameof( FilterButtonColor ) );
@@ -320,7 +326,12 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // 新しいファイル名（アーティスト名を除外）を取得
             string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
-            await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
+            var success = await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
+
+            if ( !success ) {
+                await UIManager.ShowMessageDialogAsync( "名前の変更エラー", "同名のファイルが既に存在するため、名前を変更できません。" );
+                return;
+            }
 
             string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
             if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {

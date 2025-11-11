@@ -14,6 +14,9 @@ namespace VideoManager3_WinUI.Services {
     public class TagService {
         private readonly DatabaseService _databaseService;
 
+        // 【暫定対応】Fenrir用のデータベースサービス
+        private readonly DatabaseServiceForFenrir _databaseServiceForFenrir = new DatabaseServiceForFenrir( @"H:\サンプル ビデオ\Fenrir用のべたん\Fenrir管理\個人用.profile\db\FenrirFS.db" );
+
         public TagService( DatabaseService databaseService ) {
             _databaseService = databaseService;
         }
@@ -111,6 +114,8 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public async Task AddTagToVideoAsync( VideoItem video, TagItem tag ) {
             await _databaseService.AddTagToVideoAsync( video, tag );
+            // 【暫定対応】Fenrir用のデータベースにも追加
+            await _databaseServiceForFenrir.AddTagToVideoAsync( video, tag );
         }
 
         /// <summary>
@@ -118,6 +123,8 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public async Task DeleteTagToVideoAsync( VideoItem video, TagItem tag ) {
             await _databaseService.RemoveTagFromVideoAsync( video, tag );
+            // 【暫定対応】Fenrir用のデータベースからも削除
+            await _databaseServiceForFenrir.RemoveTagFromVideoAsync( video, tag );
         }
     }
 }

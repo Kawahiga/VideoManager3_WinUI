@@ -270,53 +270,79 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
-        // 未実装項目
-        // ・既にファイルが存在する場合の処理
-        // ・元ファイルの削除（現状コピーで実装）なぜか読み取り専用になる
+        //private async void Window_Drop( object sender, DragEventArgs e ) {
+        //    if ( e.DataView.Contains( StandardDataFormats.StorageItems ) ) {
+        //        var storageItems = await e.DataView.GetStorageItemsAsync();
+        //        if ( storageItems.Any() ) {
+        //            var droppedFiles = storageItems.OfType<StorageFile>().ToList();
+        //            if ( droppedFiles.Any() ) {
+        //                // ViewModel.HomeFolderPath を StorageFolder オブジェクトに変換
+        //                StorageFolder? targetFolder = null;
+        //                try {
+        //                    targetFolder = await StorageFolder.GetFolderFromPathAsync( ViewModel.HomeFolderPath );
+        //                } catch ( Exception ex ) {
+        //                    // エラーハンドリング: ViewModel.HomeFolderPath が無効なパスの場合など
+        //                    System.Diagnostics.Debug.WriteLine( $"Error getting target folder: {ex.Message}" );
+        //                    return; // 処理を中断
+        //                }
+
+        //                List<string> newFilePaths = new List<string>();
+        //                foreach ( var file in droppedFiles ) {
+        //                    try {
+        //                        // ファイルをコピーし、コピーされたファイルのStorageFileオブジェクトを取得
+        //                        StorageFile copiedFile = await file.CopyAsync(targetFolder, file.Name, NameCollisionOption.GenerateUniqueName);
+        //                        newFilePaths.Add( copiedFile.Path );
+
+        //                        //
+        //                        // 元のファイルを一時フォルダに移動して後で削除
+
+        //                        //StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
+        //                        // ファイル名が重複しないようにユニークな名前を生成
+        //                        //string tempFileName = $"{Guid.NewGuid()}_{file.Name}";
+        //                        //await file.MoveAsync( tempFolder, tempFileName, NameCollisionOption.ReplaceExisting ); // ReplaceExisting if a GUID collision occurs (highly unlikely)
+
+        //                    } catch ( Exception ex ) {
+        //                        // エラーハンドリング: ファイル操作に失敗した場合
+        //                        System.Diagnostics.Debug.WriteLine( $"Error processing file {file.Name}: {ex.Message}" );
+        //                    }
+        //                }
+
+        //                if ( newFilePaths.Any() ) {
+        //                    // ViewModelに移動後のファイルパスを追加する処理を依頼する
+        //                    ViewModel.AddFilesCommand.Execute( newFilePaths );
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        /// <summary>
+        /// アプリ画面上にドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
+        /// JSON形式の一時ファイルを作成し、FileMoverを実行
+        /// </summary>
         private async void Window_Drop( object sender, DragEventArgs e ) {
             if ( e.DataView.Contains( StandardDataFormats.StorageItems ) ) {
                 var storageItems = await e.DataView.GetStorageItemsAsync();
-                if ( storageItems.Any() ) {
-                    var droppedFiles = storageItems.OfType<StorageFile>().ToList();
-                    if ( droppedFiles.Any() ) {
-                        // ViewModel.HomeFolderPath を StorageFolder オブジェクトに変換
-                        StorageFolder? targetFolder = null;
-                        try {
-                            targetFolder = await StorageFolder.GetFolderFromPathAsync( ViewModel.HomeFolderPath );
-                        } catch ( Exception ex ) {
-                            // エラーハンドリング: ViewModel.HomeFolderPath が無効なパスの場合など
-                            System.Diagnostics.Debug.WriteLine( $"Error getting target folder: {ex.Message}" );
-                            return; // 処理を中断
-                        }
+                var sourceFilePaths = storageItems.OfType<StorageFile>().Select( f => f.Path ).ToList();
 
-                        List<string> newFilePaths = new List<string>();
-                        foreach ( var file in droppedFiles ) {
-                            try {
-                                // ファイルをコピーし、コピーされたファイルのStorageFileオブジェクトを取得
-                                StorageFile copiedFile = await file.CopyAsync(targetFolder, file.Name, NameCollisionOption.GenerateUniqueName);
-                                newFilePaths.Add( copiedFile.Path );
-
-                                //
-                                // 元のファイルを一時フォルダに移動して後で削除
-
-                                //StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
-                                // ファイル名が重複しないようにユニークな名前を生成
-                                //string tempFileName = $"{Guid.NewGuid()}_{file.Name}";
-                                //await file.MoveAsync( tempFolder, tempFileName, NameCollisionOption.ReplaceExisting ); // ReplaceExisting if a GUID collision occurs (highly unlikely)
-
-                            } catch ( Exception ex ) {
-                                // エラーハンドリング: ファイル操作に失敗した場合
-                                System.Diagnostics.Debug.WriteLine( $"Error processing file {file.Name}: {ex.Message}" );
-                            }
-                        }
-
-                        if ( newFilePaths.Any() ) {
-                            // ViewModelに移動後のファイルパスを追加する処理を依頼する
-                            ViewModel.AddFilesCommand.Execute( newFilePaths );
-                        }
-                    }
+                if ( !sourceFilePaths.Any() ) {
+                    return;
                 }
+
+                // 1. 移動情報を定義
+                var moveTask = new
+                {
+                    SourceFiles = sourceFilePaths,
+                    DestinationFolder = ViewModel.HomeFolderPath
+                };
+
+                // 2. 情報を一時JSONファイルにシリアライズ
+                string tempFilePath = Path.GetTempFileName() + ".json";
+                await File.WriteAllTextAsync( tempFilePath, System.Text.Json.JsonSerializer.Serialize( moveTask ) );
+
+                // 3. ヘルパーアプリを起動し、JSONファイルのパスを渡す
+                string helperAppPath = @"<パス>\VideoManager3.FileMover.exe"; // 本来はもっと動的に取得すべき
+                Process.Start( helperAppPath, $"\"{tempFilePath}\"" );
             }
         }
 

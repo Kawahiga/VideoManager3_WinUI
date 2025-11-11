@@ -39,6 +39,7 @@ namespace VideoManager3_WinUI.Services {
             @"
                 CREATE TABLE IF NOT EXISTS Videos (
                     FileID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FenrirFileID INTEGER DEFAULT 0,
                     FilePath TEXT NOT NULL UNIQUE,
                     FileName TEXT NOT NULL,
                     FileNameWithoutArtist TEXT NOT NULL,
@@ -140,6 +141,7 @@ namespace VideoManager3_WinUI.Services {
             var command = connection.CreateCommand();
             command.CommandText = @"
                 UPDATE Videos SET
+                    FenrirFileID = $fenrirId,
                     FilePath = $filePath,
                     FileName = $fileName,
                     FileNameWithoutArtist = $fileNameWithiutArtist,
@@ -150,6 +152,7 @@ namespace VideoManager3_WinUI.Services {
                     LikeCount = $like,
                     ViewCount = $view
                 WHERE FileID = $id;";
+            command.Parameters.AddWithValue( "$fenrirId", video.FenrirId );
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
             command.Parameters.AddWithValue( "$fileNameWithiutArtist", video.FileNameWithoutArtists );
@@ -196,25 +199,27 @@ namespace VideoManager3_WinUI.Services {
 
             var command = connection.CreateCommand();
             command.CommandText = @"
-                SELECT FileID, FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
+                SELECT FileID, FenrirFileID, FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
                 FROM Videos";
 
             using var reader = await command.ExecuteReaderAsync();
             while ( await reader.ReadAsync() ) {
                 var id = reader.GetInt32(0);
-                var filePath = reader.GetString(1);
-                var fileName = reader.GetString(2);
-                var fileNameWithoutArtist = reader.GetString(3);
-                var extension = reader.IsDBNull(4) ? string.Empty : reader.GetString(4); // 拡張子がNULLの場合は空文字列を設定
-                var fileSize = reader.GetInt64(5);
+                var fenrirId = reader.GetInt32(1);
+                var filePath = reader.GetString(2);
+                var fileName = reader.GetString(3);
+                var fileNameWithoutArtist = reader.GetString(4);
+                var extension = reader.IsDBNull(5) ? string.Empty : reader.GetString(5); // 拡張子がNULLの場合は空文字列を設定
+                var fileSize = reader.GetInt64(6);
                 // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
-                var lastModified = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind);
-                var duration = reader.GetDouble(7);
-                var likeCount = reader.GetInt32(8);
-                var viewCount = reader.GetInt32(9);
+                var lastModified = DateTime.Parse(reader.GetString(7), null, System.Globalization.DateTimeStyles.RoundtripKind);
+                var duration = reader.GetDouble(8);
+                var likeCount = reader.GetInt32(9);
+                var viewCount = reader.GetInt32(10);
 
                 var video = new VideoItem {
                     Id = id,
+                    FenrirId = fenrirId,
                     FilePath = filePath,
                     FileName = fileName,
                     FileNameWithoutArtists = fileNameWithoutArtist,

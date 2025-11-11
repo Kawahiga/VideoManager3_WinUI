@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FileMover (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "FileMover (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

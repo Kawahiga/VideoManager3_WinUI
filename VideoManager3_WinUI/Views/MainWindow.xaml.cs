@@ -309,7 +309,7 @@ namespace VideoManager3_WinUI {
         }
 
         // 指定した型および名前の親要素が存在するかどうかを確認するヘルパーメソッド
-        private bool IsChildOf<T>( DependencyObject? element, string name ) where T : FrameworkElement {
+        private bool IsChildOf<T>( DependencyObject? element, string? name ) where T : FrameworkElement {
             while ( element != null ) {
                 if ( element is T targetElement ) {
                     if ( name == null || targetElement.Name == name ) {

@@ -19,7 +19,7 @@ namespace VideoManager3_WinUI.Services {
 
         public SettingItem() {
             VideoSortType = 0;
-            PaneWidths = [200, 200, 200];
+            PaneWidths = new double[] { 200, 200, 200 }; 
             ThumbnailSize = 260.0;
             HomeFolderPath = string.Empty;
             IsGridView = true;

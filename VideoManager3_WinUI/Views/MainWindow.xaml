@@ -40,10 +40,10 @@
                 <AppBarButton Icon="Delete" Label="削除" Command="{Binding DeleteFileCommand}"/>
                 <!-- タグ編集ボタン -->
                 <AppBarButton x:Name="TagEditButton" Icon="Tag" Label="タグ" Click="TagEditFlyout_Opening"/>
-                <!-- ランダム再生ボタン -->
-                <AppBarButton Icon="Shuffle" Label="ランダム" Click="RandomButton_Click"/>
                 <!-- いいねボタン -->
                 <AppBarButton Icon="Like" Label="{Binding SelectedItem.LikeCount}" Click="LikeButton_Click" RightTapped="LikeButton_RightTapped"/>
+                <!-- ランダム再生ボタン -->
+                <AppBarButton Icon="Shuffle" Label="ランダム" Click="RandomButton_Click"/>
                 <AppBarSeparator/>
                 <!-- 絞り込み範囲を表示 -->
                 <AppBarButton Label="{Binding FilterText}" Background="{Binding FilterButtonColor}"  FontWeight="Bold" Margin="10,0" Command="{Binding ToggleFilterCommand}"/>

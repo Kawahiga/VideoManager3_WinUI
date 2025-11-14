@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using VideoManager3_WinUI.Models;
 using VideoManager3_WinUI.Services;
@@ -25,6 +26,9 @@ namespace VideoManager3_WinUI {
         private SettingService _settingService;
         private AppWindow _appWindow;
 
+        // コンテキストメニューが開いているかを追跡するフラグ
+        private bool _isFileNameContextFlyoutOpen = false;
+
         public MainWindow() {
             this.InitializeComponent();
             this.Title = "動画管理くん";
@@ -40,9 +44,93 @@ namespace VideoManager3_WinUI {
             _appWindow = Microsoft.UI.Windowing.AppWindow.GetFromWindowId( wndId );
             LoadSetting();
 
+            // FileNameTextBox 用のカスタムコンテキストメニューを設定
+            SetupFileNameContextFlyout();
+
+            // タグツリーでのタップを処理（タグ編集中にラベルをタップしてチェックを切替えるため）
+            TagsTreeView.Tapped += TagsTreeView_Tapped;
+
             // 初期の選択ファイルの文字列を設定
             FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
         }
+
+        private void SetupFileNameContextFlyout() {
+            // 標準的なコピー/切り取り/貼り付け/全選択メニューを作成し、
+            // クリック時に TextBox のメソッドを直接呼び出す
+            var mf = new MenuFlyout();
+
+            var copy = new MenuFlyoutItem { Text = "コピー" };
+            copy.Click += (s, e) => {
+                try { FileNameTextBox.CopySelectionToClipboard(); } catch { }
+            };
+            mf.Items.Add(copy);
+
+            var cut = new MenuFlyoutItem { Text = "切り取り" };
+            cut.Click += (s, e) => {
+                try { FileNameTextBox.CutSelectionToClipboard(); } catch { }
+            };
+            mf.Items.Add(cut);
+
+            var paste = new MenuFlyoutItem { Text = "貼り付け" };
+            paste.Click += (s, e) => {
+                try { FileNameTextBox.PasteFromClipboard(); } catch { }
+            };
+            mf.Items.Add(paste);
+
+            var selectAll = new MenuFlyoutItem { Text = "全て選択" };
+            selectAll.Click += (s, e) => {
+                try { FileNameTextBox.SelectAll(); } catch { }
+            };
+            mf.Items.Add(selectAll);
+
+            // 開閉イベントでフラグを管理し、閉じたら編集状態にフォーカス戻す
+            mf.Opened += (s, e) => { _isFileNameContextFlyoutOpen = true; };
+            mf.Closed += (s, e) => {
+                _isFileNameContextFlyoutOpen = false;
+                // メニュー操作後はテキスト編集を継続できるようフォーカスを戻す
+                FileNameTextBox.Focus(FocusState.Programmatic);
+            };
+
+            FileNameTextBox.ContextFlyout = mf;
+        }
+
+        /// <summary>
+        /// タグツリー上でタップされたとき、タグ編集中であればそのタグのチェックを切り替える
+        /// </summary>
+        private void TagsTreeView_Tapped(object sender, TappedRoutedEventArgs e) {
+            // タグ編集モードでなければ何もしない（既存の挙動を維持）
+            if (!ViewModel.TagTreeViewModel.IsTagSetting) {
+                return;
+            }
+
+            var original = e.OriginalSource as DependencyObject;
+            if ( original == null ) return;
+
+            // チェックボックス部分をタップした場合は既存の CheckBox の挙動に任せる（二重トグル防止）
+            if ( IsChildOf<CheckBox>( original, null ) ) {
+                return;
+            }
+
+            // クリックされた要素から DataContext が TagItem の親を探索する
+            var tag = FindDataContext<TagItem>(original);
+            if (tag != null) {
+                // チェックボックスのトグル（チェック状態は XAML のバインディングで反映される）
+                tag.IsChecked = !tag.IsChecked;
+                e.Handled = true;
+            }
+        }
+
+        // 指定の起点から親方向に辿って DataContext が T の FrameworkElement を見つけるユーティリティ
+        private T? FindDataContext<T>(DependencyObject? start) where T : class {
+            while (start != null) {
+                if (start is FrameworkElement fe && fe.DataContext is T t) {
+                    return t;
+                }
+                start = VisualTreeHelper.GetParent(start);
+            }
+            return null;
+        }
+
         /// <summary>
         /// 選択されているアイテムまでスクロールする
         /// </summary>
@@ -270,52 +358,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        //private async void Window_Drop( object sender, DragEventArgs e ) {
-        //    if ( e.DataView.Contains( StandardDataFormats.StorageItems ) ) {
-        //        var storageItems = await e.DataView.GetStorageItemsAsync();
-        //        if ( storageItems.Any() ) {
-        //            var droppedFiles = storageItems.OfType<StorageFile>().ToList();
-        //            if ( droppedFiles.Any() ) {
-        //                // ViewModel.HomeFolderPath を StorageFolder オブジェクトに変換
-        //                StorageFolder? targetFolder = null;
-        //                try {
-        //                    targetFolder = await StorageFolder.GetFolderFromPathAsync( ViewModel.HomeFolderPath );
-        //                } catch ( Exception ex ) {
-        //                    // エラーハンドリング: ViewModel.HomeFolderPath が無効なパスの場合など
-        //                    System.Diagnostics.Debug.WriteLine( $"Error getting target folder: {ex.Message}" );
-        //                    return; // 処理を中断
-        //                }
-
-        //                List<string> newFilePaths = new List<string>();
-        //                foreach ( var file in droppedFiles ) {
-        //                    try {
-        //                        // ファイルをコピーし、コピーされたファイルのStorageFileオブジェクトを取得
-        //                        StorageFile copiedFile = await file.CopyAsync(targetFolder, file.Name, NameCollisionOption.GenerateUniqueName);
-        //                        newFilePaths.Add( copiedFile.Path );
-
-        //                        //
-        //                        // 元のファイルを一時フォルダに移動して後で削除
-
-        //                        //StorageFolder tempFolder = ApplicationData.Current.TemporaryFolder;
-        //                        // ファイル名が重複しないようにユニークな名前を生成
-        //                        //string tempFileName = $"{Guid.NewGuid()}_{file.Name}";
-        //                        //await file.MoveAsync( tempFolder, tempFileName, NameCollisionOption.ReplaceExisting ); // ReplaceExisting if a GUID collision occurs (highly unlikely)
-
-        //                    } catch ( Exception ex ) {
-        //                        // エラーハンドリング: ファイル操作に失敗した場合
-        //                        System.Diagnostics.Debug.WriteLine( $"Error processing file {file.Name}: {ex.Message}" );
-        //                    }
-        //                }
-
-        //                if ( newFilePaths.Any() ) {
-        //                    // ViewModelに移動後のファイルパスを追加する処理を依頼する
-        //                    ViewModel.AddFilesCommand.Execute( newFilePaths );
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
-
         /// <summary>
         /// アプリ画面上にドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
         /// JSON形式の一時ファイルを作成し、FileMoverを実行
@@ -414,12 +456,21 @@ namespace VideoManager3_WinUI {
         // ファイル名テキストボックスのイベントハンドラー
         // テキストボックスがフォーカスを失ったときに変更を確定する
         private async void FileNameTextBox_LostFocus( object sender, RoutedEventArgs e ) {
-            if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
-                if ( selectedItem.FileName != textBox.Text ) {
-                    await ViewModel.RenameFileAsync( textBox.Text );
-                }
-                textBox.Text = selectedItem.FileNameWithoutArtists;
+            if ( !(sender is TextBox textBox) || !(ViewModel.SelectedItem is VideoItem selectedItem) ) {
+                return;
             }
+
+            // メニューが開いている間はコミットしない（メニュー操作でコピー/切り取りを行うため）
+            await Task.Delay(50); // 多少の遅延で安定させる
+            if (_isFileNameContextFlyoutOpen) {
+                // メニューが閉じた後にフォーカスを戻すため、Closed ハンドラ側で対応しているのでここでは何もしない
+                return;
+            }
+
+            if ( selectedItem.FileName != textBox.Text ) {
+                await ViewModel.RenameFileAsync( textBox.Text );
+            }
+            textBox.Text = selectedItem.FileNameWithoutArtists;
         }
 
         // ファイル名編集テキストボックスのキーイベントハンドラー

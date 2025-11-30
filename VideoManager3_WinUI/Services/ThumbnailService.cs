@@ -16,7 +16,7 @@ namespace VideoManager3_WinUI.Services {
         private const double ThumbnailWait = 5.0;
 
         private int count = 0;
-        private readonly int limit = 100; // サムネイル生成の制限回数
+        private readonly int limit = 500; // サムネイル生成の制限回数
 
         // サムネイル画像を生成し、バイト配列として返す
         public async Task<byte[]?> GetThumbnailBytesAsync( string videoPath ) {
@@ -30,7 +30,7 @@ namespace VideoManager3_WinUI.Services {
             if ( File.Exists( tempThumbnailPath ) )                 // キャッシュが存在する場合はそれを返す
                 return await File.ReadAllBytesAsync( tempThumbnailPath );
 
-            if ( count++ > limit )                 return null; // 【暫定処理】30回以上呼び出された場合はもうサムネイル作らない
+            if ( count++ > limit )                 return null; // 【暫定処理】制限回以上呼び出された場合はもうサムネイル作らない
 
             try {
                 await FFMpeg.SnapshotAsync( videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds( ThumbnailWait ) );

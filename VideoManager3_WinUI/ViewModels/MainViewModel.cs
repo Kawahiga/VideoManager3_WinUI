@@ -285,8 +285,31 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // フォルダを選択
             var folder = await folderPicker.PickSingleFolderAsync();
-            if ( folder != null )
+            if ( folder != null ) {
                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
+
+                // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+                await CheckDuplicateFilesInHomeFolder( HomeFolderPath );
+            }
+        }
+
+        /// <summary>
+        /// 起動時のホームフォルダに対する処理
+        /// ・ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+        /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+        /// </summary>
+        //public async Task HandleHomeFolderOnStartupAsync( ) {
+        //}
+
+        // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+        private async Task CheckDuplicateFilesInHomeFolder( string homeFolder ) {
+            // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+            var dupFiles = _videoService.GetDuplicateVideosInFolder( homeFolder );
+            // メッセージボックスで通知
+            if ( dupFiles.Count > 0 ) {
+                string message = string.Join( "\n", dupFiles.Select( v => v.FilePath ) );
+                await UIManager.ShowMessageDialogAsync( "重複ファイルの警告", message );
+            }
         }
 
         // アプリを閉じるときのイベント

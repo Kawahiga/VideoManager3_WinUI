@@ -12,11 +12,12 @@ namespace VideoManager3_WinUI.Services {
         // サムネイルをキャッシュするフォルダのパス
         private string TempCacheFolder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "Thumbnails");
 
+        // 【暫定】将来的には設定で変更可能にしたい
         // サムネイルを作成する秒数
         private const double ThumbnailWait = 5.0;
 
         private int count = 0;
-        private readonly int limit = 200; // サムネイル生成の制限回数
+        private readonly int limit = 400; // サムネイル生成の制限回数
 
         // サムネイル画像を生成し、バイト配列として返す
         public async Task<byte[]?> GetThumbnailBytesAsync( string videoPath ) {

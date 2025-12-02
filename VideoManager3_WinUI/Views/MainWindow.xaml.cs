@@ -33,11 +33,13 @@ namespace VideoManager3_WinUI {
             this.InitializeComponent();
             this.Title = "動画管理くん";
 
+            // ViewModelの初期化とデータコンテキストの設定
             ViewModel = new MainViewModel();
             (this.Content as FrameworkElement)!.DataContext = ViewModel;
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             ViewModel.ScrollToItemRequested += ViewModel_ScrollToItemRequested;
 
+            // 設定サービスの初期化と設定のロード
             _settingService = new SettingService();
             IntPtr hWnd = WindowNative.GetWindowHandle(this);
             WindowId wndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);

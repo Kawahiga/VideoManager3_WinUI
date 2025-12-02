@@ -306,5 +306,70 @@ namespace VideoManager3_WinUI.Services {
                 return false;
             }
         }
+
+        /// <summary>
+        /// DBのFileNameと、指定したフォルダ内のファイル名に対して重複している動画を取得します。
+        /// DB内のFileNameどうしもチェックします。
+        /// </summary>
+        public List<VideoItem> GetDuplicateVideosInFolder( string folderPath ) {
+            var duplicateVideos = new List<VideoItem>();
+
+            // フォルダが存在するか確認
+            if ( !Directory.Exists( folderPath ) ) {
+                Debug.WriteLine( $"Folder not found: {folderPath}" );
+                return duplicateVideos;
+            }
+
+            try {
+                // フォルダ内のすべてのファイルを辞書に格納（キー: 拡張子なしファイル名、値: フルパス）
+                // 同じ名前（拡張子なし）のファイルが複数ある場合は、最後に見つかったものが使われる
+                var filesInFolder = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var file in Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
+                {
+                    filesInFolder[Path.GetFileNameWithoutExtension(file)] = file;
+                }
+
+                // DB内のファイル名（拡張子なし）でグループ化
+                var fileNameGroups = Videos.GroupBy(v => Path.GetFileNameWithoutExtension(v.FileName), StringComparer.OrdinalIgnoreCase);
+
+                // 1. フォルダ内のファイルと重複するDB内の動画を検出
+                foreach (var group in fileNameGroups)
+                {
+                    if (filesInFolder.TryGetValue(group.Key, out var duplicatePathInFolder))
+                    {
+                        // フォルダ内に同じファイル名（拡張子なし）が存在する場合
+                        
+                        // a) DB内の既存の重複アイテムをすべて追加
+                        duplicateVideos.AddRange(group);
+
+                        // b) 指定フォルダ内の重複ファイルも追加（既にリストになければ）
+                        if (!duplicateVideos.Any(v => v.FilePath.Equals(duplicatePathInFolder, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            duplicateVideos.Add(new VideoItem { FilePath = duplicatePathInFolder, FileName = Path.GetFileName(duplicatePathInFolder) });
+                        }
+                    }
+                }
+
+                // 2. DB内でのみ重複しているファイルを追加（拡張子なしで比較）
+                foreach (var group in fileNameGroups)
+                {
+                    if (group.Count() > 1)
+                    {
+                        foreach (var video in group)
+                        {
+                            if (!duplicateVideos.Contains(video))
+                            {
+                                duplicateVideos.Add(video);
+                            }
+                        }
+                    }
+                }
+
+                return duplicateVideos.OrderBy(v => v.FileName).ThenBy(v => v.FilePath).ToList();
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error getting duplicate videos: {ex.Message}" );
+                return duplicateVideos;
+            }
+        }
     }
 }

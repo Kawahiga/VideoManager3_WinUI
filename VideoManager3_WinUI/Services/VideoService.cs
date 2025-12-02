@@ -215,6 +215,9 @@ namespace VideoManager3_WinUI.Services {
                 foreach ( var tag in videoItem.VideoTagItems ) {
                     tag.TagVideoItem.Remove( videoItem );
                 }
+                foreach( var artist in videoItem.ArtistsInVideo ) {
+                    artist.VideosInArtist.Remove( videoItem );
+                }
                 Videos.Remove( videoItem );
 
                 return true; // すべての処理が成功

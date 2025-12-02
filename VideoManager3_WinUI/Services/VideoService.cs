@@ -184,11 +184,29 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// 選択された動画を削除します。（未実装：ファイルそのものを削除）
+        /// 選択された動画を削除します。
+        /// ファイルを先に削除し、成功した場合にDBとセッションデータを削除します。
         /// </summary>
-        public async Task DeleteVideoAsync( VideoItem? videoItem ) {
+        /// <returns>削除に成功した場合は true、失敗した場合は false。</returns>
+        public async Task<bool> DeleteVideoAsync( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
-                return;
+                return false;
+
+            // 1. ファイルシステムから削除を試みる
+            try {
+                var file = await StorageFile.GetFileFromPathAsync(videoItem.FilePath);
+                await file.DeleteAsync();
+            } catch ( FileNotFoundException ) {
+                // ファイルが既に存在しない場合は、成功とみなし、DBからの削除処理に進む
+                Debug.WriteLine( $"File not found, but proceeding with DB deletion: {videoItem.FilePath}" );
+            } catch ( Exception ex ) {
+                // その他のファイル関連エラー（アクセス拒否など）
+                Debug.WriteLine( $"Error deleting file: {videoItem.FilePath}. Error: {ex.Message}" );
+                // ファイル削除に失敗したため、処理を中断
+                return false;
+            }
+
+            // 2. データベースとセッションデータから削除
             try {
                 // データベースから動画と動画とタグの紐づけ情報を削除
                 await _databaseService.DeleteVideoAsync( videoItem );
@@ -199,11 +217,13 @@ namespace VideoManager3_WinUI.Services {
                 }
                 Videos.Remove( videoItem );
 
-                // ファイルシステムからも削除
-                //var file = await StorageFile.GetFileFromPathAsync(videoItem.FilePath);
-                //await file.DeleteAsync();
+                return true; // すべての処理が成功
             } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error deleting video: {ex.Message}" );
+                // DB削除またはセッションデータ操作の失敗
+                Debug.WriteLine( $"Error deleting video data from database or session: {videoItem.FilePath}. Error: {ex.Message}" );
+                // この時点でファイルは既に削除済みのため、データの不整合が発生している。
+                // より堅牢な実装では、このエラーをログに記録し、手動での修正を促すなどの対策が考えられる。
+                return false;
             }
         }
 

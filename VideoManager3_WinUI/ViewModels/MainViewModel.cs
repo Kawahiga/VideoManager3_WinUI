@@ -45,7 +45,7 @@ namespace VideoManager3_WinUI.ViewModels {
         public IRelayCommand ToggleFilterCommand { get; private set; }
         public IRelayCommand DoubleTappedCommand { get; private set; }
         public ICommand SetHomeFolderCommand { get; private set; }
-        public IRelayCommand DeleteFileCommand { get; private set; }
+        public IAsyncRelayCommand DeleteFileCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -151,7 +151,7 @@ namespace VideoManager3_WinUI.ViewModels {
             // コマンドの初期化
             AddFolderCommand = new RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
             AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
-            DeleteFileCommand = new RelayCommand( async () => { await _videoService.DeleteVideoAsync( SelectedItem ); ApplyFilters(); }, () => SelectedItem != null );
+            DeleteFileCommand = new AsyncRelayCommand( DeleteSelectedFileAsync, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
             DoubleTappedCommand = new RelayCommand<VideoItem>( ( video ) => _videoService.OpenFile( video ) );
@@ -372,6 +372,29 @@ namespace VideoManager3_WinUI.ViewModels {
             if ( SelectedItem != null ) {
                 // データベースを更新
                 await _databaseService.UpdateVideoAsync( SelectedItem );
+            }
+        }
+
+        /// <summary>
+        /// 選択されているファイルを、確認ダイアログ表示後に削除します。
+        /// </summary>
+        private async Task DeleteSelectedFileAsync() {
+            if ( SelectedItem == null )
+                return;
+
+            // 確認ダイアログを表示
+            bool confirmed = await UIManager.ShowConfirmationDialogAsync(
+                "削除の確認",
+                $"「{SelectedItem.FileName}」\nを完全に削除しますか？\n\nこの操作は元に戻せません。",
+                "削除",
+                "キャンセル");
+
+            if ( confirmed ) {
+                bool success = await _videoService.DeleteVideoAsync(SelectedItem);
+                if ( !success ) {
+                    await UIManager.ShowMessageDialogAsync( "削除エラー", "ファイルの削除に失敗しました。ファイルが他のプログラムで使用されていないか、アクセス許可があるか確認してください。" );
+                }
+                ApplyFilters();
             }
         }
     }

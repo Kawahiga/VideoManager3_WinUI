@@ -89,5 +89,34 @@ namespace VideoManager3_WinUI {
             };
             await dialog.ShowAsync();
         }
+
+        /// <summary>
+        /// 確認ダイアログを表示します。
+        /// </summary>
+        /// <param name="title">ダイアログのタイトル</param>
+        /// <param name="message">表示するメッセージ</param>
+        /// <param name="primaryButtonText">プライマリボタンのテキスト（例: "OK", "はい"）</param>
+        /// <param name="closeButtonText">閉じるボタンのテキスト（例: "キャンセル", "いいえ"）</param>
+        /// <returns>プライマリボタンが押された場合は true、それ以外の場合は false。</returns>
+        public async Task<bool> ShowConfirmationDialogAsync(string title, string message, string primaryButtonText = "OK", string closeButtonText = "キャンセル")
+        {
+            if (App.m_window == null)
+            {
+                return false;
+            }
+
+            ContentDialog dialog = new ContentDialog
+            {
+                Title = title,
+                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap }, // TextBlockでラップして折り返しを有効に
+                PrimaryButtonText = primaryButtonText,
+                CloseButtonText = closeButtonText,
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = App.m_window.Content.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            return result == ContentDialogResult.Primary;
+        }
     }
 }

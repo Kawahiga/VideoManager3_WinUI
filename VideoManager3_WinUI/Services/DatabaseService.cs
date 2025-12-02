@@ -417,9 +417,10 @@ namespace VideoManager3_WinUI.Services {
                 // 新規追加
                 command.CommandText = @"
                     INSERT INTO Artists (ArtistName, IsFavorite, LikeCount, IconPath) 
-                    ($artistName, $isFavorite, $likeCount, $iconPath)
+                    VALUES ($artistName, $isFavorite, $likeCount, $iconPath);
                 ";
-                command.Parameters.AddWithValue( "$name", artist.Name );
+
+                command.Parameters.AddWithValue( "$artistName", artist.Name );
                 command.Parameters.AddWithValue( "$isFavorite", artist.IsFavorite ? 1 : 0 );
                 command.Parameters.AddWithValue( "$likeCount", artist.LikeCount );
                 command.Parameters.AddWithValue( "$iconPath", artist.IconPath ?? (object)DBNull.Value );
@@ -480,7 +481,7 @@ namespace VideoManager3_WinUI.Services {
                 var name = reader.GetString(1);
                 var isFavorite = reader.GetBoolean(2);
                 var likeCount = reader.GetInt32(3);
-                var iconPath = reader.IsDBNull(4) ? string.Empty : reader.GetString(3);
+                var iconPath = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
                 var artist = new ArtistItem {
                     Id = id,
                     Name = name,

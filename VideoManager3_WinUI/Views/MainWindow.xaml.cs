@@ -470,7 +470,7 @@ namespace VideoManager3_WinUI {
             }
 
             if ( selectedItem.FileName != textBox.Text ) {
-                await ViewModel.RenameFileAsync( textBox.Text );
+                await ViewModel.RenameFileAsync( selectedItem, textBox.Text );
             }
             textBox.Text = selectedItem.FileNameWithoutArtists;
         }

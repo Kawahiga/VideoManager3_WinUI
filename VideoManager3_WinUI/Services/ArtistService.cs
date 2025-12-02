@@ -92,9 +92,9 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         /// <param name="video">追加または更新するビデオ。</param>
         public async Task AddOrUpdateArtistFromVideoAsync( VideoItem video ) {
-            // ビデオとアーティストの双方向リンクを解除、データベースからも削除
-            foreach ( var artist in video.ArtistsInVideo ) {
-                _databaseService.RemoveArtistFromVideoAsync( video, artist ).Wait();
+            // 既存の関連付けを解除。コレクション変更中のエラーを避けるため、コピーに対してループ処理を行う。
+            foreach ( var artist in new List<ArtistItem>(video.ArtistsInVideo) ) {
+                await _databaseService.RemoveArtistFromVideoAsync( video, artist );
                 artist.VideosInArtist.Remove( video );
             }
             video.ArtistsInVideo.Clear();

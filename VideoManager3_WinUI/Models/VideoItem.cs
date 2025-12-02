@@ -36,12 +36,90 @@ namespace VideoManager3_WinUI.Models {
 
         public int Id { get; set; } // データベースの主キー
         public int FenrirId { get; set; } // FenrirのファイルID
-        public string? FileName { get; set; }
-        public string? FilePath { get; set; }
-        public string? Extension { get; set; }
-        public long FileSize { get; set; }  // ファイルサイズ（バイト単位）
-        public DateTime LastModified { get; set; }  // 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
-        public double Duration { get; set; }    // 動画の再生時間（秒）
+
+        private string? _fileName;
+        /// <summary>
+        /// ファイル名 (例: "video.mp4")
+        /// </summary>
+        public string? FileName {
+            get => _fileName;
+            set {
+                if (_fileName != value) {
+                    _fileName = value;
+                    OnPropertyChanged(nameof(FileName));
+                }
+            }
+        }
+
+        private string? _filePath;
+        /// <summary>
+        /// ファイルのフルパス
+        /// </summary>
+        public string? FilePath {
+            get => _filePath;
+            set {
+                if (_filePath != value) {
+                    _filePath = value;
+                    OnPropertyChanged(nameof(FilePath));
+                }
+            }
+        }
+
+        private string? _extension;
+        /// <summary>
+        /// ファイルの拡張子 (例: ".mp4")
+        /// </summary>
+        public string? Extension {
+            get => _extension;
+            set {
+                if (_extension != value) {
+                    _extension = value;
+                    OnPropertyChanged(nameof(Extension));
+                }
+            }
+        }
+
+        private long _fileSize;
+        /// <summary>
+        /// ファイルサイズ（バイト単位）
+        /// </summary>
+        public long FileSize {
+            get => _fileSize;
+            set {
+                if (_fileSize != value) {
+                    _fileSize = value;
+                    OnPropertyChanged(nameof(FileSize));
+                }
+            }
+        }
+
+        private DateTime _lastModified;
+        /// <summary>
+        /// 最終更新日時（YYYY/MM/dd HH:mm:ss形式）
+        /// </summary>
+        public DateTime LastModified {
+            get => _lastModified;
+            set {
+                if (_lastModified != value) {
+                    _lastModified = value;
+                    OnPropertyChanged(nameof(LastModified));
+                }
+            }
+        }
+
+        private double _duration;
+        /// <summary>
+        /// 動画の再生時間（秒）
+        /// </summary>
+        public double Duration {
+            get => _duration;
+            set {
+                if (_duration != value) {
+                    _duration = value;
+                    OnPropertyChanged(nameof(Duration));
+                }
+            }
+        }
 
         private int _likeCount = 0; // いいね数
         public int LikeCount {
@@ -65,8 +143,19 @@ namespace VideoManager3_WinUI.Models {
             }
         }
 
-        // サムネイルの元データ（軽量なbyte配列）
-        public byte[]? Thumbnail { get; set; }
+        private byte[]? _thumbnail;
+        /// <summary>
+        /// サムネイルの元データ（軽量なbyte配列）
+        /// </summary>
+        public byte[]? Thumbnail {
+            get => _thumbnail;
+            set {
+                if (_thumbnail != value) {
+                    _thumbnail = value;
+                    OnPropertyChanged(nameof(Thumbnail));
+                }
+            }
+        }
 
         // UI表示用のサムネイル画像（BitmapImage）
         private BitmapImage? _thumbnailImage;

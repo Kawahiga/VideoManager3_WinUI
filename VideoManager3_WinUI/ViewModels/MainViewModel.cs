@@ -338,33 +338,54 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         // ファイル名を変更するメソッド
-        // 将来的にはVideoServiceに移動する
-        public async Task RenameFileAsync( string newFileName ) {
-            if ( SelectedItem == null || SelectedItem.FileName == null || SelectedItem.FileName.Equals( newFileName ) ) {
+        public async Task RenameFileAsync( VideoItem video, string newFileName ) {
+            if ( video == null || string.IsNullOrWhiteSpace(video.FileName)) {
                 return;
             }
 
-            // 変更前のアーティスト名を取得
-            string oldArtists = ArtistService.GetArtistNameWithoutFileName(SelectedItem.FileName);
+            // 変更前の情報を保持
+            string oldFileName = video.FileName;
+            string? oldFilePath = video.FilePath;
+            string oldFileNameWithoutArtists = video.FileNameWithoutArtists;
+            string oldArtists = ArtistService.GetArtistNameWithoutFileName(oldFileName);
 
-            // 新しいファイル名（アーティスト名を除外）を取得
+            // --- ファイル名の変更処理 ---
             string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
-            var success = await _videoService.RenameFileAsync( SelectedItem, newFileName, newFileNameWithoutArtists );
+            var result = await _videoService.RenameFileAsync( video, newFileName, newFileNameWithoutArtists );
 
-            if ( !success ) {
-                await UIManager.ShowMessageDialogAsync( "名前の変更エラー", "同名のファイルが既に存在するため、名前を変更できません。" );
-                return;
+            if ( result == RenameResult.Success) {
+                // --- アーティスト情報の更新 ---
+                string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
+                if (oldArtists != newArtists) {
+                    // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
+                    // これにより、アーティスト名がなくなった場合も情報がクリアされる
+                    await _artistService.AddOrUpdateArtistFromVideoAsync( video );
+                }
+
+                // --- UIの更新 ---
+                // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
+                _videoService.SortVideos( SortType );
+                ApplyFilters();
+
+            } else {
+                // --- エラー処理 ---
+                string? errorMessage = result switch {
+                    RenameResult.AlreadyExists => "同じ名前のファイルが既に存在します。",
+                    RenameResult.AccessDenied => "ファイルへのアクセスが拒否されました。\nアクセス権限を確認してください。",
+                    RenameResult.FileInUse => "ファイルは他のプログラムで使用中のため、変更できません。",
+                    RenameResult.InvalidName => "ファイル名に使用できない文字が含まれています。",
+                    _ => "原因不明のエラーにより、ファイル名の変更に失敗しました。"
+                };
+
+                if (errorMessage != null) {
+                    await UIManager.ShowMessageDialogAsync( "名前の変更エラー", errorMessage );
+                }
+
+                // 失敗した場合、ViewModelが持つVideoItemのプロパティを元に戻す
+                video.FileName = oldFileName;
+                video.FilePath = oldFilePath;
+                video.FileNameWithoutArtists = oldFileNameWithoutArtists;
             }
-
-            string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
-            if ( !(string.IsNullOrEmpty( newArtists ) || newArtists.Equals( oldArtists )) ) {
-                // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
-                // 新しい名前でアーティスト情報を更新
-                await _artistService.AddOrUpdateArtistFromVideoAsync( SelectedItem );
-            }
-
-            // 変更後のファイル名でソート
-            _videoService.SortVideos( SortType );
         }
 
         // SelectedItemのプロパティ変更イベントハンドラ

@@ -334,12 +334,14 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
+                            <!-- いいねボタン -->
                             <Border Grid.Column="0" Tapped="LikeButton_Click" RightTapped="LikeButton_RightTapped">
                                 <Grid Width="32" Height="32">
                                     <TextBlock Text="&#xEB52;" FontFamily="Segoe MDL2 Assets" Foreground="DeepPink" FontSize="32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding LikeCount}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" Padding="0,0,0,5"/>
                                 </Grid>
                             </Border>
+                            <!-- ファイル名編集用テキストボックス -->
                             <TextBox Grid.Column="1" x:Name="FileNameTextBox" FontWeight="Bold" FontSize="16" TextWrapping="Wrap" LostFocus="FileNameTextBox_LostFocus" KeyDown="FileNameTextBox_KeyDown" GotFocus="FileNameTextBox_GotFocus" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}" BorderBrush="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"/>
                         </Grid>
 

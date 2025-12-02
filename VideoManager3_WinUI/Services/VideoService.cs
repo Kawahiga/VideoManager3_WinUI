@@ -21,6 +21,15 @@ namespace VideoManager3_WinUI.Services {
         LikeCountAscending,  // いいね数昇順
     }
 
+    public enum RenameResult {
+        Success,         // 成功
+        AlreadyExists,   // 同名ファイルが既に存在する
+        AccessDenied,    // アクセスが拒否された
+        FileInUse,       // ファイルが使用中
+        InvalidName,     // ファイル名が不正
+        UnknownError     // その他のエラー
+    }
+
     /// <summary>
     /// 動画関連のデータ操作とビジネスロジックを管理するサービスクラス
     /// </summary>
@@ -293,23 +302,62 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// 指定されたファイル名が、指定されたビデオを除き、DB内に既に存在するかどうかを確認します。
+        /// FileNameとFileNameWithoutArtistsの両方でチェックを行います。
+        /// </summary>
+        /// <param name="fileName">チェックする完全なファイル名。</param>
+        /// <param name="fileNameWithoutArtists">チェックするアーティスト名を除いたファイル名。</param>
+        /// <param name="excludeVideo">チェック対象から除外するビデオ。</param>
+        /// <returns>ファイル名が重複している場合は true、それ以外は false。</returns>
+        private bool IsFileNameDuplicateInDatabase(string fileName, string fileNameWithoutArtists, VideoItem excludeVideo)
+        {
+            // 比較用の拡張子なしファイル名を作成
+            var fileNameToCheck = Path.GetFileNameWithoutExtension(fileName);
+            var fileNameWithoutArtistsToCheck = string.IsNullOrEmpty(fileNameWithoutArtists) ? string.Empty : Path.GetFileNameWithoutExtension(fileNameWithoutArtists);
+
+            // 大文字小文字を区別せずに比較
+            return Videos.Any(v =>
+                v.Id != excludeVideo.Id &&
+                (
+                    // 1. DBのビデオの拡張子を除いたファイル名が、チェック対象のファイル名と一致するか
+                    string.Equals(Path.GetFileNameWithoutExtension(v.FileName), fileNameToCheck, StringComparison.OrdinalIgnoreCase) ||
+
+                    // 2. DBのビデオのアーティスト名を除いたファイル名（これも拡張子を除く）が、
+                    //    チェック対象のアーティスト名を除いたファイル名と、空でなく、かつ一致するか
+                    (
+                        !string.IsNullOrEmpty(fileNameWithoutArtistsToCheck) &&
+                        !string.IsNullOrEmpty(v.FileNameWithoutArtists) &&
+                        string.Equals(Path.GetFileNameWithoutExtension(v.FileNameWithoutArtists), fileNameWithoutArtistsToCheck, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+            );
+        }
+
+        /// <summary>
         /// 動画ファイルの名前を変更します。
         /// </summary>
-        /// <returns>成功した場合は true、ファイルが既に存在する場合などは false。</returns>
-        public async Task<bool> RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
-            if ( videoItem == null || string.IsNullOrWhiteSpace( videoItem.FilePath ) || string.IsNullOrWhiteSpace( newFileName ) || newFileName.Equals( videoItem.FileName ) ) {
-                return false;
+        /// <returns>ファイル名の変更結果を示す RenameResult。</returns>
+        public async Task<RenameResult> RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
+            if ( videoItem == null || string.IsNullOrWhiteSpace( videoItem.FilePath ) ) {
+                return RenameResult.UnknownError;
+            }
+            if (string.IsNullOrWhiteSpace(newFileName) || newFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) {
+                return RenameResult.InvalidName;
+            }
+            if ( newFileName.Equals( videoItem.FileName ) ) {
+                // 同じ名前の場合はエラーではないが、何もせず成功を返す
+                return RenameResult.Success;
             }
 
             var oldPath = videoItem.FilePath;
             var directory = Path.GetDirectoryName(oldPath);
             if ( string.IsNullOrEmpty( directory ) ) {
-                return false;
+                return RenameResult.UnknownError;
             }
 
             var newPath = Path.Combine(directory, newFileName);
-            if (File.Exists(newPath) || Videos.Any(v => v.FilePath == newPath)) {
-                return false;
+            if (File.Exists(newPath) || IsFileNameDuplicateInDatabase(newFileName, newFileNameWithoutArtists, videoItem)) {
+                return RenameResult.AlreadyExists;
             }
 
 
@@ -319,79 +367,73 @@ namespace VideoManager3_WinUI.Services {
                 videoItem.FileName = newFileName;
                 videoItem.FileNameWithoutArtists = newFileNameWithoutArtists;
                 await _databaseService.UpdateVideoAsync( videoItem );
-                return true;
+                return RenameResult.Success;
 
-            } catch ( Exception ex ) {
+            } 
+            catch (UnauthorizedAccessException)
+            {
+                Debug.WriteLine( "Error renaming file: Access denied." );
+                return RenameResult.AccessDenied;
+            }
+            catch (IOException ex) when ((ex.HResult & 0xFFFF) == 0x20 || (ex.HResult & 0xFFFF) == 0x21) // ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION
+            {
+                Debug.WriteLine( "Error renaming file: File in use." );
+                return RenameResult.FileInUse;
+            }
+            catch ( Exception ex ) {
                 Debug.WriteLine( $"Error renaming file: {ex.Message}" );
-                // エラーが発生した場合は、プロパティを元に戻すことを検討
-                videoItem.FilePath = oldPath;
-                videoItem.FileName = Path.GetFileName( oldPath );
-                return false;
+                return RenameResult.UnknownError;
             }
         }
 
         /// <summary>
-        /// DBのFileNameと、指定したフォルダ内のファイル名に対して重複している動画を取得します。
-        /// DB内のFileNameどうしもチェックします。
+        /// 指定されたフォルダ内のファイルと重複する名前を持つビデオをDB内から検索します。
+        /// FileName（完全一致）またはFileNameWithoutArtists（アーティスト名を除いた部分）が一致する場合に重複とみなします。
         /// </summary>
+        /// <param name="folderPath">チェック対象のフォルダパス。</param>
+        /// <returns>重複が見つかったDB内のVideoItemのリスト。</returns>
         public List<VideoItem> GetDuplicateVideosInFolder( string folderPath ) {
-            var duplicateVideos = new List<VideoItem>();
-
-            // フォルダが存在するか確認
-            if ( !Directory.Exists( folderPath ) ) {
-                Debug.WriteLine( $"Folder not found: {folderPath}" );
-                return duplicateVideos;
+            var duplicateDbVideos = new HashSet<VideoItem>(); // 重複しているDB側のビデオを格納
+            if (!Directory.Exists(folderPath)) {
+                Debug.WriteLine($"Folder not found: {folderPath}");
+                return [];
             }
 
-            try {
-                // フォルダ内のすべてのファイルを辞書に格納（キー: 拡張子なしファイル名、値: フルパス）
-                // 同じ名前（拡張子なし）のファイルが複数ある場合は、最後に見つかったものが使われる
-                var filesInFolder = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var file in Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
-                {
-                    filesInFolder[Path.GetFileNameWithoutExtension(file)] = file;
-                }
+            try
+            {
+                var filesInFolder = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
 
-                // DB内のファイル名（拡張子なし）でグループ化
-                var fileNameGroups = Videos.GroupBy(v => Path.GetFileNameWithoutExtension(v.FileName), StringComparer.OrdinalIgnoreCase);
-
-                // 1. フォルダ内のファイルと重複するDB内の動画を検出
-                foreach (var group in fileNameGroups)
+                foreach (var filePath in filesInFolder)
                 {
-                    if (filesInFolder.TryGetValue(group.Key, out var duplicatePathInFolder))
+                    var fileName = Path.GetFileName(filePath);
+                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+
+                    var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(fileName);
+                    var fileNameWithoutArtistsAndExt = string.IsNullOrEmpty(fileNameWithoutArtists) ? string.Empty : Path.GetFileNameWithoutExtension(fileNameWithoutArtists);
+
+
+                    // DB内のビデオと照合
+                    var matches = Videos.Where(dbVideo => 
+                        // FileNameが一致するか
+                        string.Equals(Path.GetFileNameWithoutExtension(dbVideo.FileName), fileNameWithoutExt, StringComparison.OrdinalIgnoreCase) ||
+                        // FileNameWithoutArtistsが空でなく、かつ一致するか
+                        (!string.IsNullOrEmpty(fileNameWithoutArtistsAndExt) && 
+                         !string.IsNullOrEmpty(dbVideo.FileNameWithoutArtists) &&
+                         string.Equals(Path.GetFileNameWithoutExtension(dbVideo.FileNameWithoutArtists), fileNameWithoutArtistsAndExt, StringComparison.OrdinalIgnoreCase))
+                    );
+                    
+                    foreach (var match in matches)
                     {
-                        // フォルダ内に同じファイル名（拡張子なし）が存在する場合
-                        
-                        // a) DB内の既存の重複アイテムをすべて追加
-                        duplicateVideos.AddRange(group);
-
-                        // b) 指定フォルダ内の重複ファイルも追加（既にリストになければ）
-                        if (!duplicateVideos.Any(v => v.FilePath.Equals(duplicatePathInFolder, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            duplicateVideos.Add(new VideoItem { FilePath = duplicatePathInFolder, FileName = Path.GetFileName(duplicatePathInFolder) });
-                        }
+                        duplicateDbVideos.Add(match);
                     }
                 }
-
-                // 2. DB内でのみ重複しているファイルを追加（拡張子なしで比較）
-                foreach (var group in fileNameGroups)
-                {
-                    if (group.Count() > 1)
-                    {
-                        foreach (var video in group)
-                        {
-                            if (!duplicateVideos.Contains(video))
-                            {
-                                duplicateVideos.Add(video);
-                            }
-                        }
-                    }
-                }
-
-                return duplicateVideos.OrderBy(v => v.FileName).ThenBy(v => v.FilePath).ToList();
-            } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error getting duplicate videos: {ex.Message}" );
-                return duplicateVideos;
+                
+                return duplicateDbVideos.OrderBy(v => v.FileName).ThenBy(v => v.FilePath).ToList();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting duplicate videos: {ex.Message}");
+                return [];
             }
         }
     }

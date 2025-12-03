@@ -64,7 +64,7 @@
                     </ItemsControl>
                 </AppBarElementContainer>
             </CommandBar>
-            
+
             <CommandBar Grid.Column="1" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
                 <!-- サムネイルサイズ調整スライダー -->
                 <AppBarElementContainer VerticalAlignment="Center" Visibility="{Binding UIManager.IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -213,6 +213,7 @@
                         ItemsSource="{Binding FilteredVideos}"
                         Visibility="{Binding UIManager.IsListView, Converter={StaticResource BooleanToVisibilityConverter}}"
                         DoubleTapped="GridView_DoubleTapped"
+                        KeyDown="VideoList_KeyDown"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}">
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="models:VideoItem">
@@ -230,6 +231,7 @@
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                         Visibility="{Binding UIManager.IsGridView, Converter={StaticResource BooleanToVisibilityConverter}}"
                         DoubleTapped="GridView_DoubleTapped"
+                        KeyDown="VideoList_KeyDown"
                         ContainerContentChanging="GridView_ContainerContentChanging">
                         <!-- UI仮想化のためのイベントハンドラ -->
                         <GridView.ItemTemplate>
@@ -239,7 +241,8 @@
                                     Width="{Binding DataContext.UIManager.ThumbnailSize, ElementName=RootGrid}"
                                     Margin="5"
                                     Padding="5"
-                                    Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
+                                    Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"
+                                    PointerPressed="VideoGrid_PointerPressed">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
@@ -309,7 +312,7 @@
                                     <Grid.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem Text="ファイルの場所を開く" Click="OpenFileLocation_Click"/>
-                                            <MenuFlyoutItem Text="ファイルを削除"/>
+                                            <MenuFlyoutItem Text="ファイルを削除" Command="{Binding DataContext.DeleteFileCommand, ElementName=RootGrid}"/>
                                             <MenuFlyoutItem Text="サムネイルを再作成"/>
                                         </MenuFlyout>
                                     </Grid.ContextFlyout>

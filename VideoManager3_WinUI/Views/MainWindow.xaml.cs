@@ -62,35 +62,35 @@ namespace VideoManager3_WinUI {
             var mf = new MenuFlyout();
 
             var copy = new MenuFlyoutItem { Text = "コピー" };
-            copy.Click += (s, e) => {
+            copy.Click += ( s, e ) => {
                 try { FileNameTextBox.CopySelectionToClipboard(); } catch { }
             };
-            mf.Items.Add(copy);
+            mf.Items.Add( copy );
 
             var cut = new MenuFlyoutItem { Text = "切り取り" };
-            cut.Click += (s, e) => {
+            cut.Click += ( s, e ) => {
                 try { FileNameTextBox.CutSelectionToClipboard(); } catch { }
             };
-            mf.Items.Add(cut);
+            mf.Items.Add( cut );
 
             var paste = new MenuFlyoutItem { Text = "貼り付け" };
-            paste.Click += (s, e) => {
+            paste.Click += ( s, e ) => {
                 try { FileNameTextBox.PasteFromClipboard(); } catch { }
             };
-            mf.Items.Add(paste);
+            mf.Items.Add( paste );
 
             var selectAll = new MenuFlyoutItem { Text = "全て選択" };
-            selectAll.Click += (s, e) => {
+            selectAll.Click += ( s, e ) => {
                 try { FileNameTextBox.SelectAll(); } catch { }
             };
-            mf.Items.Add(selectAll);
+            mf.Items.Add( selectAll );
 
             // 開閉イベントでフラグを管理し、閉じたら編集状態にフォーカス戻す
-            mf.Opened += (s, e) => { _isFileNameContextFlyoutOpen = true; };
-            mf.Closed += (s, e) => {
+            mf.Opened += ( s, e ) => { _isFileNameContextFlyoutOpen = true; };
+            mf.Closed += ( s, e ) => {
                 _isFileNameContextFlyoutOpen = false;
                 // メニュー操作後はテキスト編集を継続できるようフォーカスを戻す
-                FileNameTextBox.Focus(FocusState.Programmatic);
+                FileNameTextBox.Focus( FocusState.Programmatic );
             };
 
             FileNameTextBox.ContextFlyout = mf;
@@ -99,14 +99,15 @@ namespace VideoManager3_WinUI {
         /// <summary>
         /// タグツリー上でタップされたとき、タグ編集中であればそのタグのチェックを切り替える
         /// </summary>
-        private void TagsTreeView_Tapped(object sender, TappedRoutedEventArgs e) {
+        private void TagsTreeView_Tapped( object sender, TappedRoutedEventArgs e ) {
             // タグ編集モードでなければ何もしない（既存の挙動を維持）
-            if (!ViewModel.TagTreeViewModel.IsTagSetting) {
+            if ( !ViewModel.TagTreeViewModel.IsTagSetting ) {
                 return;
             }
 
             var original = e.OriginalSource as DependencyObject;
-            if ( original == null ) return;
+            if ( original == null )
+                return;
 
             // チェックボックス部分をタップした場合は既存の CheckBox の挙動に任せる（二重トグル防止）
             if ( IsChildOf<CheckBox>( original, null ) ) {
@@ -115,7 +116,7 @@ namespace VideoManager3_WinUI {
 
             // クリックされた要素から DataContext が TagItem の親を探索する
             var tag = FindDataContext<TagItem>(original);
-            if (tag != null) {
+            if ( tag != null ) {
                 // チェックボックスのトグル（チェック状態は XAML のバインディングで反映される）
                 tag.IsChecked = !tag.IsChecked;
                 e.Handled = true;
@@ -123,12 +124,12 @@ namespace VideoManager3_WinUI {
         }
 
         // 指定の起点から親方向に辿って DataContext が T の FrameworkElement を見つけるユーティリティ
-        private T? FindDataContext<T>(DependencyObject? start) where T : class {
-            while (start != null) {
-                if (start is FrameworkElement fe && fe.DataContext is T t) {
+        private T? FindDataContext<T>( DependencyObject? start ) where T : class {
+            while ( start != null ) {
+                if ( start is FrameworkElement fe && fe.DataContext is T t ) {
                     return t;
                 }
-                start = VisualTreeHelper.GetParent(start);
+                start = VisualTreeHelper.GetParent( start );
             }
             return null;
         }
@@ -463,8 +464,8 @@ namespace VideoManager3_WinUI {
             }
 
             // メニューが開いている間はコミットしない（メニュー操作でコピー/切り取りを行うため）
-            await Task.Delay(50); // 多少の遅延で安定させる
-            if (_isFileNameContextFlyoutOpen) {
+            await Task.Delay( 50 ); // 多少の遅延で安定させる
+            if ( _isFileNameContextFlyoutOpen ) {
                 // メニューが閉じた後にフォーカスを戻すため、Closed ハンドラ側で対応しているのでここでは何もしない
                 return;
             }
@@ -490,6 +491,15 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // ListView / GridView でキーが押されたときのイベントハンドラ
+        private void VideoList_KeyDown( object sender, KeyRoutedEventArgs e ) {
+            if ( e.Key == Windows.System.VirtualKey.Delete ) {
+                if ( ViewModel.DeleteFileCommand.CanExecute( null ) ) {
+                    ViewModel.DeleteFileCommand.Execute( null );
+                }
+            }
+        }
+
         /// <summary>
         /// ファイル名編集中に選択アイテムが変更されたときに、変更を確定させる
         /// </summary>
@@ -507,6 +517,15 @@ namespace VideoManager3_WinUI {
                 string? path = ViewModel.SelectedItem.FilePath;
                 if ( !string.IsNullOrEmpty( path ) && File.Exists( path ) ) {
                     Process.Start( "explorer.exe", $"/select, \"{path}\"" );
+                }
+            }
+        }
+
+        private void VideoGrid_PointerPressed( object sender, PointerRoutedEventArgs e ) {
+            var pointerPoint = e.GetCurrentPoint(sender as UIElement);
+            if ( pointerPoint.Properties.IsRightButtonPressed ) {
+                if ( sender is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
+                    ViewModel.SelectedItem = videoItem;
                 }
             }
         }

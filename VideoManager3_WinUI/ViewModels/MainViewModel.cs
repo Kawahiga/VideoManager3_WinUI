@@ -363,6 +363,11 @@ namespace VideoManager3_WinUI.ViewModels {
             string oldFileNameWithoutArtists = video.FileNameWithoutArtists;
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(oldFileName);
 
+            if ( oldFileName == newFileName ) {
+                // ファイル名が変更されていない場合、何もしない
+                return;
+            }
+
             // --- ファイル名の変更処理 ---
             string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
             var result = await _videoService.RenameFileAsync( video, newFileName, newFileNameWithoutArtists );

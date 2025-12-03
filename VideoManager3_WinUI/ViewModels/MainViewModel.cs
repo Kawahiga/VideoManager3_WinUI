@@ -363,7 +363,7 @@ namespace VideoManager3_WinUI.ViewModels {
             string oldFileNameWithoutArtists = video.FileNameWithoutArtists;
             string oldArtists = ArtistService.GetArtistNameWithoutFileName(oldFileName);
 
-            if ( oldFileName == newFileName ) {
+            if ( oldFileName == newFileName || oldFileNameWithoutArtists == newFileName ) {
                 // ファイル名が変更されていない場合、何もしない
                 return;
             }

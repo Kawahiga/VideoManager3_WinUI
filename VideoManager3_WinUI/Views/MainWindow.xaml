@@ -29,12 +29,12 @@
             </Grid.ColumnDefinitions>
 
             <CommandBar Grid.Column="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-                <!-- 参照先なしDBのクリーンアップボタン（未実装） -->
+                <!-- クリーンアップボタン（未実装）
+                     ・参照先なしDB
+                     ・参照先なしサムネイル画像 -->
                 <AppBarButton Icon="Setting" Label="設定"/>
                 <!-- 作業フォルダ設定ボタン -->
                 <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
-                <!-- フォルダ追加ボタン -->
-                <AppBarButton Icon="Add" Label="フォルダを追加" Command="{Binding AddFolderCommand}"/>
                 <AppBarSeparator/>
                 <!-- 削除ボタン -->
                 <AppBarButton Icon="Delete" Label="削除" Command="{Binding DeleteFileCommand}"/>

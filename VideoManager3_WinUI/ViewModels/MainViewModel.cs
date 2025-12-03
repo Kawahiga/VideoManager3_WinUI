@@ -13,6 +13,7 @@ using System.Windows.Input;
 using VideoManager3_WinUI.Models;
 using VideoManager3_WinUI.Services;
 using Windows.Storage.Pickers;
+using static MediaToolkit.Model.Metadata;
 
 namespace VideoManager3_WinUI.ViewModels {
     public class MainViewModel:INotifyPropertyChanged {
@@ -39,8 +40,6 @@ namespace VideoManager3_WinUI.ViewModels {
         public TagTreeViewModel TagTreeViewModel { get; }
 
         // コマンド
-        public ICommand AddFolderCommand { get; private set; }
-        public ICommand AddFilesCommand { get; private set; }
         public ICommand ToggleViewCommand { get; private set; }
         public IRelayCommand ToggleFilterCommand { get; private set; }
         public IRelayCommand DoubleTappedCommand { get; private set; }
@@ -149,8 +148,6 @@ namespace VideoManager3_WinUI.ViewModels {
             _filterService.PropertyChanged += FilterService_PropertyChanged;    // 複数選択ボタンの有効/無効切り替え
 
             // コマンドの初期化
-            AddFolderCommand = new RelayCommand( async () => { await _videoService.AddVideosFromFolderAsync(); ApplyFilters(); } );
-            AddFilesCommand = new RelayCommand<IEnumerable<string>>( async ( files ) => { await _videoService.AddVideosFromPathsAsync( files ); _videoService.SortVideos( SortType ); ApplyFilters(); } );
             DeleteFileCommand = new AsyncRelayCommand( DeleteSelectedFileAsync, () => SelectedItem != null );
             ToggleViewCommand = UIManager.ToggleViewCommand;
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
@@ -290,6 +287,23 @@ namespace VideoManager3_WinUI.ViewModels {
 
                 // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
                 await CheckDuplicateFilesInHomeFolder( HomeFolderPath );
+
+                // ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+                var newVideos = await _videoService.MoveVideosToDateFoldersAsync( HomeFolderPath );
+
+                if ( newVideos.Any() ) {
+                    // 新しく追加された各ビデオについてアーティスト情報を更新
+                    foreach ( var video in newVideos ) {
+                        await _artistService.AddOrUpdateArtistFromVideoAsync( video );
+                    }
+
+                    // アーティストリスト全体を再読み込みしてUIに反映
+                    await _artistService.LoadArtistsAsync();
+
+                    // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
+                    _videoService.SortVideos( SortType );
+                    ApplyFilters();
+                }
             }
         }
 

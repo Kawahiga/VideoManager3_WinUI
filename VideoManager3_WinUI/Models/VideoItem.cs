@@ -35,7 +35,7 @@ namespace VideoManager3_WinUI.Models {
 
 
         public int Id { get; set; } // データベースの主キー
-        public int FenrirId { get; set; } // FenrirのファイルID
+        public int FenrirId { get; set; } = 0; // FenrirのファイルID
 
         private string? _fileName;
         /// <summary>

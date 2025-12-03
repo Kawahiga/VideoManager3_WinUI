@@ -93,7 +93,7 @@ namespace VideoManager3_WinUI.Services {
         /// <param name="video">追加または更新するビデオ。</param>
         public async Task AddOrUpdateArtistFromVideoAsync( VideoItem video ) {
             // 既存の関連付けを解除。コレクション変更中のエラーを避けるため、コピーに対してループ処理を行う。
-            foreach ( var artist in new List<ArtistItem>(video.ArtistsInVideo) ) {
+            foreach ( var artist in new List<ArtistItem>( video.ArtistsInVideo ) ) {
                 await _databaseService.RemoveArtistFromVideoAsync( video, artist );
                 artist.VideosInArtist.Remove( video );
             }
@@ -101,7 +101,8 @@ namespace VideoManager3_WinUI.Services {
 
             // ビデオのファイル名を解析し、アーティスト情報を抽出して内部状態を更新する。
             string artistsString = GetArtistNameWithoutFileName( video.FileName ?? string.Empty );
-            if ( string.IsNullOrEmpty( artistsString ) )                 return;
+            if ( string.IsNullOrEmpty( artistsString ) )
+                return;
 
             // アーティストを分別（別名義を考慮）
             // 例: "浜崎りお(篠原絵梨香、森下えりか) 吉沢明歩" → ["浜崎りお(篠原絵梨香、森下えりか)", "吉沢明歩"]
@@ -148,15 +149,21 @@ namespace VideoManager3_WinUI.Services {
 
                     // 表示名を更新
                     string displayName = mainName;
-                    if ( otherAliases.Any() )                         displayName += $"({string.Join( "、", otherAliases )})";
+                    if ( otherAliases.Any() ) {
+                        displayName += $"({string.Join( "、", otherAliases )})";
+                    }
 
                     // ArtistItemを更新
                     existingArtist.Name = displayName;
                     existingArtist.AliaseNames = updatedAliases;
 
                     // ビデオとの関連付け
-                    if ( !existingArtist.VideosInArtist.Contains( video ) )                         existingArtist.VideosInArtist.Add( video );
-                    if ( !video.ArtistsInVideo.Contains( existingArtist ) )                         video.ArtistsInVideo.Add( existingArtist );
+                    if ( !existingArtist.VideosInArtist.Contains( video ) ) {
+                        existingArtist.VideosInArtist.Add( video );
+                    }
+                    if ( !video.ArtistsInVideo.Contains( existingArtist ) ) {
+                        video.ArtistsInVideo.Add( existingArtist );
+                    }
 
                     // データベース更新
                     await _databaseService.AddOrUpdateArtistAsync( existingArtist );
@@ -170,7 +177,8 @@ namespace VideoManager3_WinUI.Services {
 
                     // 表示名を作成
                     string displayName = mainName;
-                    if ( aliases.Any() )                         displayName += $"({string.Join( "、", aliases )})";
+                    if ( aliases.Any() )
+                        displayName += $"({string.Join( "、", aliases )})";
 
                     var newArtist = new ArtistItem
                     {
@@ -215,7 +223,8 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public static string GetArtistNameWithoutFileName( string fileName ) {
             var match = Regex.Match( fileName, @"^[\[【](.*?)[\]】]" );
-            if ( !match.Success )                 return string.Empty;
+            if ( !match.Success )
+                return string.Empty;
             return match.Groups[1].Value.Trim();
         }
 
@@ -224,7 +233,8 @@ namespace VideoManager3_WinUI.Services {
         /// </summary>
         public static string GetFileNameWithoutArtist( string fileName ) {
             var match = Regex.Match( fileName, @"^[\[【](.*?)[\]】]\s*(.*)" );
-            if ( match.Success )                 return match.Groups[2].Value.Trim();
+            if ( match.Success )
+                return match.Groups[2].Value.Trim();
             return fileName;
         }
     }

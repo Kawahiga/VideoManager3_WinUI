@@ -111,84 +111,50 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// 指定されたフォルダから動画とサブフォルダを追加します。
+        /// 指定されたパスから動画やフォルダを追加する
         /// </summary>
-        public async Task AddVideosFromFolderAsync() {
-            try {
-                if ( App.m_window == null )
-                    return;
-
-                var folderPicker = new FolderPicker
-                {
-                    SuggestedStartLocation = PickerLocationId.VideosLibrary
-                };
-                folderPicker.FileTypeFilter.Add( "*" );
-
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.m_window);
-                WinRT.Interop.InitializeWithWindow.Initialize( folderPicker, hwnd );
-
-                StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-                if ( folder != null ) {
-                    var items = await folder.GetItemsAsync();
-                    foreach ( var item in items ) {
-                        await AddVideoFromPathAsync( item.Path );
-                    }
-                }
-            } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error adding videos from folder: {ex.Message}" );
-            }
-        }
-
-        /// <summary>
-        /// 指定されたパスのリストから動画やフォルダを追加します。
-        /// </summary>
-        public async Task AddVideosFromPathsAsync( IEnumerable<string>? paths ) {
-            if ( paths == null )
-                return;
-            foreach ( var path in paths ) {
-                await AddVideoFromPathAsync( path );
-            }
-        }
-
-        /// <summary>
-        /// 指定されたパスから動画やフォルダを追加する共通メソッド
-        /// </summary>
-        private async Task AddVideoFromPathAsync( string path ) {
+        private async Task<VideoItem?> AddVideoFromPathAsync( string path ) {
             if ( Videos.Any( v => v.FilePath == path ) )
-                return; // 既に存在する場合はスキップ
+                return null; // 既に存在する場合はスキップ
 
             try {
+                VideoItem videoItem;
                 // パスがディレクトリかファイルかを確認
                 if ( Directory.Exists( path ) ) {
                     var dirInfo = new DirectoryInfo(path);
-                    var videoItem = new VideoItem(0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0);
+                    videoItem = new VideoItem( 0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0 );
                     await _databaseService.AddVideoAsync( videoItem );
                     Videos.Add( videoItem );
                 } else if ( File.Exists( path ) ) {
                     var fileInfo = new FileInfo(path);
-                    if ( fileInfo.Extension.ToLower() == ".mp4" ) // .mp4ファイルのみを対象とする
+
+                    // StorageFileを取得して詳細プロパティを取得
+                    var file = await StorageFile.GetFileFromPathAsync(path);
+                    var props = await file.GetBasicPropertiesAsync();
+                    var videoProps = await file.Properties.GetVideoPropertiesAsync();
+                    var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(file.Name);
+
+                    videoItem = new VideoItem
                     {
-                        // StorageFileを取得して詳細プロパティを取得
-                        var file = await StorageFile.GetFileFromPathAsync(path);
-                        var props = await file.GetBasicPropertiesAsync();
-                        var videoProps = await file.Properties.GetVideoPropertiesAsync();
-                        var videoItem = new VideoItem
-                        {
-                            Id = 0,
-                            FilePath = file.Path,
-                            FileName = file.Name,
-                            Extension = fileInfo.Extension.ToLower(),
-                            FileSize = (long)props.Size,
-                            LastModified = props.DateModified.DateTime,
-                            Duration = videoProps.Duration.TotalSeconds
-                        };
-                        await _databaseService.AddVideoAsync( videoItem );
-                        Videos.Add( videoItem );
-                        _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
-                    }
+                        Id = 0,
+                        FilePath = file.Path,
+                        FileName = file.Name,
+                        FileNameWithoutArtists = fileNameWithoutArtists,
+                        Extension = fileInfo.Extension.ToLower(),
+                        FileSize = (long)props.Size,
+                        LastModified = props.DateModified.DateTime,
+                        Duration = videoProps.Duration.TotalSeconds
+                    };
+                    await _databaseService.AddVideoAsync( videoItem );
+                    Videos.Add( videoItem );
+                    _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
+                } else {
+                    return null;
                 }
+                return videoItem;
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
+                return null;
             }
         }
 
@@ -224,7 +190,7 @@ namespace VideoManager3_WinUI.Services {
                 foreach ( var tag in videoItem.VideoTagItems ) {
                     tag.TagVideoItem.Remove( videoItem );
                 }
-                foreach( var artist in videoItem.ArtistsInVideo ) {
+                foreach ( var artist in videoItem.ArtistsInVideo ) {
                     artist.VideosInArtist.Remove( videoItem );
                 }
                 Videos.Remove( videoItem );
@@ -302,6 +268,37 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// 指定されたファイル名に一致する重複したVideoItemをDB内から検索します。
+        /// </summary>
+        /// <param name="fileName">チェックする完全なファイル名。</param>
+        /// <param name="fileNameWithoutArtists">チェックするアーティスト名を除いたファイル名。</param>
+        /// <param name="excludeVideo">チェック対象から除外するビデオ（オプション）。</param>
+        /// <returns>重複するVideoItemのシーケンス。</returns>
+        private IEnumerable<VideoItem> GetDuplicateVideos( string fileName, string fileNameWithoutArtists, VideoItem? excludeVideo ) {
+            // 比較用の拡張子なしファイル名を作成
+            var fileNameToCheck = Path.GetFileNameWithoutExtension(fileName);
+            var fileNameWithoutArtistsToCheck = string.IsNullOrEmpty(fileNameWithoutArtists) ? string.Empty : Path.GetFileNameWithoutExtension(fileNameWithoutArtists);
+            var idToExclude = excludeVideo?.Id ?? -1; // excludeVideoがnullの場合はどのIDとも一致しない-1を設定
+
+            // 大文字小文字を区別せずに比較
+            return Videos.Where( v =>
+                v.Id != idToExclude &&
+                (
+                    // 1. DBのビデオの拡張子を除いたファイル名が、チェック対象のファイル名と一致するか
+                    string.Equals( Path.GetFileNameWithoutExtension( v.FileName ), fileNameToCheck, StringComparison.OrdinalIgnoreCase ) ||
+
+                    // 2. DBのビデオのアーティスト名を除いたファイル名（これも拡張子を除く）が、
+                    //    チェック対象のアーティスト名を除いたファイル名と、空でなく、かつ一致するか
+                    (
+                        !string.IsNullOrEmpty( fileNameWithoutArtistsToCheck ) &&
+                        !string.IsNullOrEmpty( v.FileNameWithoutArtists ) &&
+                        string.Equals( Path.GetFileNameWithoutExtension( v.FileNameWithoutArtists ), fileNameWithoutArtistsToCheck, StringComparison.OrdinalIgnoreCase )
+                    )
+                )
+            );
+        }
+
+        /// <summary>
         /// 指定されたファイル名が、指定されたビデオを除き、DB内に既に存在するかどうかを確認します。
         /// FileNameとFileNameWithoutArtistsの両方でチェックを行います。
         /// </summary>
@@ -309,28 +306,8 @@ namespace VideoManager3_WinUI.Services {
         /// <param name="fileNameWithoutArtists">チェックするアーティスト名を除いたファイル名。</param>
         /// <param name="excludeVideo">チェック対象から除外するビデオ。</param>
         /// <returns>ファイル名が重複している場合は true、それ以外は false。</returns>
-        private bool IsFileNameDuplicateInDatabase(string fileName, string fileNameWithoutArtists, VideoItem excludeVideo)
-        {
-            // 比較用の拡張子なしファイル名を作成
-            var fileNameToCheck = Path.GetFileNameWithoutExtension(fileName);
-            var fileNameWithoutArtistsToCheck = string.IsNullOrEmpty(fileNameWithoutArtists) ? string.Empty : Path.GetFileNameWithoutExtension(fileNameWithoutArtists);
-
-            // 大文字小文字を区別せずに比較
-            return Videos.Any(v =>
-                v.Id != excludeVideo.Id &&
-                (
-                    // 1. DBのビデオの拡張子を除いたファイル名が、チェック対象のファイル名と一致するか
-                    string.Equals(Path.GetFileNameWithoutExtension(v.FileName), fileNameToCheck, StringComparison.OrdinalIgnoreCase) ||
-
-                    // 2. DBのビデオのアーティスト名を除いたファイル名（これも拡張子を除く）が、
-                    //    チェック対象のアーティスト名を除いたファイル名と、空でなく、かつ一致するか
-                    (
-                        !string.IsNullOrEmpty(fileNameWithoutArtistsToCheck) &&
-                        !string.IsNullOrEmpty(v.FileNameWithoutArtists) &&
-                        string.Equals(Path.GetFileNameWithoutExtension(v.FileNameWithoutArtists), fileNameWithoutArtistsToCheck, StringComparison.OrdinalIgnoreCase)
-                    )
-                )
-            );
+        private bool IsFileNameDuplicateInDatabase( string fileName, string fileNameWithoutArtists, VideoItem? excludeVideo ) {
+            return GetDuplicateVideos( fileName, fileNameWithoutArtists, excludeVideo ).Any();
         }
 
         /// <summary>
@@ -341,7 +318,7 @@ namespace VideoManager3_WinUI.Services {
             if ( videoItem == null || string.IsNullOrWhiteSpace( videoItem.FilePath ) ) {
                 return RenameResult.UnknownError;
             }
-            if (string.IsNullOrWhiteSpace(newFileName) || newFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) {
+            if ( string.IsNullOrWhiteSpace( newFileName ) || newFileName.IndexOfAny( Path.GetInvalidFileNameChars() ) >= 0 ) {
                 return RenameResult.InvalidName;
             }
             if ( newFileName.Equals( videoItem.FileName ) ) {
@@ -356,7 +333,7 @@ namespace VideoManager3_WinUI.Services {
             }
 
             var newPath = Path.Combine(directory, newFileName);
-            if (File.Exists(newPath) || IsFileNameDuplicateInDatabase(newFileName, newFileNameWithoutArtists, videoItem)) {
+            if ( File.Exists( newPath ) || IsFileNameDuplicateInDatabase( newFileName, newFileNameWithoutArtists, videoItem ) ) {
                 return RenameResult.AlreadyExists;
             }
 
@@ -369,18 +346,14 @@ namespace VideoManager3_WinUI.Services {
                 await _databaseService.UpdateVideoAsync( videoItem );
                 return RenameResult.Success;
 
-            } 
-            catch (UnauthorizedAccessException)
-            {
+            } catch ( UnauthorizedAccessException ) {
                 Debug.WriteLine( "Error renaming file: Access denied." );
                 return RenameResult.AccessDenied;
-            }
-            catch (IOException ex) when ((ex.HResult & 0xFFFF) == 0x20 || (ex.HResult & 0xFFFF) == 0x21) // ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION
-            {
+            } catch ( IOException ex ) when ( (ex.HResult & 0xFFFF) == 0x20 || (ex.HResult & 0xFFFF) == 0x21 ) // ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION
+              {
                 Debug.WriteLine( "Error renaming file: File in use." );
                 return RenameResult.FileInUse;
-            }
-            catch ( Exception ex ) {
+            } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error renaming file: {ex.Message}" );
                 return RenameResult.UnknownError;
             }
@@ -394,47 +367,103 @@ namespace VideoManager3_WinUI.Services {
         /// <returns>重複が見つかったDB内のVideoItemのリスト。</returns>
         public List<VideoItem> GetDuplicateVideosInFolder( string folderPath ) {
             var duplicateDbVideos = new HashSet<VideoItem>(); // 重複しているDB側のビデオを格納
-            if (!Directory.Exists(folderPath)) {
-                Debug.WriteLine($"Folder not found: {folderPath}");
+            if ( !Directory.Exists( folderPath ) ) {
+                Debug.WriteLine( $"Folder not found: {folderPath}" );
                 return [];
             }
 
-            try
-            {
+            try {
                 var filesInFolder = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
 
-                foreach (var filePath in filesInFolder)
-                {
+                foreach ( var filePath in filesInFolder ) {
                     var fileName = Path.GetFileName(filePath);
-                    var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-
                     var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(fileName);
-                    var fileNameWithoutArtistsAndExt = string.IsNullOrEmpty(fileNameWithoutArtists) ? string.Empty : Path.GetFileNameWithoutExtension(fileNameWithoutArtists);
-
 
                     // DB内のビデオと照合
-                    var matches = Videos.Where(dbVideo => 
-                        // FileNameが一致するか
-                        string.Equals(Path.GetFileNameWithoutExtension(dbVideo.FileName), fileNameWithoutExt, StringComparison.OrdinalIgnoreCase) ||
-                        // FileNameWithoutArtistsが空でなく、かつ一致するか
-                        (!string.IsNullOrEmpty(fileNameWithoutArtistsAndExt) && 
-                         !string.IsNullOrEmpty(dbVideo.FileNameWithoutArtists) &&
-                         string.Equals(Path.GetFileNameWithoutExtension(dbVideo.FileNameWithoutArtists), fileNameWithoutArtistsAndExt, StringComparison.OrdinalIgnoreCase))
-                    );
-                    
-                    foreach (var match in matches)
-                    {
-                        duplicateDbVideos.Add(match);
+                    var matches = GetDuplicateVideos(fileName, fileNameWithoutArtists, null);
+
+                    foreach ( var match in matches ) {
+                        duplicateDbVideos.Add( match );
                     }
                 }
-                
-                return duplicateDbVideos.OrderBy(v => v.FileName).ThenBy(v => v.FilePath).ToList();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error getting duplicate videos: {ex.Message}");
+
+                return duplicateDbVideos.OrderBy( v => v.FileName ).ThenBy( v => v.FilePath ).ToList();
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error getting duplicate videos: {ex.Message}" );
                 return [];
             }
+        }
+
+        /// <summary>
+        /// 指定されたフォルダ内のファイルを更新日付に合わせたフォルダに移動します。
+        /// ただし、DB内に同名ファイルが存在する場合はスキップします。
+        /// </summary>
+        public async Task<List<VideoItem>> MoveVideosToDateFoldersAsync( string folderPath ) {
+            var newVideos = new List<VideoItem>();
+            if ( !Directory.Exists( folderPath ) ) {
+                Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Folder not found: {folderPath}" );
+                return newVideos;
+            }
+
+            var parentDirectory = Directory.GetParent(folderPath);
+            if ( parentDirectory == null ) {
+                Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Could not determine parent directory of {folderPath}" );
+                return newVideos;
+            }
+
+            var filesInFolder = Directory.GetFiles( folderPath, "*", SearchOption.TopDirectoryOnly );
+
+            var movedFilePaths = await Task.Run( () => {
+                var paths = new List<string>();
+                foreach ( var filePath in filesInFolder ) {
+                    try {
+                        var fileInfo = new FileInfo(filePath);
+                        var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(fileInfo.Name);
+
+                        // DB内に同名のファイルが存在するかチェック
+                        if ( IsFileNameDuplicateInDatabase( fileInfo.Name, fileNameWithoutArtists, null ) ) {
+                            Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Skipping duplicate file (found in DB): {filePath}" );
+                            continue;
+                        }
+
+                        var lastModified = fileInfo.LastWriteTime;
+                        var targetFolderName = lastModified.ToString("yyyyMM");
+                        var targetDirectoryPath = Path.Combine(parentDirectory.FullName, targetFolderName);
+
+                        // 移動先フォルダがなければ作成
+                        if ( !Directory.Exists( targetDirectoryPath ) ) {
+                            Directory.CreateDirectory( targetDirectoryPath );
+                        }
+
+                        var targetFilePath = Path.Combine(targetDirectoryPath, fileInfo.Name);
+
+                        // 移動先に同名ファイルが存在する場合はスキップ
+                        if ( File.Exists( targetFilePath ) ) {
+                            Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Target file already exists, skipping: {targetFilePath}" );
+                            continue;
+                        }
+
+                        // ファイルを移動
+                        File.Move( filePath, targetFilePath );
+
+                        paths.Add( targetFilePath );
+                        Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Moved {filePath} to {targetFilePath}" );
+                    } catch ( Exception ex ) {
+                        Debug.WriteLine( $"[MoveVideosToDateFoldersAsync] Error processing file {filePath}: {ex.Message}" );
+                        // 1ファイルのエラーで全体を止めない
+                    }
+                }
+                return paths;
+            } );
+
+            // メインスレッド（UIスレッド）に戻ってからDBとコレクションを更新
+            foreach ( var path in movedFilePaths ) {
+                var newVideo = await AddVideoFromPathAsync( path );
+                if ( newVideo != null ) {
+                    newVideos.Add( newVideo );
+                }
+            }
+            return newVideos;
         }
     }
 }

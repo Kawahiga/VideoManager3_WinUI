@@ -208,6 +208,7 @@ namespace VideoManager3_WinUI.Services {
         private void SortArtists() {
             var sorted = Artists
                 .OrderByDescending( a => a.IsFavorite )               // お気に入りを優先
+                .ThenByDescending( a => a.LikeCount )                // いいね数を優先
                 .ThenByDescending( a => a.VideosInArtist.Count )      // 動画数の多い順
                 .ThenBy( a => a.Name, StringComparer.OrdinalIgnoreCase ) // 名前順（大文字小文字無視）
                 .ToList();

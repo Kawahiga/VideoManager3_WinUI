@@ -72,7 +72,7 @@ namespace VideoManager3_WinUI.Models {
         public string IconPath { get; set; } = string.Empty;
 
         // 表示用の文字色
-        private Brush _textColor = new SolidColorBrush( Colors.Black );
+        private Brush _textColor = new SolidColorBrush( Colors.White );
         public Brush TextColor {
             get => _textColor;
             set {
@@ -82,7 +82,7 @@ namespace VideoManager3_WinUI.Models {
         }
 
         // 表示用の色
-        private Brush _artistColor = new SolidColorBrush( Colors.DarkGray );
+        private Brush _artistColor = new SolidColorBrush( Colors.DarkSlateGray );
         public Brush ArtistColor {
             get => _artistColor;
             set {

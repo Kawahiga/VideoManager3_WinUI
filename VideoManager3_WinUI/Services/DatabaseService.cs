@@ -102,9 +102,10 @@ namespace VideoManager3_WinUI.Services {
             // 既に存在する場合は無視する
             command.CommandText = @"
                 INSERT OR IGNORE INTO Videos 
-                    (FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount) 
+                    (FenrirFileID, FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount) 
                     VALUES 
-                    ($filePath, $fileName, $fileNameWithiutArtist, $extension, $fileSize, $lastModified, $duration, $like, $view)";
+                    ($fenrirId, $filePath, $fileName, $fileNameWithiutArtist, $extension, $fileSize, $lastModified, $duration, $like, $view)";
+            command.Parameters.AddWithValue( "$fenrirId", video.FenrirId );
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
             command.Parameters.AddWithValue( "$fileNameWithiutArtist", video.FileNameWithoutArtists );
@@ -205,17 +206,17 @@ namespace VideoManager3_WinUI.Services {
             using var reader = await command.ExecuteReaderAsync();
             while ( await reader.ReadAsync() ) {
                 var id = reader.GetInt32(0);
-                var fenrirId = reader.GetInt32(1);
+                var fenrirId = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
                 var filePath = reader.GetString(2);
                 var fileName = reader.GetString(3);
                 var fileNameWithoutArtist = reader.GetString(4);
                 var extension = reader.IsDBNull(5) ? string.Empty : reader.GetString(5); // 拡張子がNULLの場合は空文字列を設定
-                var fileSize = reader.GetInt64(6);
+                var fileSize = reader.IsDBNull(6) ? 0 : reader.GetInt64(6);
                 // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
                 var lastModified = DateTime.Parse(reader.GetString(7), null, System.Globalization.DateTimeStyles.RoundtripKind);
-                var duration = reader.GetDouble(8);
-                var likeCount = reader.GetInt32(9);
-                var viewCount = reader.GetInt32(10);
+                var duration = reader.IsDBNull(8) ? 0.0 : reader.GetDouble(8);
+                var likeCount = reader.IsDBNull(9) ? 0 : reader.GetInt32(9);
+                var viewCount = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
 
                 var video = new VideoItem {
                     Id = id,

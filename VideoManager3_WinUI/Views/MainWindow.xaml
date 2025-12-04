@@ -283,7 +283,7 @@
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate x:DataType="models:ArtistItem">
                                                 <Border Background="{Binding ArtistColor}" CornerRadius="4" Margin="0">
-                                                    <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="3,1" FontSize="10"/>
+                                                    <TextBlock Text="{Binding PrimaryName}" Foreground="{Binding TextColor}" Padding="3,1" FontSize="10"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>

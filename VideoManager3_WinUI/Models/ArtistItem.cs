@@ -37,6 +37,10 @@ namespace VideoManager3_WinUI.Models {
         // 例: ["浜崎りお", "篠原絵梨香", "森下えりか"]
         public List<string> AliaseNames { get; set; } = new List<string>();
 
+        // 主名
+        public string PrimaryName => AliaseNames.FirstOrDefault() ?? string.Empty;
+
+
         // お気に入り
         private bool _isFavorite = false;
         public bool IsFavorite {

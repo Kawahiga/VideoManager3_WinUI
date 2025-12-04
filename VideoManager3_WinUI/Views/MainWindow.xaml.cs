@@ -479,23 +479,47 @@ namespace VideoManager3_WinUI {
         // ファイル名編集テキストボックスのキーイベントハンドラー
         private void FileNameTextBox_KeyDown( object sender, KeyRoutedEventArgs e ) {
             if ( e.Key == Windows.System.VirtualKey.Enter ) {
-                // Enterキーでフォーカスを外す（編集内容を確定）
-                RootGrid.Focus( FocusState.Programmatic );
+                // Enterキーでフォーカスを外して編集を確定させる
+                FocusSelectedItem();
             } else if ( e.Key == Windows.System.VirtualKey.Escape ) {
-                // Escapeキーでフォーカスを外す（キャンセル）
+                // Escapeキーで編集をキャンセルして元のファイル名に戻す
                 if ( sender is TextBox textBox && ViewModel.SelectedItem is VideoItem selectedItem ) {
                     textBox.Text = selectedItem.FileName;
                 }
-                // フォーカスを外す
-                RootGrid.Focus( FocusState.Programmatic );
+                // フォーカスを選択中アイテムに戻す
+                FocusSelectedItem();
             }
         }
 
         // ListView / GridView でキーが押されたときのイベントハンドラ
+        private void FocusSelectedItem() {
+            DispatcherQueue.TryEnqueue( () => {
+                if ( ViewModel.UIManager.IsGridView ) {
+                    VideoGridView.Focus( FocusState.Programmatic );
+                    if ( ViewModel.SelectedItem != null ) {
+                        VideoGridView.ScrollIntoView( ViewModel.SelectedItem );
+                    }
+                } else {
+                    VideoListView.Focus( FocusState.Programmatic );
+                    if ( ViewModel.SelectedItem != null ) {
+                        VideoListView.ScrollIntoView( ViewModel.SelectedItem );
+                    }
+                }
+            } );
+        }
+
         private void VideoList_KeyDown( object sender, KeyRoutedEventArgs e ) {
             if ( e.Key == Windows.System.VirtualKey.Delete ) {
                 if ( ViewModel.DeleteFileCommand.CanExecute( null ) ) {
                     ViewModel.DeleteFileCommand.Execute( null );
+                }
+            }
+            if ( e.Key == Windows.System.VirtualKey.F2 )
+            {
+                if (ViewModel.SelectedItem != null)
+                {
+                    FileNameTextBox.Focus(FocusState.Programmatic);
+                    FileNameTextBox.SelectAll();
                 }
             }
         }

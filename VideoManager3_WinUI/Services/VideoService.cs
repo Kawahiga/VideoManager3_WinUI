@@ -111,8 +111,8 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// 選択された動画を削除します。
-        /// ファイルを先に削除し、成功した場合にDBとセッションデータを削除します。
+        /// 選択された動画またはフォルダを削除します。
+        /// ファイル/フォルダを先に削除し、成功した場合にDBとセッションデータを削除します。
         /// </summary>
         /// <returns>削除に成功した場合は true、失敗した場合は false。</returns>
         public async Task<bool> DeleteVideoAsync( VideoItem? videoItem ) {
@@ -121,15 +121,18 @@ namespace VideoManager3_WinUI.Services {
 
             // 1. ファイルシステムから削除を試みる
             try {
-                var file = await StorageFile.GetFileFromPathAsync(videoItem.FilePath);
-                await file.DeleteAsync();
-            } catch ( FileNotFoundException ) {
-                // ファイルが既に存在しない場合は、成功とみなし、DBからの削除処理に進む
-                Debug.WriteLine( $"File not found, but proceeding with DB deletion: {videoItem.FilePath}" );
+                if ( Directory.Exists( videoItem.FilePath ) ) {
+                    Directory.Delete( videoItem.FilePath, true ); // Recursive delete
+                } else if ( File.Exists( videoItem.FilePath ) ) {
+                    File.Delete( videoItem.FilePath );
+                } else {
+                    // ファイル/フォルダが既に存在しない場合は、成功とみなし、DBからの削除処理に進む
+                    Debug.WriteLine( $"Path not found, but proceeding with DB deletion: {videoItem.FilePath}" );
+                }
             } catch ( Exception ex ) {
-                // その他のファイル関連エラー（アクセス拒否など）
-                Debug.WriteLine( $"Error deleting file: {videoItem.FilePath}. Error: {ex.Message}" );
-                // ファイル削除に失敗したため、処理を中断
+                // ファイルまたはディレクトリの削除エラー（アクセス拒否など）
+                Debug.WriteLine( $"Error deleting file or directory: {videoItem.FilePath}. Error: {ex.Message}" );
+                // 削除に失敗したため、処理を中断
                 return false;
             }
 

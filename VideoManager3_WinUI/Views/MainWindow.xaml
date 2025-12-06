@@ -29,12 +29,15 @@
             </Grid.ColumnDefinitions>
 
             <CommandBar Grid.Column="0" DefaultLabelPosition="Right" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
-                <!-- クリーンアップボタン（未実装）
-                     ・参照先なしDB
-                     ・参照先なしサムネイル画像 -->
+                <!-- 設定ボタン -->
+                <!-- ・DBのバックアップ期間の設定 -->
+                <!-- ・ホームフォルダの空き容量確認 -->
+                <!-- ・キーボードショートカット -->
+                <!-- ・各種確認メッセージの表示有無 -->
                 <AppBarButton Icon="Setting" Label="設定"/>
+                <!-- クリーンアップボタン -->
                 <AppBarButton Icon="Repair" Label="クリーンアップ" Command="{Binding CleanupCommand}"/>
-                <!-- 作業フォルダ設定ボタン -->
+                <!-- ホームフォルダ設定ボタン -->
                 <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
                 <AppBarSeparator/>
                 <!-- 削除ボタン -->

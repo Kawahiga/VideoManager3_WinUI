@@ -164,15 +164,43 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// 選択されたファイル（動画またはフォルダ）を開きます。
         /// ・動画：再生を開始
-        /// ・フォルダ：フォルダを開く
+        /// ・フォルダ：フォルダ内に動画があれば先頭の動画を再生、なければフォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
                 return;
 
+            string? pathToOpen;
+
+            if ( Directory.Exists( videoItem.FilePath ) ) {
+                // フォルダの場合、中の最初の動画ファイルを探す
+                try {
+                    var firstVideo = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                              .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+
+                    // 動画ファイルが見つかればそれを、なければフォルダのパスをそのまま使う
+                    pathToOpen = firstVideo ?? videoItem.FilePath;
+
+                } catch ( Exception ex ) {
+                    Debug.WriteLine( $"Error reading directory {videoItem.FilePath}: {ex.Message}" );
+                    // フォルダの読み取りでエラーが発生した場合は、とりあえずフォルダを開く試みをする
+                    pathToOpen = videoItem.FilePath;
+                }
+            } else {
+                // ファイルの場合
+                pathToOpen = videoItem.FilePath;
+            }
+
+            if ( string.IsNullOrEmpty( pathToOpen ) || !(File.Exists( pathToOpen ) || Directory.Exists( pathToOpen )) ) {
+                Debug.WriteLine( $"No valid file or directory to open for: {videoItem.FilePath}" );
+                return;
+            }
+
             try {
-                Process.Start( new ProcessStartInfo( videoItem.FilePath ) { UseShellExecute = true } );
+                Process.Start( new ProcessStartInfo( pathToOpen ) { UseShellExecute = true } );
                 videoItem.ViewCount++; // 再生数を1増やす
+                // DBに更新を反映
+                _ = Task.Run( async () => await _databaseService.UpdateVideoAsync( videoItem ) );
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error opening file: {ex.Message}" );
             }
@@ -235,7 +263,7 @@ namespace VideoManager3_WinUI.Services {
             var idToExclude = excludeVideo?.Id ?? -1;
 
             // ファイルが動画拡張子を持つ場合のみ、その拡張子を安全に除去するヘルパー関数
-            string GetNameWithoutVideoExtension( string name ) {
+            string GetNameWithoutVideoExtension( string? name ) {
                 // nameがnullまたは空の場合は、空文字列を返す
                 if ( string.IsNullOrEmpty( name ) ) {
                     return string.Empty;

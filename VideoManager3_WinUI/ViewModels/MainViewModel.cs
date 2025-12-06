@@ -58,6 +58,7 @@ namespace VideoManager3_WinUI.ViewModels {
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
                     DoubleTappedCommand.NotifyCanExecuteChanged();
+                    DeleteFileCommand.NotifyCanExecuteChanged();
 
                     if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;

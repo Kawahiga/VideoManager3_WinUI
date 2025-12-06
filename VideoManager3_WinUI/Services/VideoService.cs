@@ -1,3 +1,4 @@
+using FFMpegCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -539,9 +540,20 @@ namespace VideoManager3_WinUI.Services {
                     var storageFile = await StorageFile.GetFileFromPathAsync(file);
                     var props = await storageFile.GetBasicPropertiesAsync();
                     var videoProps = await storageFile.Properties.GetVideoPropertiesAsync();
+                    double duration = videoProps.Duration.TotalSeconds;
+
+                    // 再生時間が0の場合、FFMpegCoreで再試行
+                    if ( duration == 0 ) {
+                        try {
+                            var mediaInfo = await FFProbe.AnalyseAsync( file );
+                            duration = mediaInfo.Duration.TotalSeconds;
+                        } catch ( Exception ex ) {
+                            Debug.WriteLine( $"FFMpegCore failed to get duration for {file}: {ex.Message}" );
+                        }
+                    }
 
                     totalSize += (long)props.Size;
-                    totalDuration += videoProps.Duration.TotalSeconds;
+                    totalDuration += duration;
                 } catch ( Exception ex ) {
                     // 個々のファイルのプロパティ取得エラーはログに出力して続行
                     Debug.WriteLine( $"Error getting properties for file {file}: {ex.Message}" );
@@ -589,6 +601,17 @@ namespace VideoManager3_WinUI.Services {
                     var props = await file.GetBasicPropertiesAsync();
                     var videoProps = await file.Properties.GetVideoPropertiesAsync();
                     var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(file.Name);
+                    double duration = videoProps.Duration.TotalSeconds;
+
+                    // 再生時間が0の場合、FFMpegCoreで再試行
+                    if ( duration == 0 ) {
+                        try {
+                            var mediaInfo = await FFProbe.AnalyseAsync( path );
+                            duration = mediaInfo.Duration.TotalSeconds;
+                        } catch ( Exception ex ) {
+                            Debug.WriteLine( $"FFMpegCore failed to get duration for {path}: {ex.Message}" );
+                        }
+                    }
 
                     videoItem = new VideoItem
                     {
@@ -599,7 +622,7 @@ namespace VideoManager3_WinUI.Services {
                         Extension = fileInfo.Extension.ToLower(),
                         FileSize = (long)props.Size,
                         LastModified = props.DateModified.DateTime,
-                        Duration = videoProps.Duration.TotalSeconds
+                        Duration = duration
                     };
                 } else {
                     return null;

@@ -65,12 +65,31 @@ namespace VideoManager3_WinUI.Services {
 
         /// <summary>
         /// 動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
+        /// フォルダの場合は、先頭の動画ファイルからサムネイル画像を生成します。
         /// </summary>
         private async Task LoadThumbnailBytesAsync( VideoItem videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
                 return;
 
-            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync(videoItem.FilePath);
+            string? thumbnailSourcePath = videoItem.FilePath;
+
+            // パスがディレクトリかどうかを確認
+            if ( Directory.Exists( videoItem.FilePath ) ) {
+                try {
+                    // サポートされている拡張子を持つ最初のファイルを検索
+                    thumbnailSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                                   .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+                } catch ( Exception ex ) {
+                    Debug.WriteLine( $"Error searching for video file in directory {videoItem.FilePath}: {ex.Message}" );
+                    thumbnailSourcePath = null; // エラーが発生した場合はサムネイル生成を中止
+                }
+            }
+
+            if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) {
+                return; // サムネイルのソースが見つからない場合は処理を終了
+            }
+
+            var imageBytes = await _thumbnailService.GetThumbnailBytesAsync( thumbnailSourcePath );
 
             if ( imageBytes != null && imageBytes.Length > 0 )
                 videoItem.Thumbnail = imageBytes;

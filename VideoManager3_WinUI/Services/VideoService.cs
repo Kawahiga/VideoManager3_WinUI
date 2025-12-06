@@ -111,54 +111,6 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// 指定されたパスから動画やフォルダを追加する
-        /// </summary>
-        private async Task<VideoItem?> AddVideoFromPathAsync( string path ) {
-            if ( Videos.Any( v => v.FilePath == path ) )
-                return null; // 既に存在する場合はスキップ
-
-            try {
-                VideoItem videoItem;
-                // パスがディレクトリかファイルかを確認
-                if ( Directory.Exists( path ) ) {
-                    var dirInfo = new DirectoryInfo(path);
-                    videoItem = new VideoItem( 0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0 );
-                    await _databaseService.AddVideoAsync( videoItem );
-                    Videos.Add( videoItem );
-                } else if ( File.Exists( path ) ) {
-                    var fileInfo = new FileInfo(path);
-
-                    // StorageFileを取得して詳細プロパティを取得
-                    var file = await StorageFile.GetFileFromPathAsync(path);
-                    var props = await file.GetBasicPropertiesAsync();
-                    var videoProps = await file.Properties.GetVideoPropertiesAsync();
-                    var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(file.Name);
-
-                    videoItem = new VideoItem
-                    {
-                        Id = 0,
-                        FilePath = file.Path,
-                        FileName = file.Name,
-                        FileNameWithoutArtists = fileNameWithoutArtists,
-                        Extension = fileInfo.Extension.ToLower(),
-                        FileSize = (long)props.Size,
-                        LastModified = props.DateModified.DateTime,
-                        Duration = videoProps.Duration.TotalSeconds
-                    };
-                    await _databaseService.AddVideoAsync( videoItem );
-                    Videos.Add( videoItem );
-                    _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
-                } else {
-                    return null;
-                }
-                return videoItem;
-            } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
-                return null;
-            }
-        }
-
-        /// <summary>
         /// 選択された動画を削除します。
         /// ファイルを先に削除し、成功した場合にDBとセッションデータを削除します。
         /// </summary>
@@ -464,6 +416,54 @@ namespace VideoManager3_WinUI.Services {
                 }
             }
             return newVideos;
+        }
+
+        /// <summary>
+        /// 指定されたパスから動画やフォルダを追加する
+        /// </summary>
+        private async Task<VideoItem?> AddVideoFromPathAsync( string path ) {
+            if ( Videos.Any( v => v.FilePath == path ) )
+                return null; // 既に存在する場合はスキップ
+
+            try {
+                VideoItem videoItem;
+                // パスがディレクトリかファイルかを確認
+                if ( Directory.Exists( path ) ) {
+                    var dirInfo = new DirectoryInfo(path);
+                    videoItem = new VideoItem( 0, path, dirInfo.Name, 0, dirInfo.LastWriteTime, 0 );
+                    await _databaseService.AddVideoAsync( videoItem );
+                    Videos.Add( videoItem );
+                } else if ( File.Exists( path ) ) {
+                    var fileInfo = new FileInfo(path);
+
+                    // StorageFileを取得して詳細プロパティを取得
+                    var file = await StorageFile.GetFileFromPathAsync(path);
+                    var props = await file.GetBasicPropertiesAsync();
+                    var videoProps = await file.Properties.GetVideoPropertiesAsync();
+                    var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(file.Name);
+
+                    videoItem = new VideoItem
+                    {
+                        Id = 0,
+                        FilePath = file.Path,
+                        FileName = file.Name,
+                        FileNameWithoutArtists = fileNameWithoutArtists,
+                        Extension = fileInfo.Extension.ToLower(),
+                        FileSize = (long)props.Size,
+                        LastModified = props.DateModified.DateTime,
+                        Duration = videoProps.Duration.TotalSeconds
+                    };
+                    await _databaseService.AddVideoAsync( videoItem );
+                    Videos.Add( videoItem );
+                    _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
+                } else {
+                    return null;
+                }
+                return videoItem;
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
+                return null;
+            }
         }
     }
 }

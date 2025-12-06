@@ -270,7 +270,11 @@ namespace VideoManager3_WinUI.ViewModels {
             }
         }
 
-        // ホームフォルダを設定するコマンド
+        /// <summary>
+        /// ホームフォルダを設定するコマンド
+        /// ・ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+        /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+        /// </summary>
         private async Task SetHomeFolderAsync() {
             var folderPicker = new FolderPicker
             {
@@ -285,25 +289,8 @@ namespace VideoManager3_WinUI.ViewModels {
             if ( folder != null ) {
                 HomeFolderPath = folder.Path; // 選択されたフォルダのパスを設定
 
-                // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
-                await CheckDuplicateFilesInHomeFolder( HomeFolderPath );
-
-                // ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
-                var newVideos = await _videoService.MoveVideosToDateFoldersAsync( HomeFolderPath );
-
-                if ( newVideos.Any() ) {
-                    // 新しく追加された各ビデオについてアーティスト情報を更新
-                    foreach ( var video in newVideos ) {
-                        await _artistService.AddOrUpdateArtistFromVideoAsync( video );
-                    }
-
-                    // アーティストリスト全体を再読み込みしてUIに反映
-                    await _artistService.LoadArtistsAsync();
-
-                    // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
-                    _videoService.SortVideos( SortType );
-                    ApplyFilters();
-                }
+                // ホームフォルダ内のファイルをDBに登録
+                await AddFilesInHomeFolder( HomeFolderPath );
             }
         }
 
@@ -312,17 +299,39 @@ namespace VideoManager3_WinUI.ViewModels {
         /// ・ホームフォルダ内のファイルがすでにDBに登録されているかチェック
         /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
         /// </summary>
-        //public async Task HandleHomeFolderOnStartupAsync( ) {
-        //}
+        public async Task HandleHomeFolderOnStartupAsync( ) {
+            if ( !string.IsNullOrEmpty( HomeFolderPath ) && Directory.Exists( HomeFolderPath ) ) {
+                // ホームフォルダ内のファイルをDBに登録
+                await AddFilesInHomeFolder( HomeFolderPath );
+            }
+        }
 
-        // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
-        private async Task CheckDuplicateFilesInHomeFolder( string homeFolder ) {
+        /// <summary>
+        /// ホームフォルダに対する共通処理
+        /// ・フォルダ内のファイルがすでにDBに登録されているかチェック
+        /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+        /// </summary>
+        private async Task AddFilesInHomeFolder( string homeFolder ) {
             // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
             var dupFiles = _videoService.GetDuplicateVideosInFolder( homeFolder );
-            // メッセージボックスで通知
+            // 重複があった場合はメッセージボックスで通知
             if ( dupFiles.Count > 0 ) {
                 string message = string.Join( "\n", dupFiles.Select( v => v.FilePath ) );
                 await UIManager.ShowMessageDialogAsync( "重複ファイルの警告", message );
+            }
+
+            // ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+            var newVideos = await _videoService.MoveVideosToDateFoldersAsync( HomeFolderPath );
+
+            if ( newVideos.Any() ) {
+                // 新しく追加された各ビデオについてアーティスト情報を更新
+                foreach ( var video in newVideos ) {
+                    await _artistService.AddOrUpdateArtistFromVideoAsync( video );
+                }
+
+                // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
+                _videoService.SortVideos( SortType );
+                ApplyFilters();
             }
         }
 

@@ -54,7 +54,16 @@ namespace VideoManager3_WinUI {
 
             // 初期の選択ファイルの文字列を設定
             FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
+
+            (this.Content as FrameworkElement)!.Loaded += Window_Loaded;
         }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // アプリ起動時のホームフォルダ処理を呼び出す
+            await ViewModel.HandleHomeFolderOnStartupAsync();
+        }
+
 
         private void SetupFileNameContextFlyout() {
             // 標準的なコピー/切り取り/貼り付け/全選択メニューを作成し、

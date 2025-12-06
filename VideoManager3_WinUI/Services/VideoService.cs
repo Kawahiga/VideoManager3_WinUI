@@ -522,6 +522,36 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// フォルダ内の動画ファイルの合計サイズと合計再生時間を計算します。
+        /// </summary>
+        /// <param name="folderPath">調査するフォルダのパス。</param>
+        /// <returns>合計ファイルサイズと合計再生時間（秒）を含むタプル。</returns>
+        private async Task<(long totalSize, double totalDuration)> CalculateFolderPropertiesAsync( string folderPath ) {
+            long totalSize = 0;
+            double totalDuration = 0;
+
+            // フォルダ内の動画ファイルを再帰的に検索
+            var files = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories)
+                                 .Where(f => SupportedVideoExtensions.Contains(Path.GetExtension(f).ToLowerInvariant()));
+
+            foreach ( var file in files ) {
+                try {
+                    var storageFile = await StorageFile.GetFileFromPathAsync(file);
+                    var props = await storageFile.GetBasicPropertiesAsync();
+                    var videoProps = await storageFile.Properties.GetVideoPropertiesAsync();
+
+                    totalSize += (long)props.Size;
+                    totalDuration += videoProps.Duration.TotalSeconds;
+                } catch ( Exception ex ) {
+                    // 個々のファイルのプロパティ取得エラーはログに出力して続行
+                    Debug.WriteLine( $"Error getting properties for file {file}: {ex.Message}" );
+                }
+            }
+
+            return (totalSize, totalDuration);
+        }
+
+        /// <summary>
         /// 指定されたパスから動画やフォルダを追加する
         /// </summary>
         private async Task<VideoItem?> AddVideoFromPathAsync( string path ) {
@@ -534,6 +564,8 @@ namespace VideoManager3_WinUI.Services {
                 if ( Directory.Exists( path ) ) {
                     var dirInfo = new DirectoryInfo(path);
                     var fileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(dirInfo.Name);
+                    var (totalSize, totalDuration) = await CalculateFolderPropertiesAsync( path );
+
                     videoItem = new VideoItem
                     {
                         Id = 0,
@@ -541,9 +573,9 @@ namespace VideoManager3_WinUI.Services {
                         FileName = dirInfo.Name,
                         FileNameWithoutArtists = fileNameWithoutArtists,
                         Extension = "",
-                        FileSize = 0,       // 将来的にフォルダ内のファイルサイズ合計を計算する
+                        FileSize = totalSize,
                         LastModified = dirInfo.LastWriteTime,
-                        Duration = 0        // 将来的にフォルダ内の動画の合計時間を計算する
+                        Duration = totalDuration
                     };
                 } else if ( File.Exists( path ) ) {
                     var fileExtension = Path.GetExtension(path).ToLower();

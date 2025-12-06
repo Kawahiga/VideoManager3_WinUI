@@ -391,12 +391,21 @@ namespace VideoManager3_WinUI.ViewModels {
         /// - 動画が0件のアーティスト
         /// </summary>
         private async Task ExecuteCleanupAsync() {
-            await _videoService.DeleteOrphanedThumbnailsAsync();
-            await _artistService.DeleteOrphanedArtistsAsync();
-            await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。\n - リンク切れのサムネイル\r\n - 動画が0件のアーティスト\r\n" );
-            // 【エンハンス案】
-            // リンク切れファイルを検出
-            // 削除した件数を表示する
+            // 確認ダイアログを表示
+            bool confirmed = await UIManager.ShowConfirmationDialogAsync(
+                "クリーンアップの確認",
+                "不要なデータをクリーンアップしますか？\n - リンク切れのサムネイル\n - 動画が0件のアーティスト",
+                "実行",
+                "キャンセル");
+
+            if ( confirmed ) {
+                await _videoService.DeleteOrphanedThumbnailsAsync();
+                await _artistService.DeleteOrphanedArtistsAsync();
+                await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。" );
+                // 【エンハンス案】
+                // リンク切れファイルを検出
+                // 削除した件数を表示する
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

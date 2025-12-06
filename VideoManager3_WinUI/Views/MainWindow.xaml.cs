@@ -539,8 +539,21 @@ namespace VideoManager3_WinUI {
         private void OpenFileLocation_Click( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem != null ) {
                 string? path = ViewModel.SelectedItem.FilePath;
-                if ( !string.IsNullOrEmpty( path ) && File.Exists( path ) ) {
-                    Process.Start( "explorer.exe", $"/select, \"{path}\"" );
+                if ( !string.IsNullOrEmpty( path ) ) {
+                    if ( Directory.Exists( path ) ) {
+                        // パスがフォルダの場合、そのフォルダを開く
+                        Process.Start( "explorer.exe", path );
+                    }
+                    else if ( File.Exists( path ) ) {
+                        // パスがファイルの場合、そのファイルを選択して開く
+                        Process.Start( "explorer.exe", $"/select, \"{path}\"" );
+                    } else {
+                        // パスが存在しない場合、親フォルダを開く
+                        string? directoryPath = Path.GetDirectoryName( path );
+                        if ( !string.IsNullOrEmpty( directoryPath ) && Directory.Exists( directoryPath ) ) {
+                            Process.Start( "explorer.exe", directoryPath );
+                        }
+                    }
                 }
             }
         }

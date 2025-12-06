@@ -58,8 +58,7 @@ namespace VideoManager3_WinUI {
             (this.Content as FrameworkElement)!.Loaded += Window_Loaded;
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
-        {
+        private async void Window_Loaded( object sender, RoutedEventArgs e ) {
             // アプリ起動時のホームフォルダ処理を呼び出す
             await ViewModel.HandleHomeFolderOnStartupAsync();
         }
@@ -353,55 +352,6 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        // ドラッグ中のアイテムがウィンドウ上にあるときのイベントハンドラ
-        // ホームフォルダの末尾20文字をキャプションとして表示する
-        private void Window_DragOver( object sender, DragEventArgs e ) {
-            e.AcceptedOperation = DataPackageOperation.Copy;
-
-            if ( e.DragUIOverride != null ) {
-                int pathLength = ViewModel.HomeFolderPath.Length;
-                int maxLength = 20;
-                string displayPath = "ファイルを追加";
-                if ( pathLength > maxLength ) {
-                    displayPath = ViewModel.HomeFolderPath.Substring( pathLength - maxLength );
-                } else {
-                    displayPath = ViewModel.HomeFolderPath;
-                }
-                e.DragUIOverride.Caption = displayPath;
-                e.DragUIOverride.IsContentVisible = true;
-            }
-        }
-
-        /// <summary>
-        /// アプリ画面上にドラッグ＆ドロップでファイルがドロップされたときのイベントハンドラ
-        /// JSON形式の一時ファイルを作成し、FileMoverを実行
-        /// </summary>
-        private async void Window_Drop( object sender, DragEventArgs e ) {
-            if ( e.DataView.Contains( StandardDataFormats.StorageItems ) ) {
-                var storageItems = await e.DataView.GetStorageItemsAsync();
-                var sourceFilePaths = storageItems.OfType<StorageFile>().Select( f => f.Path ).ToList();
-
-                if ( !sourceFilePaths.Any() ) {
-                    return;
-                }
-
-                // 1. 移動情報を定義
-                var moveTask = new
-                {
-                    SourceFiles = sourceFilePaths,
-                    DestinationFolder = ViewModel.HomeFolderPath
-                };
-
-                // 2. 情報を一時JSONファイルにシリアライズ
-                string tempFilePath = Path.GetTempFileName() + ".json";
-                await File.WriteAllTextAsync( tempFilePath, System.Text.Json.JsonSerializer.Serialize( moveTask ) );
-
-                // 3. ヘルパーアプリを起動し、JSONファイルのパスを渡す
-                string helperAppPath = @"<パス>\VideoManager3.FileMover.exe"; // 本来はもっと動的に取得すべき
-                Process.Start( helperAppPath, $"\"{tempFilePath}\"" );
-            }
-        }
-
         // 画面などの初期状態をロード
         public void LoadSetting() {
             var setting = _settingService.LoadSettings();
@@ -519,17 +469,20 @@ namespace VideoManager3_WinUI {
             } );
         }
 
+        /// <summary>
+        /// 動画リストでキーが押されたときのイベントハンドラ
+        /// </summary>
         private void VideoList_KeyDown( object sender, KeyRoutedEventArgs e ) {
             if ( e.Key == Windows.System.VirtualKey.Delete ) {
+                // Deleteキーでファイル削除コマンドを実行
                 if ( ViewModel.DeleteFileCommand.CanExecute( null ) ) {
                     ViewModel.DeleteFileCommand.Execute( null );
                 }
             }
-            if ( e.Key == Windows.System.VirtualKey.F2 )
-            {
-                if (ViewModel.SelectedItem != null)
-                {
-                    FileNameTextBox.Focus(FocusState.Programmatic);
+            if ( e.Key == Windows.System.VirtualKey.F2 ) {
+                // F2キーでファイル名編集にフォーカスを移動
+                if ( ViewModel.SelectedItem != null ) {
+                    FileNameTextBox.Focus( FocusState.Programmatic );
                     FileNameTextBox.SelectAll();
                 }
             }
@@ -554,8 +507,7 @@ namespace VideoManager3_WinUI {
                     if ( Directory.Exists( path ) ) {
                         // パスがフォルダの場合、そのフォルダを開く
                         Process.Start( "explorer.exe", path );
-                    }
-                    else if ( File.Exists( path ) ) {
+                    } else if ( File.Exists( path ) ) {
                         // パスがファイルの場合、そのファイルを選択して開く
                         Process.Start( "explorer.exe", $"/select, \"{path}\"" );
                     } else {
@@ -569,6 +521,7 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        // GridViewのアイテムを右クリックしたときのイベントハンドラ
         private void VideoGrid_PointerPressed( object sender, PointerRoutedEventArgs e ) {
             var pointerPoint = e.GetCurrentPoint(sender as UIElement);
             if ( pointerPoint.Properties.IsRightButtonPressed ) {

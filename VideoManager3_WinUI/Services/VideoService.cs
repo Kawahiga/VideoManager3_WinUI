@@ -266,7 +266,7 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// 動画ファイルの名前を変更します。
+        /// 動画ファイルまたはフォルダの名前を変更します。
         /// </summary>
         /// <returns>ファイル名の変更結果を示す RenameResult。</returns>
         public async Task<RenameResult> RenameFileAsync( VideoItem videoItem, string newFileName, string newFileNameWithoutArtists ) {
@@ -288,13 +288,21 @@ namespace VideoManager3_WinUI.Services {
             }
 
             var newPath = Path.Combine(directory, newFileName);
-            if ( File.Exists( newPath ) || IsFileNameDuplicateInDatabase( newFileName, newFileNameWithoutArtists, videoItem ) ) {
+            if ( File.Exists( newPath ) || Directory.Exists( newPath ) || IsFileNameDuplicateInDatabase( newFileName, newFileNameWithoutArtists, videoItem ) ) {
                 return RenameResult.AlreadyExists;
             }
 
 
             try {
-                File.Move( oldPath, newPath );
+                if ( Directory.Exists( oldPath ) ) {
+                    Directory.Move( oldPath, newPath );
+                } else if ( File.Exists( oldPath ) ) {
+                    File.Move( oldPath, newPath );
+                } else {
+                    Debug.WriteLine( $"Source path not found for renaming: {oldPath}" );
+                    return RenameResult.UnknownError;
+                }
+
                 videoItem.FilePath = newPath;
                 videoItem.FileName = newFileName;
                 videoItem.FileNameWithoutArtists = newFileNameWithoutArtists;

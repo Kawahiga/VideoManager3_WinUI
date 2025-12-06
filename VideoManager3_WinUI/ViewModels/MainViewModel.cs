@@ -162,20 +162,6 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         /// <summary>
-        /// 不要なデータをクリーンアップします。
-        /// - リンク切れのサムネイル
-        /// - 動画が0件のアーティスト
-        /// </summary>
-        private async Task ExecuteCleanupAsync() {
-            await _videoService.DeleteOrphanedThumbnailsAsync();
-            await _artistService.DeleteOrphanedArtistsAsync();
-            await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。\n - リンク切れのサムネイル\r\n - 動画が0件のアーティスト\r\n" );
-            // 【エンハンス案】
-            // リンク切れファイルを検出
-            // 削除した件数を表示する
-        }
-
-        /// <summary>
         /// 初期データをDBからロード
         /// </summary>
         private async Task LoadInitialDataAsync() {
@@ -350,6 +336,19 @@ namespace VideoManager3_WinUI.ViewModels {
                 _videoService.SortVideos( SortType );
                 ApplyFilters();
             }
+
+            // ディスクの空き容量をチェック
+            try {
+                var driveInfo = new DriveInfo(Path.GetPathRoot(homeFolder));
+                const long threshold = 10L * 1024 * 1024 * 1024; // 10GB
+                if ( driveInfo.AvailableFreeSpace < threshold ) {
+                    var freeSpaceGB = driveInfo.AvailableFreeSpace / (1024.0 * 1024.0 * 1024.0);
+                    await UIManager.ShowMessageDialogAsync( "ディスク容量の警告", $"ディスクの空き容量が少なくなっています。({freeSpaceGB:F2} GB残り)" );
+                }
+            } catch ( Exception ex ) {
+                // ドライブ情報の取得に失敗した場合（例：ネットワークドライブなど）
+                Debug.WriteLine( $"ディスク容量のチェックに失敗しました: {ex.Message}" );
+            }
         }
 
         // アプリを閉じるときのイベント
@@ -367,6 +366,20 @@ namespace VideoManager3_WinUI.ViewModels {
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error saving artists: {ex.Message}" );
             }
+        }
+
+        /// <summary>
+        /// 不要なデータをクリーンアップします。
+        /// - リンク切れのサムネイル
+        /// - 動画が0件のアーティスト
+        /// </summary>
+        private async Task ExecuteCleanupAsync() {
+            await _videoService.DeleteOrphanedThumbnailsAsync();
+            await _artistService.DeleteOrphanedArtistsAsync();
+            await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。\n - リンク切れのサムネイル\r\n - 動画が0件のアーティスト\r\n" );
+            // 【エンハンス案】
+            // リンク切れファイルを検出
+            // 削除した件数を表示する
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

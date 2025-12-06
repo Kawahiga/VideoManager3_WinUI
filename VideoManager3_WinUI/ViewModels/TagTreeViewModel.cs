@@ -14,6 +14,8 @@ namespace VideoManager3_WinUI.ViewModels {
         private readonly TagService _tagService;
 
         public ObservableCollection<TagItem> TagItems { get; } = new ObservableCollection<TagItem>();
+        private TagItem? _allFilesTag;
+        public ObservableCollection<TagItem> TagTreeItems { get; } = new();
 
         // TreeViewで選択されているタグを保持するためのプロパティ
         private TagItem? _selectedTag;
@@ -47,6 +49,15 @@ namespace VideoManager3_WinUI.ViewModels {
             TagItems.Clear();
             foreach ( var tag in rootTags ) {
                 TagItems.Add( tag );
+            }
+
+            _allFilesTag = TagItems.FirstOrDefault();
+
+            TagTreeItems.Clear();
+            if ( _allFilesTag != null ) {
+                foreach ( var child in _allFilesTag.Children ) {
+                    TagTreeItems.Add( child );
+                }
             }
         }
 

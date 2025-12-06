@@ -46,6 +46,7 @@ namespace VideoManager3_WinUI.ViewModels {
         public ICommand SetHomeFolderCommand { get; private set; }
         public IAsyncRelayCommand DeleteFileCommand { get; private set; }
         public IAsyncRelayCommand CleanupCommand { get; private set; }
+        public IRelayCommand ClearAllFiltersCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -156,6 +157,7 @@ namespace VideoManager3_WinUI.ViewModels {
             DoubleTappedCommand = new RelayCommand<VideoItem>( ( video ) => _videoService.OpenFile( video ) );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
             CleanupCommand = new AsyncRelayCommand( ExecuteCleanupAsync );
+            ClearAllFiltersCommand = new RelayCommand(ClearAllFilters);
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -177,7 +179,22 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // 3. 最後にソートとフィルタリング
             _videoService.SortVideos( SortType );
-            ApplyFilters();
+            ClearAllFilters();
+        }
+
+        /// <summary>
+        /// 全てのフィルターをクリア（＝全てのファイル表示）
+        /// </summary>
+        private void ClearAllFilters() {
+            TagTreeViewModel.SelectedTag = null;
+            // 直接フィールドを更新して、意図しないフィルターの再適用を防ぐ
+            _selectedArtist = null;
+            OnPropertyChanged(nameof(SelectedArtist));
+            _searchText = string.Empty;
+            OnPropertyChanged(nameof(SearchText));
+
+            _filterService.ClearAllFilters();
+            // ClearAllFilters内でFilterStateChangedが呼ばれるので、ここでのApplyFiltersは不要
         }
 
         /// <summary>

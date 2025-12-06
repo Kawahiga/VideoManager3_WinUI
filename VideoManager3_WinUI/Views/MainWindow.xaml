@@ -105,19 +105,25 @@
             <Grid Grid.Column="0" Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <Button Grid.Row="0" Background="LightGray" HorizontalAlignment="Center" Click="ToggleLeftPain_Click" Visibility="{Binding UIManager.IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock Text="タグツリー"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
                 </Button>
+                <Button Grid.Row="0" Background="LightGray" HorizontalAlignment="Center" Click="ToggleLeftPain_Click" Visibility="{Binding UIManager.IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="女優一覧"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
+                </Button>
 
-                <!-- タグを表示するTreeView -->
-                <TreeView Grid.Row="1" x:Name="TagsTreeView" Margin="5,0,5,5"
-                    ItemsSource="{Binding TagTreeViewModel.TagItems, Mode=TwoWay}"
-                    SelectedItem="{Binding TagTreeViewModel.SelectedTag, Mode=TwoWay}"
-                    ScrollViewer.VerticalScrollBarVisibility="Visible"
-                    Visibility="{Binding UIManager.IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Button Grid.Row="1" Content="全てのファイル" Command="{Binding ClearAllFiltersCommand}" HorizontalAlignment="Stretch" Margin="5"/>
+                <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="0 0 0 1" Margin="5 0" VerticalAlignment="Bottom"/>
+
+                <TreeView Grid.Row="2" x:Name="TagsTreeView" Margin="5,5,5,5"
+                          ItemsSource="{Binding TagTreeViewModel.TagTreeItems, Mode=OneWay}"
+                          SelectedItem="{Binding TagTreeViewModel.SelectedTag, Mode=TwoWay}"
+                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                          Visibility="{Binding UIManager.IsTreeView, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TreeView.ItemTemplate>
                         <!-- 各タグアイテムの表示形式を定義 -->
                         <DataTemplate x:DataType="models:TagItem">
@@ -153,12 +159,7 @@
                     </TreeView.ItemTemplate>
                 </TreeView>
 
-                <!-- アーティストリスト -->
-                <Button Grid.Row="0" Background="LightGray" HorizontalAlignment="Center" Click="ToggleLeftPain_Click" Visibility="{Binding UIManager.IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <TextBlock Text="女優一覧"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
-                </Button>
-
-                <ListView Grid.Row="1" ItemsSource="{x:Bind ViewModel.ArtistItems,Mode=OneWay}" SelectedItem="{Binding SelectedArtist, Mode=TwoWay}" Visibility="{Binding UIManager.IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.ArtistItems,Mode=OneWay}" SelectedItem="{Binding SelectedArtist, Mode=TwoWay}" Visibility="{Binding UIManager.IsArtistView, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:ArtistItem">
                             <Grid Margin="5,0,5,5" Height="30">

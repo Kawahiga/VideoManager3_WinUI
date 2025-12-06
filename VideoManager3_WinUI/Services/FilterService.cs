@@ -65,6 +65,12 @@ namespace VideoManager3_WinUI.Services {
             }
         }
 
+        public void ClearAllFilters() {
+            Filters.Clear();
+            MultiFilterEnabled = false;
+            FilterStateChanged?.Invoke();
+        }
+
         public bool SetTagFilter( TagItem? tag ) {
             // tagがnullの場合は、タグフィルターを解除
             return UpdateFilter( FilterType.Tag, tag, tag?.Name, tag?.TextColor, tag?.Color, tag == null );
@@ -84,13 +90,6 @@ namespace VideoManager3_WinUI.Services {
         /// フィルターの更新（追加または削除）を行う
         /// </summary>
         private bool UpdateFilter( FilterType type, object? value, string? label, Brush? textColor, Brush? backColor, bool shouldRemove ) {
-
-            if ( type.Equals( FilterType.Tag ) && label != null && label.Equals( "全てのファイル" ) ) {
-                // 全てのフィルターをリセット
-                Filters.Clear();
-                MultiFilterEnabled = false;
-                return true;
-            }
 
             var existingFilter = Filters.FirstOrDefault(f => f.Value == value);
             if ( existingFilter != null ) {

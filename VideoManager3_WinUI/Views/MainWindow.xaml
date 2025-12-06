@@ -33,6 +33,7 @@
                      ・参照先なしDB
                      ・参照先なしサムネイル画像 -->
                 <AppBarButton Icon="Setting" Label="設定"/>
+                <AppBarButton Icon="Repair" Label="クリーンアップ" Command="{Binding CleanupCommand}"/>
                 <!-- 作業フォルダ設定ボタン -->
                 <AppBarButton Icon="Folder" Label="{Binding HomeFolderPath}" Command="{Binding SetHomeFolderCommand}"/>
                 <AppBarSeparator/>

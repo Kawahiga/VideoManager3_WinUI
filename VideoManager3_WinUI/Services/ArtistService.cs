@@ -238,5 +238,17 @@ namespace VideoManager3_WinUI.Services {
                 return match.Groups[2].Value.Trim();
             return fileName;
         }
+
+        /// <summary>
+        /// どのビデオにも関連付けられていないアーティストをデータベースから削除します。
+        /// </summary>
+        public async Task DeleteOrphanedArtistsAsync() {
+            try {
+                await _databaseService.DeleteOrphanedArtistsAsync();
+                await LoadArtistsAsync(); // リストを再読み込みしてUIに反映
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Error deleting orphaned artists: {ex.Message}" );
+            }
+        }
     }
 }

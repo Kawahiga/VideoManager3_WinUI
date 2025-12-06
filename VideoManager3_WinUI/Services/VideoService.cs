@@ -37,8 +37,6 @@ namespace VideoManager3_WinUI.Services {
     public class VideoService {
         public ObservableCollection<VideoItem> Videos { get; } = new ObservableCollection<VideoItem>();
 
-        public string? HomeFolder = null;
-
         private readonly DatabaseService _databaseService;
         private readonly TagService _tagService;
         private readonly ThumbnailService _thumbnailService;
@@ -48,6 +46,18 @@ namespace VideoManager3_WinUI.Services {
             _databaseService = databaseService;
             _tagService = tagService;
             _thumbnailService = thumbnailService;
+        }
+
+        /// <summary>
+        /// リンク切れのサムネイルファイルを削除します。
+        /// </summary>
+        public async Task DeleteOrphanedThumbnailsAsync() {
+            try {
+                var allVideoPaths = Videos.Select(v => v.FilePath);
+                await _thumbnailService.DeleteOrphanedThumbnailsAsync(allVideoPaths);
+            } catch (Exception ex) {
+                Debug.WriteLine($"Error during thumbnail cleanup: {ex.Message}");
+            }
         }
 
         /// <summary>

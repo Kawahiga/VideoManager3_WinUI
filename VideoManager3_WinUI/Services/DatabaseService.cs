@@ -553,5 +553,19 @@ namespace VideoManager3_WinUI.Services {
             }
             return artists;
         }
+
+        /// <summary>
+        /// どのビデオにも関連付けられていないアーティストをデータベースから削除します。
+        /// </summary>
+        public async Task DeleteOrphanedArtistsAsync() {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            await connection.OpenAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                DELETE FROM Artists
+                WHERE ArtistID NOT IN (SELECT DISTINCT ArtistID FROM VideoArtists);
+            ";
+            await command.ExecuteNonQueryAsync();
+        }
     }
 }

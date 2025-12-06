@@ -45,6 +45,7 @@ namespace VideoManager3_WinUI.ViewModels {
         public IRelayCommand DoubleTappedCommand { get; private set; }
         public ICommand SetHomeFolderCommand { get; private set; }
         public IAsyncRelayCommand DeleteFileCommand { get; private set; }
+        public IAsyncRelayCommand CleanupCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -154,9 +155,24 @@ namespace VideoManager3_WinUI.ViewModels {
             ToggleFilterCommand = new RelayCommand( () => _filterService.ToggleFilterMulti() );
             DoubleTappedCommand = new RelayCommand<VideoItem>( ( video ) => _videoService.OpenFile( video ) );
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
+            CleanupCommand = new AsyncRelayCommand( ExecuteCleanupAsync );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
+        }
+
+        /// <summary>
+        /// 不要なデータをクリーンアップします。
+        /// - リンク切れのサムネイル
+        /// - 動画が0件のアーティスト
+        /// </summary>
+        private async Task ExecuteCleanupAsync() {
+            await _videoService.DeleteOrphanedThumbnailsAsync();
+            await _artistService.DeleteOrphanedArtistsAsync();
+            await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。\n - リンク切れのサムネイル\r\n - 動画が0件のアーティスト\r\n" );
+            // 【エンハンス案】
+            // リンク切れファイルを検出
+            // 削除した件数を表示する
         }
 
         /// <summary>
@@ -300,7 +316,7 @@ namespace VideoManager3_WinUI.ViewModels {
         /// ・ホームフォルダ内のファイルがすでにDBに登録されているかチェック
         /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
         /// </summary>
-        public async Task HandleHomeFolderOnStartupAsync( ) {
+        public async Task HandleHomeFolderOnStartupAsync() {
             if ( !string.IsNullOrEmpty( HomeFolderPath ) && Directory.Exists( HomeFolderPath ) ) {
                 // ホームフォルダ内のファイルをDBに登録
                 await AddFilesInHomeFolder( HomeFolderPath );
@@ -363,7 +379,7 @@ namespace VideoManager3_WinUI.ViewModels {
 
         // ファイル名を変更するメソッド
         public async Task RenameFileAsync( VideoItem video, string newFileName ) {
-            if ( video == null || string.IsNullOrWhiteSpace(video.FileName)) {
+            if ( video == null || string.IsNullOrWhiteSpace( video.FileName ) ) {
                 return;
             }
 
@@ -382,10 +398,10 @@ namespace VideoManager3_WinUI.ViewModels {
             string newFileNameWithoutArtists = ArtistService.GetFileNameWithoutArtist(newFileName);
             var result = await _videoService.RenameFileAsync( video, newFileName, newFileNameWithoutArtists );
 
-            if ( result == RenameResult.Success) {
+            if ( result == RenameResult.Success ) {
                 // --- アーティスト情報の更新 ---
                 string newArtists = ArtistService.GetArtistNameWithoutFileName(newFileName);
-                if (oldArtists != newArtists) {
+                if ( oldArtists != newArtists ) {
                     // ファイル名に含まれるアーティスト名が変更された場合、アーティスト情報を更新
                     // これにより、アーティスト名がなくなった場合も情報がクリアされる
                     await _artistService.AddOrUpdateArtistFromVideoAsync( video );
@@ -398,7 +414,8 @@ namespace VideoManager3_WinUI.ViewModels {
 
             } else {
                 // --- エラー処理 ---
-                string? errorMessage = result switch {
+                string? errorMessage = result switch
+                {
                     RenameResult.AlreadyExists => "同じ名前のファイルが既に存在します。",
                     RenameResult.AccessDenied => "ファイルへのアクセスが拒否されました。\nアクセス権限を確認してください。",
                     RenameResult.FileInUse => "ファイルは他のプログラムで使用中のため、変更できません。",
@@ -406,7 +423,7 @@ namespace VideoManager3_WinUI.ViewModels {
                     _ => "原因不明のエラーにより、ファイル名の変更に失敗しました。"
                 };
 
-                if (errorMessage != null) {
+                if ( errorMessage != null ) {
                     await UIManager.ShowMessageDialogAsync( "名前の変更エラー", errorMessage );
                 }
 

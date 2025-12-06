@@ -1,6 +1,8 @@
 using FFMpegCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -78,6 +80,38 @@ namespace VideoManager3_WinUI.Services {
                 }
                 return sb.ToString() + ".png";
             }
+        }
+
+        /// <summary>
+        /// データベースに存在しない動画に対応する、古いサムネイルキャッシュファイルを削除します。
+        /// </summary>
+        public Task DeleteOrphanedThumbnailsAsync( IEnumerable<string> videoPaths ) {
+            return Task.Run( () => {
+                try {
+                    if ( !Directory.Exists( TempCacheFolder ) ) {
+                        return;
+                    }
+                    
+                    var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p)));
+
+                    // キャッシュフォルダ内のすべてのファイルを取得
+                    var cachedFiles = Directory.GetFiles(TempCacheFolder);
+
+                    foreach ( var file in cachedFiles ) {
+                        var fileName = Path.GetFileName(file);
+                        if ( !validCacheKeys.Contains( fileName ) ) {
+                            try {
+                                File.Delete( file );
+                                System.Diagnostics.Debug.WriteLine( $"Deleted orphaned thumbnail: {fileName}" );
+                            } catch ( Exception ex ) {
+                                System.Diagnostics.Debug.WriteLine( $"Failed to delete thumbnail {fileName}: {ex.Message}" );
+                            }
+                        }
+                    }
+                } catch ( Exception ex ) {
+                    System.Diagnostics.Debug.WriteLine( $"Error deleting orphaned thumbnails: {ex.Message}" );
+                }
+            } );
         }
     }
 }

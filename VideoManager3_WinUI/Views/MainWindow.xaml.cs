@@ -203,7 +203,9 @@ namespace VideoManager3_WinUI {
                 if ( ViewModel.SelectedItem.LikeCount > 0 ) {
                     ViewModel.SelectedItem.LikeCount--;
                     foreach ( var artist in ViewModel.SelectedItem.ArtistsInVideo ) {
-                        artist.LikeCount--;
+                        if ( artist.LikeCount > 0 ) {
+                            artist.LikeCount--;
+                        }
                     }
                 }
             }

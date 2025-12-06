@@ -34,7 +34,9 @@
                 <!-- ・ホームフォルダの空き容量確認 -->
                 <!-- ・キーボードショートカット -->
                 <!-- ・各種確認メッセージの表示有無 -->
+                <!--
                 <AppBarButton Icon="Setting" Label="設定"/>
+                -->
                 <!-- クリーンアップボタン -->
                 <AppBarButton Icon="Repair" Label="クリーンアップ" Command="{Binding CleanupCommand}"/>
                 <!-- ホームフォルダ設定ボタン -->
@@ -116,8 +118,7 @@
                     <TextBlock Text="女優一覧"  TextAlignment="Center" FontWeight="Bold" Margin="3"/>
                 </Button>
 
-                <Button Grid.Row="1" Content="全てのファイル" Command="{Binding ClearAllFiltersCommand}" HorizontalAlignment="Stretch" Margin="5"/>
-                <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="0 0 0 1" Margin="5 0" VerticalAlignment="Bottom"/>
+                <Button Grid.Row="1" Content="全てのファイル" Command="{Binding ClearAllFiltersCommand}" HorizontalAlignment="Stretch" Margin="5" BorderThickness="0" Background="Transparent"/>
 
                 <TreeView Grid.Row="2" x:Name="TagsTreeView" Margin="5,5,5,5"
                           ItemsSource="{Binding TagTreeViewModel.TagTreeItems, Mode=OneWay}"

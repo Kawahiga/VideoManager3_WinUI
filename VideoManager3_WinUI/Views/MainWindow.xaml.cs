@@ -56,13 +56,41 @@ namespace VideoManager3_WinUI {
             FileNameTextBox.Text = ViewModel.SelectedItem?.FileNameWithoutArtists ?? string.Empty;
 
             (this.Content as FrameworkElement)!.Loaded += Window_Loaded;
+
+            _appWindow.Closing += AppWindow_Closing;
         }
 
+        // ウィンドウが読み込まれたときのイベントハンドラー
         private async void Window_Loaded( object sender, RoutedEventArgs e ) {
             // アプリ起動時のホームフォルダ処理を呼び出す
             await ViewModel.HandleHomeFolderOnStartupAsync();
         }
 
+        // アプリウィンドウが閉じられるときのイベントハンドラー
+        private async void AppWindow_Closing( AppWindow sender, AppWindowClosingEventArgs args ) {
+            // ViewModelが処理中かどうかを確認
+            if ( ViewModel.IsProcessing ) {
+                // ウィンドウが閉じるのを一旦キャンセルする
+                args.Cancel = true;
+
+                // 警告ダイアログを表示
+                bool forceClose = await ViewModel.UIManager.ShowConfirmationDialogAsync(
+                    "終了の確認",
+                    "現在、ファイルの移動やデータベースへの登録処理を行っています。\n途中で終了するとデータが不整合になる可能性があります。\n\nそれでも強制終了しますか？",
+                    "強制終了", // PrimaryButton
+                    "キャンセル" // CloseButton
+                );
+
+                if ( forceClose ) {
+                    // 強制終了が選ばれた場合、フラグを強制的に折ってアプリを終了させる
+                    ViewModel.IsProcessing = false;
+
+                    // Close()を呼ぶと再度このイベントが呼ばれるが、
+                    // IsProcessingがfalseになっているのでスルーされる
+                    this.Close();
+                }
+            }
+        }
 
         private void SetupFileNameContextFlyout() {
             // 標準的なコピー/切り取り/貼り付け/全選択メニューを作成し、

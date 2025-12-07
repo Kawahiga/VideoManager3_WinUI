@@ -129,6 +129,18 @@ namespace VideoManager3_WinUI.ViewModels {
             }
         }
 
+        // バックグラウンド処理中かどうかを示すフラグ
+        private bool _isProcessing = false;
+        public bool IsProcessing {
+            get => _isProcessing;
+            set {
+                if ( _isProcessing != value ) {
+                    _isProcessing = value;
+                    OnPropertyChanged( nameof( IsProcessing ) );
+                }
+            }
+        }
+
         // コンストラクタ
         public MainViewModel() {
             UIManager = new UIManager();
@@ -332,26 +344,34 @@ namespace VideoManager3_WinUI.ViewModels {
         /// ・ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
         /// </summary>
         private async Task AddFilesInHomeFolder( string homeFolder ) {
-            // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
-            var dupFiles = _videoService.GetDuplicateVideosInFolder( homeFolder );
-            // 重複があった場合はメッセージボックスで通知
-            if ( dupFiles.Count > 0 ) {
-                string message = string.Join( "\n", dupFiles.Select( v => v.FilePath ) );
-                await UIManager.ShowMessageDialogAsync( "重複ファイルの警告", message );
-            }
+            try {
+                // 処理中フラグを立てる
+                IsProcessing = true;
 
-            // ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
-            var newVideos = await _videoService.MoveVideosToDateFoldersAsync( HomeFolderPath );
-
-            if ( newVideos.Any() ) {
-                // 新しく追加された各ビデオについてアーティスト情報を更新
-                foreach ( var video in newVideos ) {
-                    await _artistService.AddOrUpdateArtistFromVideoAsync( video );
+                // ホームフォルダ内のファイルがすでにDBに登録されているかチェック
+                var dupFiles = _videoService.GetDuplicateVideosInFolder( homeFolder );
+                // 重複があった場合はメッセージボックスで通知
+                if ( dupFiles.Count > 0 ) {
+                    string message = string.Join( "\n", dupFiles.Select( v => v.FilePath ) );
+                    await UIManager.ShowMessageDialogAsync( "重複ファイルの警告", message );
                 }
 
-                // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
-                _videoService.SortVideos( SortType );
-                ApplyFilters();
+                // ホームフォルダ内のファイルを所定のフォルダに移動しDBに登録
+                var newVideos = await _videoService.MoveVideosToDateFoldersAsync( HomeFolderPath );
+
+                if ( newVideos.Any() ) {
+                    // 新しく追加された各ビデオについてアーティスト情報を更新
+                    foreach ( var video in newVideos ) {
+                        await _artistService.AddOrUpdateArtistFromVideoAsync( video );
+                    }
+
+                    // ソート順を維持し、フィルターを再適用してUIを正しく更新します。
+                    _videoService.SortVideos( SortType );
+                    ApplyFilters();
+                }
+            } finally {
+                // 処理中フラグを下ろす
+                IsProcessing = false;
             }
 
             // ディスクの空き容量をチェック

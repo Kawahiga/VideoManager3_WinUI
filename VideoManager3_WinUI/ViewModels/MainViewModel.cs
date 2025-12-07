@@ -130,6 +130,7 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         // バックグラウンド処理中かどうかを示すフラグ
+        // 【改善案】カウンタにしてどこまで終了しているか管理する
         private bool _isProcessing = false;
         public bool IsProcessing {
             get => _isProcessing;

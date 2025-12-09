@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace VideoManager3_WinUI {
-    public partial class UIManager : ObservableObject {
+    public partial class UIManager:ObservableObject {
         private bool _isGridView = true;
         public bool IsGridView {
             get => _isGridView;
@@ -98,10 +98,8 @@ namespace VideoManager3_WinUI {
         /// <param name="primaryButtonText">プライマリボタンのテキスト（例: "OK", "はい"）</param>
         /// <param name="closeButtonText">閉じるボタンのテキスト（例: "キャンセル", "いいえ"）</param>
         /// <returns>プライマリボタンが押された場合は true、それ以外の場合は false。</returns>
-        public async Task<bool> ShowConfirmationDialogAsync(string title, string message, string primaryButtonText = "OK", string closeButtonText = "キャンセル")
-        {
-            if (App.m_window == null)
-            {
+        public async Task<bool> ShowConfirmationDialogAsync( string title, string message, string primaryButtonText = "OK", string closeButtonText = "キャンセル" ) {
+            if ( App.m_window == null ) {
                 return false;
             }
 

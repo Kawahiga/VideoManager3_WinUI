@@ -160,7 +160,8 @@ namespace VideoManager3_WinUI.Services {
         /// 動画が指定されたタグにマッチするかどうかを判定します。 
         /// </summary>
         private bool IsMatchByTag( VideoItem video, TagItem selectedTag ) {
-            if ( selectedTag.Name.Equals( "タグなし" ) )                 return !video.VideoTagItems.Any();
+            if ( selectedTag.Name.Equals( "タグなし" ) )
+                return !video.VideoTagItems.Any();
             var tagIds = new HashSet<int>(selectedTag.GetAllDescendantIds());
             return video.VideoTagItems.Any( videoTag => tagIds.Contains( videoTag.Id ) );
         }

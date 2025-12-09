@@ -54,9 +54,9 @@ namespace VideoManager3_WinUI.Services {
         public async Task DeleteOrphanedThumbnailsAsync() {
             try {
                 var allVideoPaths = Videos.Select(v => v.FilePath);
-                await _thumbnailService.DeleteOrphanedThumbnailsAsync(allVideoPaths);
-            } catch (Exception ex) {
-                Debug.WriteLine($"Error during thumbnail cleanup: {ex.Message}");
+                await _thumbnailService.DeleteOrphanedThumbnailsAsync( allVideoPaths );
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error during thumbnail cleanup: {ex.Message}" );
             }
         }
 

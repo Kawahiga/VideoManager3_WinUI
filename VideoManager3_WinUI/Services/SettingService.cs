@@ -19,7 +19,7 @@ namespace VideoManager3_WinUI.Services {
 
         public SettingItem() {
             VideoSortType = 0;
-            PaneWidths = new double[] { 200, 200, 200 }; 
+            PaneWidths = new double[] { 200, 200, 200 };
             ThumbnailSize = 260.0;
             HomeFolderPath = string.Empty;
             IsGridView = true;
@@ -51,7 +51,9 @@ namespace VideoManager3_WinUI.Services {
             if ( localSettings.Values.TryGetValue( SETTINGS_KEY, out object? obj ) && obj is string json ) {
                 try {
                     var settings = JsonSerializer.Deserialize<SettingItem>( json );
-                    if ( settings != null ) return settings;
+                    if ( settings != null ) {
+                        return settings;
+                    }
 
                 } catch ( JsonException ) {
                     // JSONのデシリアライズに失敗した場合はデフォルト設定を返す

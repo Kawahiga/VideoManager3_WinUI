@@ -375,7 +375,24 @@ namespace VideoManager3_WinUI {
         // 動画詳細ペインで使用
         private void ArtistName_PointerPressed( object sender, PointerRoutedEventArgs e ) {
             if ( sender is FrameworkElement element && element.DataContext is ArtistItem artist ) {
-                ViewModel.SelectedArtist = artist;
+                if ( ViewModel.SelectedArtist == artist ) {
+                    ViewModel.SelectedArtist = null;
+                } else {
+                    ViewModel.SelectedArtist = artist;
+                }
+                e.Handled = true;
+            }
+        }
+
+        // タグ名をクリックしたときのイベントハンドラ 選択状態にする
+        // 動画詳細ペインで使用
+        private void TagName_PointerPressed( object sender, PointerRoutedEventArgs e ) {
+            if ( sender is FrameworkElement element && element.DataContext is TagItem tag ) {
+                if ( ViewModel.TagTreeViewModel.SelectedTag == tag ) {
+                    ViewModel.TagTreeViewModel.SelectedTag = null;
+                } else {
+                    ViewModel.TagTreeViewModel.SelectedTag = tag;
+                }
                 e.Handled = true;
             }
         }

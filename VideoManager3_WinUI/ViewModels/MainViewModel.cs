@@ -80,7 +80,8 @@ namespace VideoManager3_WinUI.ViewModels {
                     _selectedArtist = value;
                     OnPropertyChanged( nameof( SelectedArtist ) );
 
-                    if ( _filterService.SetArtistFilter( _selectedArtist ) ) {
+                    // フィルターが変更された場合、または選択が解除された場合に更新
+                    if ( _filterService.SetArtistFilter( value ) || value == null ) {
                         ApplyFilters();
                     }
                 }
@@ -215,7 +216,8 @@ namespace VideoManager3_WinUI.ViewModels {
         /// 選択したタグをフィルターに設定する
         /// </summary>
         private void OnSelectedTagChanged( TagItem? newSelectedTag ) {
-            if ( _filterService.SetTagFilter( newSelectedTag ) ) {
+            // フィルターが変更された場合、または選択が解除された場合に更新
+            if ( _filterService.SetTagFilter( newSelectedTag ) || newSelectedTag == null ) {
                 ApplyFilters();
             }
         }

@@ -403,7 +403,7 @@
                                     <!-- 各タグの表示形式 -->
                                     <DataTemplate x:DataType="models:TagItem">
                                         <Border Background="{Binding Color}" CornerRadius="4" Margin="0,0,8,5">
-                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="8,3" />
+                                            <TextBlock Text="{Binding Name}" Foreground="{Binding TextColor}" Padding="8,3" PointerPressed="TagName_PointerPressed"/>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

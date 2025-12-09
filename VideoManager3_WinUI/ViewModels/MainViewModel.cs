@@ -181,19 +181,24 @@ namespace VideoManager3_WinUI.ViewModels {
         /// 初期データをDBからロード
         /// </summary>
         private async Task LoadInitialDataAsync() {
-            // 1. 各データを個別にロード
-            await _videoService.LoadVideosAsync();
-            await TagTreeViewModel.LoadTagsAsync();
-            await _artistService.LoadArtistsAsync();
+            try {
+                IsProcessing = true;
+                // 1. 各データを個別にロード
+                await _videoService.LoadVideosAsync();
+                await TagTreeViewModel.LoadTagsAsync();
+                await _artistService.LoadArtistsAsync();
 
-            // 2. サービスを使って、ロードしたデータ同士を関連付ける
-            var allTags = TagTreeViewModel.GetTagsInOrder();    // 全てのタグをフラットなリストとして取得
-            await _tagService.LinkVideosAndTagsAsync( Videos, allTags );
-            await _artistService.LoadArtistVideosAsync( Videos );
+                // 2. サービスを使って、ロードしたデータ同士を関連付ける
+                var allTags = TagTreeViewModel.GetTagsInOrder();    // 全てのタグをフラットなリストとして取得
+                await _tagService.LinkVideosAndTagsAsync( Videos, allTags );
+                await _artistService.LoadArtistVideosAsync( Videos );
 
-            // 3. 最後にソートとフィルタリング
-            _videoService.SortVideos( SortType );
-            ClearAllFilters();
+                // 3. 最後にソートとフィルタリング
+                _videoService.SortVideos( SortType );
+                ClearAllFilters();
+            } finally {
+                IsProcessing = false;
+            }
         }
 
         /// <summary>
@@ -422,12 +427,17 @@ namespace VideoManager3_WinUI.ViewModels {
                 "キャンセル");
 
             if ( confirmed ) {
-                await _videoService.DeleteOrphanedThumbnailsAsync();
-                await _artistService.DeleteOrphanedArtistsAsync();
-                await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。" );
-                // 【エンハンス案】
-                // リンク切れファイルを検出
-                // 削除した件数を表示する
+                try {
+                    IsProcessing = true;
+                    await _videoService.DeleteOrphanedThumbnailsAsync();
+                    await _artistService.DeleteOrphanedArtistsAsync();
+                    await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。" );
+                    // 【エンハンス案】
+                    // リンク切れファイルを検出
+                    // 削除した件数を表示する
+                } finally {
+                    IsProcessing = false;
+                }
             }
         }
 

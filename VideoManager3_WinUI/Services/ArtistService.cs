@@ -245,7 +245,10 @@ namespace VideoManager3_WinUI.Services {
         public async Task DeleteOrphanedArtistsAsync() {
             try {
                 await _databaseService.DeleteOrphanedArtistsAsync();
-                await LoadArtistsAsync(); // リストを再読み込みしてUIに反映
+                var orphanedArtists = Artists.Where( a => a.VideosInArtist.Count == 0 ).ToList();
+                foreach ( var artist in orphanedArtists ) {
+                    Artists.Remove( artist );
+                }
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Error deleting orphaned artists: {ex.Message}" );
             }

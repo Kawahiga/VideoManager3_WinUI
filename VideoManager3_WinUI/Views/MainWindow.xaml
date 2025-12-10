@@ -319,7 +319,7 @@
                                         <MenuFlyout>
                                             <MenuFlyoutItem Text="ファイルの場所を開く" Click="OpenFileLocation_Click"/>
                                             <MenuFlyoutItem Text="ファイルを削除" Command="{Binding DataContext.DeleteFileCommand, ElementName=RootGrid}"/>
-                                            <MenuFlyoutItem Text="サムネイルを再作成"/>
+                                            <MenuFlyoutItem Text="サムネイルを再作成" Command="{Binding DataContext.RecreateThumbnailCommand, ElementName=RootGrid}"/>
                                         </MenuFlyout>
                                     </Grid.ContextFlyout>
                                 </Grid>

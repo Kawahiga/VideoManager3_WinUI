@@ -44,9 +44,9 @@ namespace VideoManager3_WinUI.Models {
         public string? FileName {
             get => _fileName;
             set {
-                if (_fileName != value) {
+                if ( _fileName != value ) {
                     _fileName = value;
-                    OnPropertyChanged(nameof(FileName));
+                    OnPropertyChanged( nameof( FileName ) );
                 }
             }
         }
@@ -58,9 +58,9 @@ namespace VideoManager3_WinUI.Models {
         public string? FilePath {
             get => _filePath;
             set {
-                if (_filePath != value) {
+                if ( _filePath != value ) {
                     _filePath = value;
-                    OnPropertyChanged(nameof(FilePath));
+                    OnPropertyChanged( nameof( FilePath ) );
                 }
             }
         }
@@ -72,9 +72,9 @@ namespace VideoManager3_WinUI.Models {
         public string? Extension {
             get => _extension;
             set {
-                if (_extension != value) {
+                if ( _extension != value ) {
                     _extension = value;
-                    OnPropertyChanged(nameof(Extension));
+                    OnPropertyChanged( nameof( Extension ) );
                 }
             }
         }
@@ -86,9 +86,9 @@ namespace VideoManager3_WinUI.Models {
         public long FileSize {
             get => _fileSize;
             set {
-                if (_fileSize != value) {
+                if ( _fileSize != value ) {
                     _fileSize = value;
-                    OnPropertyChanged(nameof(FileSize));
+                    OnPropertyChanged( nameof( FileSize ) );
                 }
             }
         }
@@ -100,9 +100,9 @@ namespace VideoManager3_WinUI.Models {
         public DateTime LastModified {
             get => _lastModified;
             set {
-                if (_lastModified != value) {
+                if ( _lastModified != value ) {
                     _lastModified = value;
-                    OnPropertyChanged(nameof(LastModified));
+                    OnPropertyChanged( nameof( LastModified ) );
                 }
             }
         }
@@ -114,9 +114,9 @@ namespace VideoManager3_WinUI.Models {
         public double Duration {
             get => _duration;
             set {
-                if (_duration != value) {
+                if ( _duration != value ) {
                     _duration = value;
-                    OnPropertyChanged(nameof(Duration));
+                    OnPropertyChanged( nameof( Duration ) );
                 }
             }
         }
@@ -150,9 +150,9 @@ namespace VideoManager3_WinUI.Models {
         public byte[]? Thumbnail {
             get => _thumbnail;
             set {
-                if (_thumbnail != value) {
+                if ( _thumbnail != value ) {
                     _thumbnail = value;
-                    OnPropertyChanged(nameof(Thumbnail));
+                    OnPropertyChanged( nameof( Thumbnail ) );
                 }
             }
         }
@@ -207,7 +207,8 @@ namespace VideoManager3_WinUI.Models {
         // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド
         public async Task LoadThumbnailImageAsync() {
             // 既に画像がある、または元データがない場合は何もしない
-            if ( ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0 )                 return;
+            if ( ThumbnailImage != null || Thumbnail == null || Thumbnail.Length == 0 )
+                return;
 
             try {
                 var bitmapImage = new BitmapImage();
@@ -221,6 +222,13 @@ namespace VideoManager3_WinUI.Models {
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Failed to create BitmapImage for {FileName}: {ex.Message}" );
             }
+        }
+
+        // サムネイル画像を強制的にリロードする
+        public async Task ReloadThumbnailImageAsync() {
+            // 一度nullにしてから再読み込み
+            ThumbnailImage = null;
+            await LoadThumbnailImageAsync();
         }
 
         // 表示されなくなったアイテムのメモリを解放する

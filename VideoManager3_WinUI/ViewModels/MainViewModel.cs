@@ -47,6 +47,7 @@ namespace VideoManager3_WinUI.ViewModels {
         public IAsyncRelayCommand DeleteFileCommand { get; private set; }
         public IAsyncRelayCommand CleanupCommand { get; private set; }
         public IRelayCommand ClearAllFiltersCommand { get; private set; }
+        public IAsyncRelayCommand RecreateThumbnailCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -61,6 +62,7 @@ namespace VideoManager3_WinUI.ViewModels {
                     OnPropertyChanged( nameof( SelectedItem ) );
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     DeleteFileCommand.NotifyCanExecuteChanged();
+                    RecreateThumbnailCommand.NotifyCanExecuteChanged();
 
                     if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
@@ -172,6 +174,7 @@ namespace VideoManager3_WinUI.ViewModels {
             SetHomeFolderCommand = new RelayCommand( async () => await SetHomeFolderAsync() );
             CleanupCommand = new AsyncRelayCommand( ExecuteCleanupAsync );
             ClearAllFiltersCommand = new RelayCommand( ClearAllFilters );
+            RecreateThumbnailCommand = new AsyncRelayCommand( RecreateThumbnailAsync, () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -534,6 +537,24 @@ namespace VideoManager3_WinUI.ViewModels {
                     await UIManager.ShowMessageDialogAsync( "削除エラー", "ファイルの削除に失敗しました。ファイルが他のプログラムで使用されていないか、アクセス許可があるか確認してください。" );
                 }
                 ApplyFilters();
+            }
+        }
+
+        /// <summary>
+        /// 選択されたビデオのサムネイルを再作成します。
+        /// </summary>
+        private async Task RecreateThumbnailAsync() {
+            if ( SelectedItem == null )
+                return;
+
+            try {
+                IsProcessing = true;
+                await _videoService.CreateThumbnailAsync( SelectedItem );
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"サムネイルの再作成に失敗しました: {ex.Message}" );
+                await UIManager.ShowMessageDialogAsync( "エラー", "サムネイルの再作成に失敗しました。" );
+            } finally {
+                IsProcessing = false;
             }
         }
     }

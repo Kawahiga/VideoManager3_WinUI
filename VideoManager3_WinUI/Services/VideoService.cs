@@ -61,6 +61,41 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// 指定されたビデオのサムネイルを強制的に再作成し、UIを更新します。
+        /// </summary>
+        public async Task CreateThumbnailAsync( VideoItem videoItem ) {
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
+                return;
+
+            string? thumbnailSourcePath = videoItem.FilePath;
+
+            // パスがディレクトリかどうかを確認
+            if ( Directory.Exists( videoItem.FilePath ) ) {
+                try {
+                    // サポートされている拡張子を持つ最初のファイルを検索
+                    thumbnailSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                                   .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+                } catch ( Exception ex ) {
+                    Debug.WriteLine( $"Error searching for video file in directory {videoItem.FilePath}: {ex.Message}" );
+                    thumbnailSourcePath = null; // エラーが発生した場合はサムネイル生成を中止
+                }
+            }
+
+            if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) {
+                return; // サムネイルのソースが見つからない場合は処理を終了
+            }
+
+            // ThumbnailService を呼び出してサムネイルを再生成
+            var imageBytes = await _thumbnailService.CreateThumbnailAsync(thumbnailSourcePath);
+
+            if ( imageBytes != null && imageBytes.Length > 0 ) {
+                videoItem.Thumbnail = imageBytes;
+                // UIで表示されている画像を更新するためにリロード処理を呼び出す
+                await videoItem.ReloadThumbnailImageAsync();
+            }
+        }
+
+        /// <summary>
         /// データベースから動画を非同期にロードし、UIを更新します。
         /// </summary>
         public async Task LoadVideosAsync() {

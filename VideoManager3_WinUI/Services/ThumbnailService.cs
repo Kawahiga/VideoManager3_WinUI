@@ -70,6 +70,63 @@ namespace VideoManager3_WinUI.Services {
             }
         }
 
+        // サムネイル画像を強制的に再生成し、バイト配列として返す
+        public async Task<byte[]?> CreateThumbnailAsync( string videoPath ) {
+            if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
+                return null;
+            }
+
+            if ( !Directory.Exists( TempCacheFolder ) ) {
+                Directory.CreateDirectory( TempCacheFolder );
+            }
+
+            string tempThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+
+            // 既存のキャッシュファイルがあれば削除
+            if ( File.Exists( tempThumbnailPath ) ) {
+                try {
+                    File.Delete( tempThumbnailPath );
+                } catch ( Exception ex ) {
+                    System.Diagnostics.Debug.WriteLine( $"Failed to delete existing thumbnail cache {tempThumbnailPath}: {ex.Message}" );
+                    // 削除に失敗しても処理を続行する
+                }
+            }
+
+            await _semaphore.WaitAsync();
+            try {
+                var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
+                var duration = mediaInfo.Duration;
+
+                for ( int time = RetryInterval; time <= MaxRetryTime; time += RetryInterval ) {
+                    if ( duration < TimeSpan.FromSeconds( time ) ) {
+                        // キャプチャ試行時間が動画の長さを超える場合は、前の時間のサムネイルで確定
+                        break;
+                    }
+
+                    await FFMpeg.SnapshotAsync( videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds( time ) );
+
+                    if ( File.Exists( tempThumbnailPath ) ) {
+                        var fileInfo = new FileInfo(tempThumbnailPath);
+                        if ( fileInfo.Length >= MinFileSize ) {
+                            // ファイルサイズが閾値以上ならループを抜ける
+                            break;
+                        }
+                    }
+                }
+
+                if ( !File.Exists( tempThumbnailPath ) ) {
+                    return null;
+                }
+
+                return await File.ReadAllBytesAsync( tempThumbnailPath );
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Thumbnail generation failed for {videoPath}: {ex.Message}" );
+                return null;
+            } finally {
+                _semaphore.Release();
+            }
+        }
+
         // 動画ファイルのパスからSHA256ハッシュを生成し、キャッシュキーとして返す
         private string GetCacheKey( string videoPath ) {
             using ( var sha256 = SHA256.Create() ) {
@@ -91,7 +148,7 @@ namespace VideoManager3_WinUI.Services {
                     if ( !Directory.Exists( TempCacheFolder ) ) {
                         return;
                     }
-                    
+
                     var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p)));
 
                     // キャッシュフォルダ内のすべてのファイルを取得

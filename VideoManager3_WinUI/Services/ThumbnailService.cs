@@ -1,4 +1,7 @@
 using FFMpegCore;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,14 +15,15 @@ using Windows.Storage;
 namespace VideoManager3_WinUI.Services {
     public class ThumbnailService {
         private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(4); // 同時実行数を4に制限
-        private const long MinFileSize = 200 * 1024; // 200KB
-        private const int MaxRetryTime = 30; // 最大リトライ時間（秒）
-        private const int RetryInterval = 5; // リトライ間隔（秒）
+        private static readonly Random _random = new Random();
+        private const int NumberOfCandidates = 5; // 生成するサムネイル候補の数
 
-        // サムネイルをキャッシュするフォルダのパス
+        // サムネイルをキャッシュするパス
         private readonly string TempCacheFolder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "Thumbnails");
 
-        // サムネイル画像を生成し、バイト配列として返す
+        /// <summary>
+        /// サムネイル画像をバイト配列として取得する 
+        /// </summary>
         public async Task<byte[]?> GetThumbnailBytesAsync( string videoPath ) {
             if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
                 return null;
@@ -29,48 +33,19 @@ namespace VideoManager3_WinUI.Services {
                 Directory.CreateDirectory( TempCacheFolder );
             }
 
-            string tempThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+            string thumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
 
-            if ( File.Exists( tempThumbnailPath ) ) {
-                return await File.ReadAllBytesAsync( tempThumbnailPath );
+            if ( File.Exists( thumbnailPath ) ) {
+                return await File.ReadAllBytesAsync( thumbnailPath );
             }
 
-            await _semaphore.WaitAsync();
-            try {
-                var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
-                var duration = mediaInfo.Duration;
-
-                for ( int time = RetryInterval; time <= MaxRetryTime; time += RetryInterval ) {
-                    if ( duration < TimeSpan.FromSeconds( time ) ) {
-                        // キャプチャ試行時間が動画の長さを超える場合は、前の時間のサムネイルで確定
-                        break;
-                    }
-
-                    await FFMpeg.SnapshotAsync( videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds( time ) );
-
-                    if ( File.Exists( tempThumbnailPath ) ) {
-                        var fileInfo = new FileInfo(tempThumbnailPath);
-                        if ( fileInfo.Length >= MinFileSize ) {
-                            // ファイルサイズが閾値以上ならループを抜ける
-                            break;
-                        }
-                    }
-                }
-
-                if ( !File.Exists( tempThumbnailPath ) ) {
-                    return null;
-                }
-
-                return await File.ReadAllBytesAsync( tempThumbnailPath );
-            } catch ( Exception ex ) {
-                System.Diagnostics.Debug.WriteLine( $"Thumbnail generation failed for {videoPath}: {ex.Message}" );
-                return null;
-            } finally {
-                _semaphore.Release();
-            }
+            // キャッシュが存在しない場合は作成する
+            return await CreateThumbnailAsync( videoPath );
         }
 
-        // サムネイル画像を強制的に再生成し、バイト配列として返す
+        /// <summary>
+        /// サムネイル画像を強制的に再生成し、バイト配列として返す
+        /// </summary>
         public async Task<byte[]?> CreateThumbnailAsync( string videoPath ) {
             if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
                 return null;
@@ -80,45 +55,27 @@ namespace VideoManager3_WinUI.Services {
                 Directory.CreateDirectory( TempCacheFolder );
             }
 
-            string tempThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+            string finalThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
 
-            // 既存のキャッシュファイルがあれば削除
-            if ( File.Exists( tempThumbnailPath ) ) {
+            // 既存のキャッシュファイルがあれば削除する
+            if ( File.Exists( finalThumbnailPath ) ) {
                 try {
-                    File.Delete( tempThumbnailPath );
+                    File.Delete( finalThumbnailPath );
                 } catch ( Exception ex ) {
-                    System.Diagnostics.Debug.WriteLine( $"Failed to delete existing thumbnail cache {tempThumbnailPath}: {ex.Message}" );
+                    System.Diagnostics.Debug.WriteLine( $"Failed to delete existing thumbnail cache {finalThumbnailPath}: {ex.Message}" );
                     // 削除に失敗しても処理を続行する
                 }
             }
 
             await _semaphore.WaitAsync();
             try {
-                var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
-                var duration = mediaInfo.Duration;
+                await FindBestThumbnailAsync( videoPath, finalThumbnailPath );
 
-                for ( int time = RetryInterval; time <= MaxRetryTime; time += RetryInterval ) {
-                    if ( duration < TimeSpan.FromSeconds( time ) ) {
-                        // キャプチャ試行時間が動画の長さを超える場合は、前の時間のサムネイルで確定
-                        break;
-                    }
-
-                    await FFMpeg.SnapshotAsync( videoPath, tempThumbnailPath, captureTime: TimeSpan.FromSeconds( time ) );
-
-                    if ( File.Exists( tempThumbnailPath ) ) {
-                        var fileInfo = new FileInfo(tempThumbnailPath);
-                        if ( fileInfo.Length >= MinFileSize ) {
-                            // ファイルサイズが閾値以上ならループを抜ける
-                            break;
-                        }
-                    }
-                }
-
-                if ( !File.Exists( tempThumbnailPath ) ) {
+                if ( !File.Exists( finalThumbnailPath ) ) {
                     return null;
                 }
 
-                return await File.ReadAllBytesAsync( tempThumbnailPath );
+                return await File.ReadAllBytesAsync( finalThumbnailPath );
             } catch ( Exception ex ) {
                 System.Diagnostics.Debug.WriteLine( $"Thumbnail generation failed for {videoPath}: {ex.Message}" );
                 return null;
@@ -127,7 +84,105 @@ namespace VideoManager3_WinUI.Services {
             }
         }
 
-        // 動画ファイルのパスからSHA256ハッシュを生成し、キャッシュキーとして返す
+        // 最適なサムネイルを見つけて保存する
+        private async Task FindBestThumbnailAsync( string videoPath, string finalThumbnailPath ) {
+            var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
+            var duration = mediaInfo.Duration;
+            var candidatePaths = new List<string>();
+            var bestCandidate = (Path: (string?)null, Score: -1.0);
+
+            string tempFolderName = $"temp_{Path.GetRandomFileName()}";
+            string tempFolderForCandidates = Path.Combine(TempCacheFolder, tempFolderName);
+            Directory.CreateDirectory( tempFolderForCandidates );
+
+            try {
+                // 候補を生成
+                for ( int i = 0; i < NumberOfCandidates; i++ ) {
+                    // 動画の10%から90%の間でランダムな時間を指定
+                    double randomPoint = _random.NextDouble() * 0.8 + 0.1;
+                    var captureTime = TimeSpan.FromSeconds(duration.TotalSeconds * randomPoint);
+
+                    string candidatePath = Path.Combine(tempFolderForCandidates, $"{i}.png");
+                    await FFMpeg.SnapshotAsync( videoPath, candidatePath, captureTime: captureTime );
+
+                    if ( File.Exists( candidatePath ) ) {
+                        candidatePaths.Add( candidatePath );
+                    }
+                }
+
+                if ( candidatePaths.Count == 0 ) {
+                    // 候補が一つも生成されなかった場合、古い方法にフォールバックする
+                    await FFMpeg.SnapshotAsync( videoPath, finalThumbnailPath, captureTime: TimeSpan.FromSeconds( 5 ) );
+                    return;
+                }
+
+
+                // 候補を評価し、最適なものを選択する
+                foreach ( var path in candidatePaths ) {
+                    var score = await CalculateImageScoreAsync(path);
+                    if ( score > bestCandidate.Score ) {
+                        bestCandidate = (path, score);
+                    }
+                }
+
+                // 最適な候補を最終的な保存先にコピーする
+                if ( bestCandidate.Path != null ) {
+                    File.Copy( bestCandidate.Path, finalThumbnailPath, true );
+                }
+            } finally {
+                // 一時的な候補ファイルとフォルダをクリーンアップする
+                if ( Directory.Exists( tempFolderForCandidates ) ) {
+                    Directory.Delete( tempFolderForCandidates, true );
+                }
+            }
+        }
+
+        // 画像の品質スコアを計算する
+        private async Task<double> CalculateImageScoreAsync( string imagePath ) {
+            try {
+                using var image = await Image.LoadAsync<Rgba32>(imagePath);
+
+                // 明るさ、コントラスト、色彩の豊かさを計算する
+                double totalLuminance = 0;
+                var luminances = new List<double>();
+                var colors = new HashSet<Rgba32>();
+
+                image.ProcessPixelRows( accessor => {
+                    for ( int y = 0; y < accessor.Height; y++ ) {
+                        var row = accessor.GetRowSpan(y);
+                        for ( int x = 0; x < row.Length; x++ ) {
+                            var pixel = row[x];
+                            // 輝度計算にNTSC方式の係数を使用
+                            double luminance = 0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B;
+                            totalLuminance += luminance;
+                            luminances.Add( luminance );
+
+                            // 色の多様性のためにピクセルをサンプリングする
+                            if ( (x % 10 == 0) && (y % 10 == 0) ) {
+                                colors.Add( pixel );
+                            }
+                        }
+                    }
+                } );
+
+                double avgLuminance = totalLuminance / (image.Width * image.Height);
+                double stdDev = Math.Sqrt(luminances.Average(l => Math.Pow(l - avgLuminance, 2)));
+
+                // 値を0-1のスケールに正規化する
+                double brightnessScore = 1 - Math.Abs(avgLuminance / 255.0 - 0.5) * 2; // 暗すぎる/明るすぎる画像にペナルティを与える
+                double contrastScore = stdDev / 128.0; // 標準偏差が大きいほどコントラストが高い
+                double colorScore = Math.Min(colors.Count / 500.0, 1.0); // 想定される色数に基づいて正規化する
+
+                // 重みは調整可能
+                return (brightnessScore * 0.3) + (contrastScore * 0.5) + (colorScore * 0.2);
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Failed to calculate score for {imagePath}: {ex.Message}" );
+                return -1; // 失敗を示すスコアを返す
+            }
+        }
+
+
+        // 動画パスからSHA256ハッシュを生成し、キャッシュキーとして使用する
         private string GetCacheKey( string videoPath ) {
             using ( var sha256 = SHA256.Create() ) {
                 var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(videoPath));

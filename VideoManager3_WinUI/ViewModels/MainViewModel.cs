@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -199,6 +200,13 @@ namespace VideoManager3_WinUI.ViewModels {
                 // 3. 最後にソートとフィルタリング
                 _videoService.SortVideos( SortType );
                 ClearAllFilters();
+            } catch ( Microsoft.Data.Sqlite.SqliteException ex ) when ( ex.SqliteErrorCode == 5 || ex.SqliteErrorCode == 6 ) // SQLITE_BUSY or SQLITE_LOCKED
+              {
+                await UIManager.ShowMessageDialogAsync( "データベースエラー", "データベースファイルが他のプロセスによってロックされています。\nアプリケーションを終了します。" );
+                // アプリケーションを終了する
+                Application.Current.Exit();
+            } catch ( Exception ex ) {
+                await UIManager.ShowMessageDialogAsync( "初期化エラー", $"アプリケーションの初期化中にエラーが発生しました。\n{ex.Message}" );
             } finally {
                 IsProcessing = false;
             }

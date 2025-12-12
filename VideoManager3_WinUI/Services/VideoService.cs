@@ -51,12 +51,13 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// リンク切れのサムネイルファイルを削除します。
         /// </summary>
-        public async Task DeleteOrphanedThumbnailsAsync() {
+        public async Task<int> DeleteOrphanedThumbnailsAsync() {
             try {
                 var allVideoPaths = Videos.Select(v => v.FilePath);
-                await _thumbnailService.DeleteOrphanedThumbnailsAsync( allVideoPaths );
+                return await _thumbnailService.DeleteOrphanedThumbnailsAsync( allVideoPaths );
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error during thumbnail cleanup: {ex.Message}" );
+                return 0;
             }
         }
 

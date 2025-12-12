@@ -197,11 +197,12 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// データベースに存在しない動画に対応する、古いサムネイルキャッシュファイルを削除します。
         /// </summary>
-        public Task DeleteOrphanedThumbnailsAsync( IEnumerable<string> videoPaths ) {
+        public Task<int> DeleteOrphanedThumbnailsAsync( IEnumerable<string> videoPaths ) {
             return Task.Run( () => {
+                int deleteCount = 0;
                 try {
                     if ( !Directory.Exists( TempCacheFolder ) ) {
-                        return;
+                        return 0;
                     }
 
                     var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p)));
@@ -214,6 +215,7 @@ namespace VideoManager3_WinUI.Services {
                         if ( !validCacheKeys.Contains( fileName ) ) {
                             try {
                                 File.Delete( file );
+                                deleteCount++;
                                 System.Diagnostics.Debug.WriteLine( $"Deleted orphaned thumbnail: {fileName}" );
                             } catch ( Exception ex ) {
                                 System.Diagnostics.Debug.WriteLine( $"Failed to delete thumbnail {fileName}: {ex.Message}" );
@@ -223,6 +225,7 @@ namespace VideoManager3_WinUI.Services {
                 } catch ( Exception ex ) {
                     System.Diagnostics.Debug.WriteLine( $"Error deleting orphaned thumbnails: {ex.Message}" );
                 }
+                return deleteCount;
             } );
         }
     }

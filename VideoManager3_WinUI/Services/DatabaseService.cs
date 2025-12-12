@@ -551,7 +551,7 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// どのビデオにも関連付けられていないアーティストをデータベースから削除します。
         /// </summary>
-        public async Task DeleteOrphanedArtistsAsync() {
+        public async Task<int> DeleteOrphanedArtistsAsync() {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             await connection.OpenAsync();
             var command = connection.CreateCommand();
@@ -559,7 +559,7 @@ namespace VideoManager3_WinUI.Services {
                 DELETE FROM Artists
                 WHERE ArtistID NOT IN (SELECT DISTINCT ArtistID FROM VideoArtists);
             ";
-            await command.ExecuteNonQueryAsync();
+            return await command.ExecuteNonQueryAsync();
         }
     }
 }

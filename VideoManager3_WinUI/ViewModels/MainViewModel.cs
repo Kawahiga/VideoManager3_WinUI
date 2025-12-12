@@ -432,12 +432,11 @@ namespace VideoManager3_WinUI.ViewModels {
             if ( confirmed ) {
                 try {
                     IsProcessing = true;
-                    await _videoService.DeleteOrphanedThumbnailsAsync();
-                    await _artistService.DeleteOrphanedArtistsAsync();
-                    await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", "クリーンアップ処理が完了しました。" );
-                    // 【エンハンス案】
-                    // リンク切れファイルを検出
-                    // 削除した件数を表示する
+                    int deletedThumbnails = await _videoService.DeleteOrphanedThumbnailsAsync();
+                    int deletedArtists = await _artistService.DeleteOrphanedArtistsAsync();
+
+                    string message = $"クリーンアップ処理が完了しました。\n\n削除されたサムネイル: {deletedThumbnails}件\n削除されたアーティスト: {deletedArtists}件";
+                    await UIManager.ShowMessageDialogAsync( "クリーンアップ完了", message );
                 } finally {
                     IsProcessing = false;
                 }

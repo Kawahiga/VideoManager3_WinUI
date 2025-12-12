@@ -395,11 +395,16 @@ namespace VideoManager3_WinUI.ViewModels {
 
             // ディスクの空き容量をチェック
             try {
-                var driveInfo = new DriveInfo(Path.GetPathRoot(homeFolder));
-                const long threshold = 10L * 1024 * 1024 * 1024; // 10GB
-                if ( driveInfo.AvailableFreeSpace < threshold ) {
-                    var freeSpaceGB = driveInfo.AvailableFreeSpace / (1024.0 * 1024.0 * 1024.0);
-                    await UIManager.ShowMessageDialogAsync( "ディスク容量の警告", $"ディスクの空き容量が少なくなっています。({freeSpaceGB:F2} GB残り)" );
+                if ( !string.IsNullOrEmpty( homeFolder ) ) {
+                    string? rootPath = Path.GetPathRoot(homeFolder);
+                    if ( rootPath != null ) {
+                        var driveInfo = new DriveInfo(rootPath);
+                        const long threshold = 10L * 1024 * 1024 * 1024; // 10GB
+                        if ( driveInfo.AvailableFreeSpace < threshold ) {
+                            var freeSpaceGB = driveInfo.AvailableFreeSpace / (1024.0 * 1024.0 * 1024.0);
+                            await UIManager.ShowMessageDialogAsync( "ディスク容量の警告", $"ディスクの空き容量が少なくなっています。({freeSpaceGB:F2} GB残り)" );
+                        }
+                    }
                 }
             } catch ( Exception ex ) {
                 // ドライブ情報の取得に失敗した場合（例：ネットワークドライブなど）
@@ -534,7 +539,7 @@ namespace VideoManager3_WinUI.ViewModels {
             // 確認ダイアログを表示
             bool confirmed = await UIManager.ShowConfirmationDialogAsync(
                 "削除の確認",
-                $"「{SelectedItem.FileName}」\nを完全に削除しますか？\n\nこの操作は元に戻せません。",
+                $"「{SelectedItem.FilePath}」\nを完全に削除しますか？\n\nこの操作は元に戻せません。",
                 "削除",
                 "キャンセル");
 

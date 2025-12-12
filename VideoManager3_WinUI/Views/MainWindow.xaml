@@ -11,7 +11,7 @@
     Closed="Window_Closed">
 
     <!-- ウィンドウ全体のレイアウトを定義するGrid -->
-    <Grid x:Name="RootGrid" AllowDrop="True" Tapped="RootGrid_Tapped">
+    <Grid x:Name="RootGrid" AllowDrop="True" Tapped="RootGrid_Tapped" KeyDown="RootGrid_KeyDown">
         <Grid.RowDefinitions>
             <!-- 上部ツールバー用の行 -->
             <RowDefinition Height="Auto"/>

@@ -575,5 +575,17 @@ namespace VideoManager3_WinUI {
                 }
             }
         }
+
+        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            var ctrlState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control);
+            bool isCtrlKeyPressed = ctrlState == Windows.UI.Core.CoreVirtualKeyStates.Down || ctrlState == (Windows.UI.Core.CoreVirtualKeyStates.Down | Windows.UI.Core.CoreVirtualKeyStates.Locked);
+
+            if (isCtrlKeyPressed && e.Key == Windows.System.VirtualKey.F)
+            {
+                SearchBox.Focus(FocusState.Programmatic);
+                e.Handled = true;
+            }
+        }
     }
 }

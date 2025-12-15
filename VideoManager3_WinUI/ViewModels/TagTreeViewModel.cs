@@ -169,26 +169,36 @@ namespace VideoManager3_WinUI.ViewModels {
                 return;
             }
 
-            var tmpTag = GetTagsInOrder();
-            foreach ( var tag in tmpTag ) {
-                // チェック状態に応じてDBとViewModelを更新
-                if ( tag.IsChecked ) {
-                    // ビデオが既にタグを持っていなければ追加
-                    if ( !targetItem.VideoTagItems.Any( t => t.Id == tag.Id ) ) {
-                        await _tagService.AddTagToVideoAsync( targetItem, tag );
-                        targetItem.VideoTagItems.Add( tag );
-                        tag.TagVideoItem.Add( targetItem ); // タグ側の関連付けも更新
-                    }
-                } else {
-                    // タグが既に存在すれば削除
-                    var tagToRemove = targetItem.VideoTagItems.FirstOrDefault(t => t.Id == tag.Id);
-                    if ( tagToRemove != null ) {
-                        await _tagService.DeleteTagToVideoAsync( targetItem, tag );
-                        targetItem.VideoTagItems.Remove( tag );
-                        tag.TagVideoItem.Remove( targetItem ); // タグ側の関連付けも更新
-                    }
+            var allTagsInOrder = GetTagsInOrder();
+            var currentVideoTags = new HashSet<TagItem>(targetItem.VideoTagItems);
+            var checkedTagsInOrder = allTagsInOrder.Where(t => t.IsChecked && !t.IsGroup).ToList();
+            var checkedTagsSet = new HashSet<TagItem>(checkedTagsInOrder);
+
+            var tagsToAdd = checkedTagsInOrder.Where(t => !currentVideoTags.Contains(t)).ToList();
+            var tagsToRemove = currentVideoTags.Where(t => !checkedTagsSet.Contains(t)).ToList();
+
+            foreach (var tag in tagsToAdd) {
+                await _tagService.AddTagToVideoAsync(targetItem, tag);
+                tag.TagVideoItem.Add(targetItem);
+            }
+
+            foreach (var tag in tagsToRemove) {
+                await _tagService.DeleteTagToVideoAsync(targetItem, tag);
+                tag.TagVideoItem.Remove(targetItem);
+            }
+
+            // VideoTagItemsを正しい順序で再構築
+            if (!targetItem.VideoTagItems.SequenceEqual(checkedTagsInOrder))
+            {
+                targetItem.VideoTagItems.Clear();
+                foreach (var tag in checkedTagsInOrder)
+                {
+                    targetItem.VideoTagItems.Add(tag);
                 }
-                // タグの編集モードを解除
+            }
+    
+            // 全てのタグの編集モードを解除
+            foreach (var tag in allTagsInOrder) {
                 tag.IsEditing = false;
             }
         }

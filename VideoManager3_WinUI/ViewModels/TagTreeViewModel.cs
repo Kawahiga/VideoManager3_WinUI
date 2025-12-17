@@ -177,28 +177,26 @@ namespace VideoManager3_WinUI.ViewModels {
             var tagsToAdd = checkedTagsInOrder.Where(t => !currentVideoTags.Contains(t)).ToList();
             var tagsToRemove = currentVideoTags.Where(t => !checkedTagsSet.Contains(t)).ToList();
 
-            foreach (var tag in tagsToAdd) {
-                await _tagService.AddTagToVideoAsync(targetItem, tag);
-                tag.TagVideoItem.Add(targetItem);
+            foreach ( var tag in tagsToAdd ) {
+                await _tagService.AddTagToVideoAsync( targetItem, tag );
+                tag.TagVideoItem.Add( targetItem );
             }
 
-            foreach (var tag in tagsToRemove) {
-                await _tagService.DeleteTagToVideoAsync(targetItem, tag);
-                tag.TagVideoItem.Remove(targetItem);
+            foreach ( var tag in tagsToRemove ) {
+                await _tagService.DeleteTagToVideoAsync( targetItem, tag );
+                tag.TagVideoItem.Remove( targetItem );
             }
 
             // VideoTagItemsを正しい順序で再構築
-            if (!targetItem.VideoTagItems.SequenceEqual(checkedTagsInOrder))
-            {
+            if ( !targetItem.VideoTagItems.SequenceEqual( checkedTagsInOrder ) ) {
                 targetItem.VideoTagItems.Clear();
-                foreach (var tag in checkedTagsInOrder)
-                {
-                    targetItem.VideoTagItems.Add(tag);
+                foreach ( var tag in checkedTagsInOrder ) {
+                    targetItem.VideoTagItems.Add( tag );
                 }
             }
-    
+
             // 全てのタグの編集モードを解除
-            foreach (var tag in allTagsInOrder) {
+            foreach ( var tag in allTagsInOrder ) {
                 tag.IsEditing = false;
             }
         }
@@ -218,5 +216,12 @@ namespace VideoManager3_WinUI.ViewModels {
             Traverse( TagItems );
             return orderedTags;
         }
+
+        public async Task UpdateTagColorAsync( TagItem tag ) {
+            if ( tag != null ) {
+                await _tagService.AddOrUpdateTagAsync( tag );
+            }
+        }
     }
 }
+

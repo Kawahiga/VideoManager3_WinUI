@@ -308,6 +308,47 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        private async void EditTagColor_Click(object sender, RoutedEventArgs e)
+        {
+            // 1. TagItem を取得
+            if (!(sender is FrameworkElement element) || !(element.DataContext is TagItem selectedTag))
+            {
+                return;
+            }
+
+            // 2. ColorPicker を含む ContentDialog を作成
+            var colorPicker = new ColorPicker
+            {
+                // TagItem.Color は Brush 型なので、SolidColorBrush にキャストして Color を取得
+                Color = (selectedTag.Color as SolidColorBrush)?.Color ?? Colors.Black,
+                IsAlphaEnabled = true,
+                IsHexInputVisible = true
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "色の編集",
+                Content = colorPicker,
+                PrimaryButtonText = "OK",
+                CloseButtonText = "キャンセル",
+                XamlRoot = this.Content.XamlRoot
+            };
+
+            // 3. ダイアログを表示し、結果を待つ
+            var result = await dialog.ShowAsync();
+
+            // 4. "OK" がクリックされたら色を更新
+            if (result == ContentDialogResult.Primary)
+            {
+                var newColor = colorPicker.Color;
+                // TagItem.Color は Brush 型なので、新しい SolidColorBrush を設定
+                selectedTag.Color = new SolidColorBrush(newColor);
+
+                // 5. データベースを更新
+                await ViewModel.TagTreeViewModel.UpdateTagColorAsync(selectedTag);
+            }
+        }
+
         // タグ設定モード開始時の動画アイテム
         private VideoItem? _editTargetItem;
 

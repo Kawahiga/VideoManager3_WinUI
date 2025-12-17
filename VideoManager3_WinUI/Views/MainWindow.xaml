@@ -137,7 +137,7 @@
                                     </Grid.ColumnDefinitions>
                                     <!-- タグの色と名前を表示するパネル -->
                                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <Rectangle Width="20" Height="20" Fill="{x:Bind Color}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                        <Rectangle Width="20" Height="20" Fill="{x:Bind Color, Mode=OneWay}" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                         <CheckBox IsChecked="{x:Bind IsChecked, Mode=TwoWay}" MinWidth="20" Width="20" MinHeight="20" Height="20" Margin="0,0,5,0" Visibility="{x:Bind IsEditing, Mode=OneWay}"/>
                                         <TextBlock Text="{x:Bind Name, Mode=OneWay}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -151,6 +151,7 @@
                                 <TreeViewItem.ContextFlyout>
                                     <MenuFlyout>
                                         <MenuFlyoutItem Text="タグを編集" Click="TagEdit"/>
+                                        <MenuFlyoutItem Text="色を編集" Click="EditTagColor_Click"/>
                                         <MenuFlyoutItem Text="タグを追加"/>
                                         <MenuFlyoutItem Text="グループを追加"/>
                                     </MenuFlyout>

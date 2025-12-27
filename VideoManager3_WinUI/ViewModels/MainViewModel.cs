@@ -399,7 +399,8 @@ namespace VideoManager3_WinUI.ViewModels {
                     string? rootPath = Path.GetPathRoot(homeFolder);
                     if ( rootPath != null ) {
                         var driveInfo = new DriveInfo(rootPath);
-                        const long threshold = 10L * 1024 * 1024 * 1024; // 10GB
+                        // 20GB以下かどうかチェック
+                        const long threshold = 20L * 1024 * 1024 * 1024;
                         if ( driveInfo.AvailableFreeSpace < threshold ) {
                             var freeSpaceGB = driveInfo.AvailableFreeSpace / (1024.0 * 1024.0 * 1024.0);
                             await UIManager.ShowMessageDialogAsync( "ディスク容量の警告", $"ディスクの空き容量が少なくなっています。({freeSpaceGB:F2} GB残り)" );

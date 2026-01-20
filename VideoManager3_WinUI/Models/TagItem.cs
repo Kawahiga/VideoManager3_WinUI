@@ -19,7 +19,10 @@ namespace VideoManager3_WinUI.Models {
         private int _id;
         public int Id {
             get => _id;
-            set { _id = value; PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Id ) ) ); }
+            set { 
+                _id = value;
+                PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( Id ) ) );
+            }
         }
 
         // タグ/グループの名前

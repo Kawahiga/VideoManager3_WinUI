@@ -154,6 +154,7 @@
                                         <MenuFlyoutItem Text="色を編集" Click="EditTagColor_Click"/>
                                         <MenuFlyoutItem Text="タグを追加(未実装)"/>
                                         <MenuFlyoutItem Text="グループを追加(未実装)"/>
+                                        <MenuFlyoutItem Text="一つ上に移動(未実装)"/>
                                     </MenuFlyout>
                                 </TreeViewItem.ContextFlyout>
                             </TreeViewItem>

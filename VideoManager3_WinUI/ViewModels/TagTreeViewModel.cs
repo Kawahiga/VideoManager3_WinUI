@@ -119,6 +119,39 @@ namespace VideoManager3_WinUI.ViewModels {
         }
 
         /// <summary>
+        /// タグを追加する
+        /// ・タグ指定：同階層に追加
+        /// ・グループ指定：その中に追加
+        /// </summary>
+        public async Task AddNewTagAsync( TagItem referenceTag ) {
+            var newTag = new TagItem
+            {
+                Name = "新しいタグ",
+                IsGroup = false,
+                ParentId = referenceTag.IsGroup ? referenceTag.Id : referenceTag.ParentId,
+                Color = referenceTag.Color,
+                TextColor = referenceTag.TextColor
+            };
+            if ( referenceTag.IsGroup ) {
+                int order = await _tagService.UpdateTagOrderInGroupAsync( referenceTag );
+                newTag.OrderInGroup = order;
+                referenceTag.Children.Add( newTag );
+
+            } else {
+                // 親グループを取得
+                var flattenedTags = GetTagsInOrder();
+                var parentTag = flattenedTags.FirstOrDefault( t => t.Id == referenceTag.ParentId );
+                if ( parentTag != null ) {
+                    int order = await _tagService.UpdateTagOrderInGroupAsync( parentTag );
+                    newTag.OrderInGroup = order;
+                    parentTag.Children.Add( newTag );
+                }
+            }
+            await _tagService.AddOrUpdateTagAsync( newTag );
+        }
+
+
+        /// <summary>
         /// アプリを終了する際にタグ情報を保存する
         /// </summary>
         public async Task SaveTagsInClose() {

@@ -308,11 +308,9 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        private async void EditTagColor_Click(object sender, RoutedEventArgs e)
-        {
+        private async void EditTagColor_Click( object sender, RoutedEventArgs e ) {
             // 1. TagItem を取得
-            if (!(sender is FrameworkElement element) || !(element.DataContext is TagItem selectedTag))
-            {
+            if ( !(sender is FrameworkElement element) || !(element.DataContext is TagItem selectedTag) ) {
                 return;
             }
 
@@ -338,14 +336,23 @@ namespace VideoManager3_WinUI {
             var result = await dialog.ShowAsync();
 
             // 4. "OK" がクリックされたら色を更新
-            if (result == ContentDialogResult.Primary)
-            {
+            if ( result == ContentDialogResult.Primary ) {
                 var newColor = colorPicker.Color;
                 // TagItem.Color は Brush 型なので、新しい SolidColorBrush を設定
-                selectedTag.Color = new SolidColorBrush(newColor);
+                selectedTag.Color = new SolidColorBrush( newColor );
 
                 // 5. データベースを更新
-                await ViewModel.TagTreeViewModel.UpdateTagColorAsync(selectedTag);
+                await ViewModel.TagTreeViewModel.UpdateTagColorAsync( selectedTag );
+            }
+        }
+
+        /// <summary>
+        /// タグを追加する
+        /// </summary>
+        private async void AddTag( object sender, RoutedEventArgs e ) {
+            // sender（クリックされたMenuFlyoutItem）のDataContextを取得
+            if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
+                await ViewModel.TagTreeViewModel.AddNewTagAsync( selectedTag );
             }
         }
 
@@ -617,14 +624,12 @@ namespace VideoManager3_WinUI {
             }
         }
 
-        private void RootGrid_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
+        private void RootGrid_KeyDown( object sender, KeyRoutedEventArgs e ) {
             var ctrlState = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(Windows.System.VirtualKey.Control);
             bool isCtrlKeyPressed = ctrlState == Windows.UI.Core.CoreVirtualKeyStates.Down || ctrlState == (Windows.UI.Core.CoreVirtualKeyStates.Down | Windows.UI.Core.CoreVirtualKeyStates.Locked);
 
-            if (isCtrlKeyPressed && e.Key == Windows.System.VirtualKey.F)
-            {
-                SearchBox.Focus(FocusState.Programmatic);
+            if ( isCtrlKeyPressed && e.Key == Windows.System.VirtualKey.F ) {
+                SearchBox.Focus( FocusState.Programmatic );
                 e.Handled = true;
             }
         }

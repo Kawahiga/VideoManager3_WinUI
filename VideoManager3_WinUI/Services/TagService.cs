@@ -93,6 +93,21 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// グループ内のタグの順序を更新します。
+        /// </summary>
+        /// <returns>グループ内のタグの数</returns>
+        public async Task<int> UpdateTagOrderInGroupAsync( TagItem groupTag ) {
+            int order = 0;
+            foreach ( var childTag in groupTag.Children ) {
+                childTag.OrderInGroup = order;
+                await _databaseService.AddOrUpdateTagAsync( childTag );
+                order++;
+            }
+            return order;
+        }
+
+
+        /// <summary>
         /// タグをデータベースに追加または更新します。
         /// </summary>
         public async Task AddOrUpdateTagAsync( TagItem tag ) {

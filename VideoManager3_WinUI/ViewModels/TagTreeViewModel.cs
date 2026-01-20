@@ -150,6 +150,35 @@ namespace VideoManager3_WinUI.ViewModels {
             await _tagService.AddOrUpdateTagAsync( newTag );
         }
 
+        /// <summary>>
+        /// タグ/グループを移動する
+        /// </summary>
+        /// <param name="moveDir">true:上へ、false:下へ</param>
+        public async Task MoveTagAsync( TagItem tagItem, bool moveDir ) {
+            var flattenedTags = GetTagsInOrder();
+            int currentIndex = flattenedTags.IndexOf( tagItem );
+            int newIndex = moveDir ? currentIndex - 1 : currentIndex + 1;
+            if ( newIndex < 0 || newIndex >= flattenedTags.Count ) {
+                return; // 範囲外
+            }
+            var targetTag = flattenedTags[newIndex];
+            if ( tagItem.ParentId != targetTag.ParentId ) {
+                return; // 同じ親グループ内でのみ移動可能
+            }
+            // 両タグの順序を入れ替え
+            int tempOrder = tagItem.OrderInGroup;
+            tagItem.OrderInGroup = targetTag.OrderInGroup;
+            targetTag.OrderInGroup = tempOrder;
+            await _tagService.AddOrUpdateTagAsync( tagItem );
+            await _tagService.AddOrUpdateTagAsync( targetTag );
+            var parentTag = flattenedTags.FirstOrDefault( t => t.Id == tagItem.ParentId );
+            if ( parentTag != null ) {
+                await _tagService.UpdateTagOrderInGroupAsync( parentTag );
+                var tmp = parentTag.Children[tagItem.OrderInGroup];
+                parentTag.Children[tagItem.OrderInGroup] = parentTag.Children[targetTag.OrderInGroup];
+                parentTag.Children[targetTag.OrderInGroup] = tmp;
+            }
+        }
 
         /// <summary>
         /// アプリを終了する際にタグ情報を保存する

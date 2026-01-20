@@ -100,12 +100,11 @@ namespace VideoManager3_WinUI.Services {
             int order = 0;
             foreach ( var childTag in groupTag.Children ) {
                 childTag.OrderInGroup = order;
-                await _databaseService.AddOrUpdateTagAsync( childTag );
+                await AddOrUpdateTagAsync( childTag );
                 order++;
             }
             return order;
         }
-
 
         /// <summary>
         /// タグをデータベースに追加または更新します。

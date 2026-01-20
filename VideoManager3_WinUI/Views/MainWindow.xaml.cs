@@ -356,6 +356,30 @@ namespace VideoManager3_WinUI {
             }
         }
 
+        /// <summary>
+        /// グループタグを追加する
+        /// </summary>
+
+        /// <summary>
+        /// タグ/グループを一つ上に移動する
+        /// </summary>
+        private async void MoveTagUp( object sender, RoutedEventArgs e ) {
+            // sender（クリックされたMenuFlyoutItem）のDataContextを取得
+            if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
+                await ViewModel.TagTreeViewModel.MoveTagAsync( selectedTag, true );
+            }
+        }
+
+        /// <summary>
+        /// タグ/グループを一つ下に移動する
+        /// </summary>
+        private async void MoveTagDown( object sender, RoutedEventArgs e ) {
+            // sender（クリックされたMenuFlyoutItem）のDataContextを取得
+            if ( sender is FrameworkElement element && element.DataContext is TagItem selectedTag ) {
+                await ViewModel.TagTreeViewModel.MoveTagAsync( selectedTag, false );
+            }
+        }
+
         // タグ設定モード開始時の動画アイテム
         private VideoItem? _editTargetItem;
 

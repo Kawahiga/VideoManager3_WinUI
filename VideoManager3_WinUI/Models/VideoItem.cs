@@ -13,30 +13,12 @@ namespace VideoManager3_WinUI.Models {
         public VideoItem() {
             // VideoTagItemsの変更を監視
             VideoTagItems.CollectionChanged += VideoTagItems_CollectionChanged;
-
             // ArtistsInVideoの変更を監視
             ArtistsInVideo.CollectionChanged += ArtistsInVideo_CollectionChanged;
         }
-
-        public VideoItem( int id, string filePath, string fileName, long fileSize, DateTime lastModified, double duration ) {
-            // VideoTagItemsの変更を監視
-            VideoTagItems.CollectionChanged += VideoTagItems_CollectionChanged;
-
-            // ArtistsInVideoの変更を監視
-            ArtistsInVideo.CollectionChanged += ArtistsInVideo_CollectionChanged;
-
-            Id = id;
-            FilePath = filePath;
-            FileName = fileName;
-            FileSize = fileSize;
-            LastModified = lastModified;
-            Duration = duration;
-        }
-
 
         public int Id { get; set; } // データベースの主キー
-        public int FenrirId { get; set; } = 0; // FenrirのファイルID
-
+        
         private string? _fileName;
         /// <summary>
         /// ファイル名 (例: "video.mp4")

@@ -107,28 +107,32 @@ namespace VideoManager3_WinUI.Services {
             command.Parameters.AddWithValue( "$filePath", video.FilePath );
             command.Parameters.AddWithValue( "$fileName", video.FileName );
             command.Parameters.AddWithValue( "$fileNameWithiutArtist", video.FileNameWithoutArtists );
-            command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty ); // 拡張子がnullの場合は空文字列を設定
+            command.Parameters.AddWithValue( "$extension", video.Extension ?? string.Empty );
             command.Parameters.AddWithValue( "$fileSize", video.FileSize );
-            command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) ); // 日付は環境に依存しないISO 8601形式("o")で保存する
+            command.Parameters.AddWithValue( "$lastModified", video.LastModified.ToString( "o" ) );
             command.Parameters.AddWithValue( "$duration", video.Duration );
             command.Parameters.AddWithValue( "$like", video.LikeCount );
             command.Parameters.AddWithValue( "$view", video.ViewCount );
 
-            // IDを設定
             var rowsAffected = await command.ExecuteNonQueryAsync();
 
-            // INSERT OR IGNORE を使っているため、行が実際に挿入されたか確認が必要です。
-            // 挿入された場合(rowsAffected > 0)、新しく生成されたIDを取得してVideoItemに設定します。
             if ( rowsAffected > 0 ) {
+                // 同じ接続で ID を取得
                 command.CommandText = "SELECT last_insert_rowid()";
                 command.Parameters.Clear();
-                video.Id = Convert.ToInt32( await command.ExecuteScalarAsync() );
+                var id = await command.ExecuteScalarAsync();
+                if ( id != null && id != DBNull.Value ) {
+                    video.Id = Convert.ToInt32( id );
+                }
             } else {
-                // 挿入されなかった場合（既に存在していた場合）、既存のIDを取得します。
+                // 挿入されなかった場合（既に存在していた場合）、既存のIDを取得
                 command.CommandText = "SELECT FileID FROM Videos WHERE FilePath = $filePath";
                 command.Parameters.Clear();
                 command.Parameters.AddWithValue( "$filePath", video.FilePath );
-                video.Id = Convert.ToInt32( await command.ExecuteScalarAsync() );
+                var id = await command.ExecuteScalarAsync();
+                if ( id != null && id != DBNull.Value ) {
+                    video.Id = Convert.ToInt32( id );
+                }
             }
         }
 

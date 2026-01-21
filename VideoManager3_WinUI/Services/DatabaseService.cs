@@ -195,43 +195,51 @@ namespace VideoManager3_WinUI.Services {
         // データベースからすべての動画を読み込む
         public async Task<List<VideoItem>> GetAllVideosAsync() {
             var videos = new List<VideoItem>();
-            using var connection = new SqliteConnection($"Data Source={_dbPath}");
-            await connection.OpenAsync();
 
-            var command = connection.CreateCommand();
-            command.CommandText = @"
+            try {
+                using var connection = new SqliteConnection($"Data Source={_dbPath}");
+                await connection.OpenAsync();
+
+                var command = connection.CreateCommand();
+                command.CommandText = @"
                 SELECT FileID, FilePath, FileName, FileNameWithoutArtist, Extension, FileSize, LastModified, Duration, LikeCount, ViewCount
                 FROM Videos";
 
-            using var reader = await command.ExecuteReaderAsync();
-            while ( await reader.ReadAsync() ) {
-                var id = reader.GetInt32(0);
-                var filePath = reader.GetString(1);
-                var fileName = reader.GetString(2);
-                var fileNameWithoutArtist = reader.GetString(3);
-                var extension = reader.IsDBNull(4) ? string.Empty : reader.GetString(4); // 拡張子がNULLの場合は空文字列を設定
-                var fileSize = reader.IsDBNull(5) ? 0 : reader.GetInt64(5);
-                // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
-                var lastModified = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind);
-                var duration = reader.IsDBNull(7) ? 0.0 : reader.GetDouble(7);
-                var likeCount = reader.IsDBNull(8) ? 0 : reader.GetInt32(8);
-                var viewCount = reader.IsDBNull(9) ? 0 : reader.GetInt32(9);
+                using var reader = await command.ExecuteReaderAsync();
+                while ( await reader.ReadAsync() ) {
+                    var id = reader.GetInt32(0);
+                    var filePath = reader.GetString(1);
+                    var fileName = reader.GetString(2);
+                    var fileNameWithoutArtist = reader.GetString(3);
+                    var extension = reader.IsDBNull(4) ? string.Empty : reader.GetString(4); // 拡張子がNULLの場合は空文字列を設定
+                    var fileSize = reader.IsDBNull(5) ? 0 : reader.GetInt64(5);
+                    // ISO 8601形式で保存した日付を正しく読み込むため、スタイルを指定します
+                    var lastModified = DateTime.Parse(reader.GetString(6), null, System.Globalization.DateTimeStyles.RoundtripKind);
+                    var duration = reader.IsDBNull(7) ? 0.0 : reader.GetDouble(7);
+                    var likeCount = reader.IsDBNull(8) ? 0 : reader.GetInt32(8);
+                    var viewCount = reader.IsDBNull(9) ? 0 : reader.GetInt32(9);
 
-                var video = new VideoItem {
-                    Id = id,
-                    FilePath = filePath,
-                    FileName = fileName,
-                    FileNameWithoutArtists = fileNameWithoutArtist,
-                    Extension = extension,
-                    FileSize = fileSize,
-                    LastModified = lastModified,
-                    Duration = duration,
-                    LikeCount = likeCount,
-                    ViewCount = viewCount
-                 };
-                videos.Add( video );
+                    var video = new VideoItem
+                    {
+                        Id = id,
+                        FilePath = filePath,
+                        FileName = fileName,
+                        FileNameWithoutArtists = fileNameWithoutArtist,
+                        Extension = extension,
+                        FileSize = fileSize,
+                        LastModified = lastModified,
+                        Duration = duration,
+                        LikeCount = likeCount,
+                        ViewCount = viewCount
+                    };
+                    videos.Add( video );
+                }
+                return videos;
+            } catch ( Exception ex ) {
+                // 例外処理（ログ出力など）
+                Console.WriteLine( $"Error retrieving videos: {ex.Message}" );
+                return videos;
             }
-            return videos;
         }
 
         // タグをデータベースに追加または更新する
@@ -405,7 +413,7 @@ namespace VideoManager3_WinUI.Services {
             return tags;
         }
 
-    /* タグに関する処理↑   ↓アーティストに関する処理 */
+        /* タグに関する処理↑   ↓アーティストに関する処理 */
 
         // アーティストをデータベースに追加または更新する
         public async Task AddOrUpdateArtistAsync( ArtistItem artist ) {
@@ -481,7 +489,8 @@ namespace VideoManager3_WinUI.Services {
                 var isFavorite = reader.GetBoolean(2);
                 var likeCount = reader.GetInt32(3);
                 var iconPath = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);
-                var artist = new ArtistItem {
+                var artist = new ArtistItem
+                {
                     Id = id,
                     Name = name,
                     IsFavorite = isFavorite,
@@ -541,7 +550,8 @@ namespace VideoManager3_WinUI.Services {
                 var name = reader.GetString(1);
                 var isFavorite = reader.GetBoolean(2);
                 var iconPath = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
-                var artist = new ArtistItem {
+                var artist = new ArtistItem
+                {
                     Id = id,
                     Name = name,
                     IsFavorite = isFavorite,

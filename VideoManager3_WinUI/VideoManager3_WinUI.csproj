@@ -38,12 +38,12 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Common" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.250402" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.Segmented" Version="8.2.250402" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.250402" />
-    <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.250402" />
-    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.250402" />
-    <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.2.250402" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Segmented" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Extensions" Version="8.2.251219" />
+    <PackageReference Include="CommunityToolkit.WinUI.Helpers" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Core" Version="7.1.2" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
     <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Markdown" Version="7.1.2" />
@@ -51,9 +51,9 @@
     <PackageReference Include="FFMpegCore" Version="5.4.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageReference Include="MediaToolkit" Version="1.1.0.1" />
-    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.1" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7175" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251106002" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
   </ItemGroup>
   <ItemGroup>

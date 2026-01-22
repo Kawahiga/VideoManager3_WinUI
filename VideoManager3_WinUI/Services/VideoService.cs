@@ -94,6 +94,16 @@ namespace VideoManager3_WinUI.Services {
                 // UIで表示されている画像を更新するためにリロード処理を呼び出す
                 await videoItem.ReloadThumbnailImageAsync();
             }
+
+            // プレビューGIFの生成を非同期で開始
+            _ = Task.Run(async () => {
+                if (string.IsNullOrEmpty(thumbnailSourcePath)) return;
+                var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
+                if (!string.IsNullOrEmpty(gifPath))
+                {
+                    videoItem.PreviewGifPath = gifPath;
+                }
+            });
         }
 
         /// <summary>
@@ -107,11 +117,46 @@ namespace VideoManager3_WinUI.Services {
                 Videos.Add( video );
                 // サムネイルのbyte[]の読み込みをバックグラウンドで実行
                 _ = Task.Run( () => LoadThumbnailBytesAsync( video ) );
+                // プレビューGIFのパスを読み込み
+                _ = Task.Run( async () => await LoadPreviewGifPathAsync( video ) );
             }
         }
 
         /// <summary>
-        /// 動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
+        /// 動画のプレビューGIFパスを非同期で読み込み、VideoItemのプロパティを更新します。
+        /// 既存のGIFファイルがあれば読み込み、なければ何もしません。
+        /// </summary>
+        private async Task LoadPreviewGifPathAsync( VideoItem videoItem ) {
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
+                return;
+
+            string? gifSourcePath = videoItem.FilePath;
+
+            // パスがディレクトリかどうかを確認
+            if ( Directory.Exists( videoItem.FilePath ) ) {
+                try {
+                    // サポートされている拡張子を持つ最初のファイルを検索
+                    gifSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                                   .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+                } catch ( Exception ex ) {
+                    System.Diagnostics.Debug.WriteLine( $"Error searching for video file in directory {videoItem.FilePath}: {ex.Message}" );
+                    gifSourcePath = null;
+                }
+            }
+
+            if ( string.IsNullOrEmpty( gifSourcePath ) ) {
+                return;
+            }
+
+            // 既存のGIFファイルのみを読み込み、新規作成は行わない
+            var gifPath = _thumbnailService.GetExistingPreviewGifPathIfExists( gifSourcePath );
+            if ( !string.IsNullOrEmpty( gifPath ) ) {
+                videoItem.PreviewGifPath = gifPath;
+            }
+        }
+
+        /// <summary>
+        /// データベースから動画のサムネイル(byte[])を非同期で読み込み、VideoItemのプロパティを更新します。
         /// フォルダの場合は、先頭の動画ファイルからサムネイル画像を生成します。
         /// </summary>
         private async Task LoadThumbnailBytesAsync( VideoItem videoItem ) {
@@ -676,6 +721,20 @@ namespace VideoManager3_WinUI.Services {
                 await _databaseService.AddVideoAsync( videoItem );
                 Videos.Add( videoItem );
                 _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
+                // プレビューGIFの生成を非同期で開始
+                _ = Task.Run(async () => {
+                    string? thumbnailSourcePath = videoItem.FilePath;
+                    if ( Directory.Exists( videoItem.FilePath ) ) {
+                        thumbnailSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                                       .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+                    }
+                    if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) return;
+                    var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
+                    if (!string.IsNullOrEmpty(gifPath))
+                    {
+                        videoItem.PreviewGifPath = gifPath;
+                    }
+                });
 
                 return videoItem;
             } catch ( Exception ex ) {

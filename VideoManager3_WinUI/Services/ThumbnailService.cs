@@ -33,7 +33,7 @@ namespace VideoManager3_WinUI.Services {
                 Directory.CreateDirectory( TempCacheFolder );
             }
 
-            string thumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+            string thumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".png"));
 
             if ( File.Exists( thumbnailPath ) ) {
                 return await File.ReadAllBytesAsync( thumbnailPath );
@@ -55,7 +55,7 @@ namespace VideoManager3_WinUI.Services {
                 Directory.CreateDirectory( TempCacheFolder );
             }
 
-            string finalThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath));
+            string finalThumbnailPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".png"));
 
             // 既存のキャッシュファイルがあれば削除する
             if ( File.Exists( finalThumbnailPath ) ) {
@@ -183,15 +183,91 @@ namespace VideoManager3_WinUI.Services {
 
 
         // 動画パスからSHA256ハッシュを生成し、キャッシュキーとして使用する
-        private string GetCacheKey( string videoPath ) {
+        private string GetCacheKey( string videoPath, string extension ) {
             using ( var sha256 = SHA256.Create() ) {
                 var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(videoPath));
                 var sb = new StringBuilder();
                 foreach ( var b in hashBytes ) {
                     sb.Append( b.ToString( "x2" ) );
                 }
-                return sb.ToString() + ".png";
+                return sb.ToString() + extension;
             }
+        }
+
+        /// <summary>
+        /// プレビュー用のGIFを生成し、そのファイルパスを返す
+        /// </summary>
+        public async Task<string?> CreatePreviewGifAsync(string videoPath)
+        {
+            if (string.IsNullOrEmpty(videoPath) || !File.Exists(videoPath))
+            {
+                return null;
+            }
+
+            if (!Directory.Exists(TempCacheFolder))
+            {
+                Directory.CreateDirectory(TempCacheFolder);
+            }
+
+            string gifPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".gif"));
+
+            // 既にGIFキャッシュが存在する場合はそのパスを返す
+            if (File.Exists(gifPath))
+            {
+                return gifPath;
+            }
+
+            await _semaphore.WaitAsync();
+            try
+            {
+                var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
+                var duration = mediaInfo.Duration;
+
+                // GIFの開始時間を動画全体の45%の位置に設定
+                var startTime = TimeSpan.FromSeconds(duration.TotalSeconds * 0.45);
+
+                // GIFの仕様: 3秒間, 1秒あたり10フレーム, 幅320px
+                await FFMpegArguments
+                    .FromFileInput(videoPath)
+                    .OutputToFile(gifPath, true, options => options
+                        .WithCustomArgument("-vf \"fps=10,scale=320:-1:flags=lanczos\"")
+                        .WithDuration(TimeSpan.FromSeconds(3))
+                        .Seek(startTime))
+                    .ProcessAsynchronously();
+
+                if (File.Exists(gifPath))
+                {
+                    return gifPath;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Preview GIF generation failed for {videoPath}: {ex.Message}");
+                return null;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// 指定されたパスに対応するキャッシュ済みのプレビューGIFが存在するか確認し、パスを返します。
+        /// 既存のGIFファイルのみを返し、新規作成は行いません。
+        /// </summary>
+        public string? GetExistingPreviewGifPathIfExists( string videoPath ) {
+            if ( string.IsNullOrEmpty( videoPath ) ) {
+                return null;
+            }
+
+            if ( !Directory.Exists( TempCacheFolder ) ) {
+                return null;
+            }
+
+            string gifPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".gif"));
+
+            return File.Exists( gifPath ) ? gifPath : null;
         }
 
         /// <summary>
@@ -205,7 +281,7 @@ namespace VideoManager3_WinUI.Services {
                         return 0;
                     }
 
-                    var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p)));
+                    var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p, ".png")));
 
                     // キャッシュフォルダ内のすべてのファイルを取得
                     var cachedFiles = Directory.GetFiles(TempCacheFolder);

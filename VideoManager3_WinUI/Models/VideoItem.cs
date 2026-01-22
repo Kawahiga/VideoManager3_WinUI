@@ -186,6 +186,34 @@ namespace VideoManager3_WinUI.Models {
             }
         }
 
+        // GIFプレビュー再生中かどうかのフラグ
+        private bool _isPreviewing;
+        public bool IsPreviewing {
+            get => _isPreviewing;
+            set {
+                if ( _isPreviewing != value ) {
+                    _isPreviewing = value;
+                    OnPropertyChanged( nameof( IsPreviewing ) );
+                    OnPropertyChanged( nameof( IsStaticThumbnailVisible ) );
+                }
+            }
+        }
+
+        // IsPreviewingの逆の状態を返すプロパティ
+        public bool IsStaticThumbnailVisible => !_isPreviewing;
+
+        // プレビューGIFのファイルパス
+        private string? _previewGifPath;
+        public string? PreviewGifPath {
+            get => _previewGifPath;
+            set {
+                if ( _previewGifPath != value ) {
+                    _previewGifPath = value;
+                    OnPropertyChanged( nameof( PreviewGifPath ) );
+                }
+            }
+        }
+
         // UIスレッドから呼び出されることを前提とした、非同期でのサムネイル画像読み込みメソッド
         public async Task LoadThumbnailImageAsync() {
             // 既に画像がある、または元データがない場合は何もしない

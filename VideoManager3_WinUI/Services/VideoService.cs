@@ -83,14 +83,15 @@ namespace VideoManager3_WinUI.Services {
             }
 
             // プレビューGIFの生成を非同期で開始
-            _ = Task.Run(async () => {
-                if (string.IsNullOrEmpty(thumbnailSourcePath)) return;
+            _ = Task.Run( async () => {
+                if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) {
+                    return;
+                }
                 var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
-                if (!string.IsNullOrEmpty(gifPath))
-                {
+                if ( !string.IsNullOrEmpty( gifPath ) ) {
                     videoItem.PreviewGifPath = gifPath;
                 }
-            });
+            } );
         }
 
         /// <summary>
@@ -175,41 +176,6 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// データベースから各動画に紐づくタグ情報を非同期にロードし、VideoItemのプロパティを更新します。
-        /// </summary>
-        public async Task LoadVideoTagsAsync( ObservableCollection<TagItem> Tags ) {
-            var orderedAllTags = GetTagsInOrder(Tags);
-            var allTagsLookup = orderedAllTags.ToDictionary(t => t.Id);
-
-            foreach ( var video in Videos ) {
-                video.VideoTagItems.Clear();
-                var tagsForVideoFromDb = await _databaseService.GetTagsForVideoAsync(video);
-                var tagsForVideoIds = new HashSet<int>(tagsForVideoFromDb.Select(t => t.Id));
-
-                // orderedAllTags の順序を維持しつつ、このビデオに紐づくタグのみをフィルタリングして追加
-                foreach ( var tag in orderedAllTags ) {
-                    if ( tagsForVideoIds.Contains( tag.Id ) )
-                        video.VideoTagItems.Add( tag );
-                }
-            }
-        }
-        /// <summary>
-        /// すべてのタグをツリーの表示順でフラットなリストとして取得します。
-        /// TagTreeViewModelと同じ実装 1本化したい・・・
-        /// </summary>
-        private List<TagItem> GetTagsInOrder( ObservableCollection<TagItem> TagItems ) {
-            var orderedTags = new List<TagItem>();
-            void Traverse( IEnumerable<TagItem> tags ) {
-                foreach ( var tag in tags ) {
-                    orderedTags.Add( tag );
-                    Traverse( tag.Children );
-                }
-            }
-            Traverse( TagItems );
-            return orderedTags;
-        }
-
-        /// <summary>
         /// 選択された動画またはフォルダを削除します。
         /// ファイル/フォルダを先に削除し、成功した場合にDBとセッションデータを削除します。
         /// </summary>
@@ -263,8 +229,7 @@ namespace VideoManager3_WinUI.Services {
 
         /// <summary>
         /// 選択されたファイル（動画またはフォルダ）を開きます。
-        /// ・動画：再生を開始
-        /// ・フォルダ：フォルダ内に動画があれば先頭の動画を再生、なければフォルダを開く
+        /// 動画：再生を開始  フォルダ：フォルダ内に動画があれば先頭の動画を再生、なければフォルダを開く
         /// </summary>
         public void OpenFile( VideoItem? videoItem ) {
             if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
@@ -711,19 +676,19 @@ namespace VideoManager3_WinUI.Services {
                 Videos.Add( videoItem );
                 _ = Task.Run( () => LoadThumbnailBytesAsync( videoItem ) );
                 // プレビューGIFの生成を非同期で開始
-                _ = Task.Run(async () => {
+                _ = Task.Run( async () => {
                     string? thumbnailSourcePath = videoItem.FilePath;
                     if ( Directory.Exists( videoItem.FilePath ) ) {
                         thumbnailSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
                                                        .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
                     }
-                    if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) return;
+                    if ( string.IsNullOrEmpty( thumbnailSourcePath ) )
+                        return;
                     var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
-                    if (!string.IsNullOrEmpty(gifPath))
-                    {
+                    if ( !string.IsNullOrEmpty( gifPath ) ) {
                         videoItem.PreviewGifPath = gifPath;
                     }
-                });
+                } );
 
                 return videoItem;
             } catch ( Exception ex ) {

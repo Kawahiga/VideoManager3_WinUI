@@ -197,29 +197,24 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// プレビュー用のGIFを生成し、そのファイルパスを返す
         /// </summary>
-        public async Task<string?> CreatePreviewGifAsync(string videoPath)
-        {
-            if (string.IsNullOrEmpty(videoPath) || !File.Exists(videoPath))
-            {
+        public async Task<string?> CreatePreviewGifAsync( string videoPath ) {
+            if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
                 return null;
             }
 
-            if (!Directory.Exists(TempCacheFolder))
-            {
-                Directory.CreateDirectory(TempCacheFolder);
+            if ( !Directory.Exists( TempCacheFolder ) ) {
+                Directory.CreateDirectory( TempCacheFolder );
             }
 
             string gifPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".gif"));
 
             // 既にGIFキャッシュが存在する場合はそのパスを返す
-            if (File.Exists(gifPath))
-            {
+            if ( File.Exists( gifPath ) ) {
                 return gifPath;
             }
 
             await _semaphore.WaitAsync();
-            try
-            {
+            try {
                 var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
                 var duration = mediaInfo.Duration;
 
@@ -228,26 +223,21 @@ namespace VideoManager3_WinUI.Services {
 
                 // GIFの仕様: 3秒間, 1秒あたり10フレーム, 幅320px
                 await FFMpegArguments
-                    .FromFileInput(videoPath)
-                    .OutputToFile(gifPath, true, options => options
-                        .WithCustomArgument("-vf \"fps=10,scale=320:-1:flags=lanczos\"")
-                        .WithDuration(TimeSpan.FromSeconds(3))
-                        .Seek(startTime))
+                    .FromFileInput( videoPath )
+                    .OutputToFile( gifPath, true, options => options
+                        .WithCustomArgument( "-vf \"fps=10,scale=320:-1:flags=lanczos\"" )
+                        .WithDuration( TimeSpan.FromSeconds( 3 ) )
+                        .Seek( startTime ) )
                     .ProcessAsynchronously();
 
-                if (File.Exists(gifPath))
-                {
+                if ( File.Exists( gifPath ) ) {
                     return gifPath;
                 }
                 return null;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Preview GIF generation failed for {videoPath}: {ex.Message}");
+            } catch ( Exception ex ) {
+                System.Diagnostics.Debug.WriteLine( $"Preview GIF generation failed for {videoPath}: {ex.Message}" );
                 return null;
-            }
-            finally
-            {
+            } finally {
                 _semaphore.Release();
             }
         }

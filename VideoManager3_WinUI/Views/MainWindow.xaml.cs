@@ -657,32 +657,5 @@ namespace VideoManager3_WinUI {
                 e.Handled = true;
             }
         }
-
-        /// <summary>
-        /// サムネイルグリッドにマウスポインターが入ったときに呼び出されます。
-        /// GIFプレビュー用のファイルが存在する場合、プレビュー状態を開始します。
-        /// </summary>
-        /// <param name="sender">イベントのソース。</param>
-        /// <param name="e">イベントデータ。</param>
-        private void VideoGrid_PointerEntered( object sender, PointerRoutedEventArgs e ) {
-            if ( sender is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
-                // GIFのパスが設定されており、かつファイルが存在する場合のみプレビューを開始
-                if ( !string.IsNullOrEmpty( videoItem.PreviewGifPath ) && File.Exists( videoItem.PreviewGifPath ) ) {
-                    videoItem.IsPreviewing = true;
-                }
-            }
-        }
-
-        /// <summary>
-        /// サムネイルグリッドからマウスポインターが出たときに呼び出されます。
-        /// プレビュー状態を終了します。
-        /// </summary>
-        /// <param name="sender">イベントのソース。</param>
-        /// <param name="e">イベントデータ。</param>
-        private void VideoGrid_PointerExited( object sender, PointerRoutedEventArgs e ) {
-            if ( sender is FrameworkElement element && element.DataContext is VideoItem videoItem ) {
-                videoItem.IsPreviewing = false;
-            }
-        }
     }
 }

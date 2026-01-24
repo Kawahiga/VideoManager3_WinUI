@@ -56,17 +56,28 @@ namespace VideoManager3_WinUI.ViewModels {
             get => _selectedItem;
             set {
                 if ( _selectedItem != value ) {
-                    if ( _selectedItem != null )
+                    if ( _selectedItem != null ) {
+                        _selectedItem.IsPreviewing = false;
                         _selectedItem.PropertyChanged -= SelectedItem_PropertyChanged;
+                    }
 
                     _selectedItem = value;
                     OnPropertyChanged( nameof( SelectedItem ) );
+
+                    // コマンドの実行可否を更新
                     DoubleTappedCommand.NotifyCanExecuteChanged();
                     DeleteFileCommand.NotifyCanExecuteChanged();
                     RecreateThumbnailCommand.NotifyCanExecuteChanged();
 
                     if ( _selectedItem != null ) {
                         _selectedItem.PropertyChanged += SelectedItem_PropertyChanged;
+                        // GIFアニメーションをプレビュー開始
+                        if ( !string.IsNullOrEmpty( _selectedItem.PreviewGifPath ) && File.Exists( _selectedItem.PreviewGifPath ) ) {
+                            var fileInfo = new FileInfo( _selectedItem.PreviewGifPath );
+                            if ( fileInfo.Length > 0 ) {
+                                _selectedItem.IsPreviewing = true;
+                            }
+                        }
                         // 選択ファイルの位置までスクロール
                         ScrollToItemRequested?.Invoke( _selectedItem );
                     }
@@ -548,7 +559,7 @@ namespace VideoManager3_WinUI.ViewModels {
                 // キャンセル
                 return;
             }
-            
+
             // 削除前のインデックスを保持
             var previousIndex = FilteredVideos.IndexOf(SelectedItem);
 
@@ -567,7 +578,6 @@ namespace VideoManager3_WinUI.ViewModels {
             } else {
                 SelectedItem = null;
             }
-        }
         }
 
         /// <summary>

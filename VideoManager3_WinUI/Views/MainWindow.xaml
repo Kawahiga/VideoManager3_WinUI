@@ -252,9 +252,7 @@
                                     Margin="5"
                                     Padding="5"
                                     Background="{ThemeResource SystemControlPageBackgroundChromeLowBrush}"
-                                    PointerPressed="VideoGrid_PointerPressed"
-                                    PointerEntered="VideoGrid_PointerEntered"
-                                    PointerExited="VideoGrid_PointerExited">
+                                    PointerPressed="VideoGrid_PointerPressed">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                         <RowDefinition Height="Auto"/>
@@ -278,11 +276,6 @@
                                         </Image.Source>
                                     </Image>
                                     <!-- GIFプレビュー -->
-                                    <!-- ui:ImageEx 
-                                        Source="{Binding PreviewGifPath}"
-                                        Source="C:\Users\kawahigashi\AppData\Local\Packages\c262e66b-9f42-492e-b1a2-4ab4e846c855_yee5g11jw9r6r\LocalCache\Thumbnails\6c609b8a0e03cc5b8aa376bc3222c564689122c0894a16a49a8742cedfb6293e.gif"
-                                        Source="C:\\Users\\kawahigashi\\AppData\\Local\\Packages\\c262e66b-9f42-492e-b1a2-4ab4e846c855_yee5g11jw9r6r\\LocalCache\\Thumbnails\\6c609b8a0e03cc5b8aa376bc3222c564689122c0894a16a49a8742cedfb6293e.gif"
-                                    -->
                                     <Image
                                         Grid.Row="0" Stretch="UniformToFill"
                                         Source="{Binding PreviewGifPath}"

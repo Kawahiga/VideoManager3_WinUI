@@ -49,19 +49,6 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
-        /// リンク切れのサムネイルファイルを削除します。
-        /// </summary>
-        public async Task<int> DeleteOrphanedThumbnailsAsync() {
-            try {
-                var allVideoPaths = Videos.Select(v => v.FilePath).OfType<string>();
-                return await _thumbnailService.DeleteOrphanedThumbnailsAsync( allVideoPaths );
-            } catch ( Exception ex ) {
-                Debug.WriteLine( $"Error during thumbnail cleanup: {ex.Message}" );
-                return 0;
-            }
-        }
-
-        /// <summary>
         /// 指定されたビデオのサムネイルを強制的に再作成し、UIを更新します。
         /// </summary>
         public async Task CreateThumbnailAsync( VideoItem videoItem ) {
@@ -742,6 +729,19 @@ namespace VideoManager3_WinUI.Services {
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"Error adding item from path: {path}. Error: {ex.Message}" );
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// リンク切れのサムネイルファイルを削除します。
+        /// </summary>
+        public async Task<int> DeleteOrphanedThumbnailsAsync() {
+            try {
+                var allVideoPaths = Videos.Select(v => v.FilePath).OfType<string>();
+                return await _thumbnailService.DeleteOrphanedThumbnailsAsync( allVideoPaths );
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"Error during thumbnail cleanup: {ex.Message}" );
+                return 0;
             }
         }
     }

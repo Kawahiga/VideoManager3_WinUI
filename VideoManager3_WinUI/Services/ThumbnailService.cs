@@ -272,13 +272,14 @@ namespace VideoManager3_WinUI.Services {
                     }
 
                     var validCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p, ".png")));
+                    var validGifCacheKeys = new HashSet<string>(videoPaths.Select(p => GetCacheKey(p, ".gif")));
 
                     // キャッシュフォルダ内のすべてのファイルを取得
                     var cachedFiles = Directory.GetFiles(TempCacheFolder);
 
                     foreach ( var file in cachedFiles ) {
                         var fileName = Path.GetFileName(file);
-                        if ( !validCacheKeys.Contains( fileName ) ) {
+                        if ( !validCacheKeys.Contains( fileName ) && !validGifCacheKeys.Contains(fileName) ) {
                             try {
                                 File.Delete( file );
                                 deleteCount++;

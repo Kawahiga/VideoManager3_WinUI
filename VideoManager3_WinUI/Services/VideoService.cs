@@ -364,11 +364,11 @@ namespace VideoManager3_WinUI.Services {
                 }
 
                 // 2. 拡張子とアーティスト名を除いた名前が一致するか
-                if ( !string.IsNullOrEmpty( fileNameWithoutArtistsToCheck ) &&
-                     !string.IsNullOrEmpty( dbItemNameWithoutArtists ) &&
-                     string.Equals( dbItemNameWithoutArtists, fileNameWithoutArtistsToCheck, StringComparison.OrdinalIgnoreCase ) ) {
-                    return true;
-                }
+                //if ( !string.IsNullOrEmpty( fileNameWithoutArtistsToCheck ) &&
+                //     !string.IsNullOrEmpty( dbItemNameWithoutArtists ) &&
+                //     string.Equals( dbItemNameWithoutArtists, fileNameWithoutArtistsToCheck, StringComparison.OrdinalIgnoreCase ) ) {
+                //    return true;
+                //}
 
                 return false;
             } );

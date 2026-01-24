@@ -526,11 +526,18 @@ namespace VideoManager3_WinUI {
             _settingService.SaveSettings( settings );
         }
 
+        private bool _isEditingFileName = false;
+        private VideoItem _oldSelectedItem = new VideoItem();
+
         // ファイル名テキストボックスのイベントハンドラー
         // テキストボックスがフォーカスを得たときに元のファイル名を表示する
         private void FileNameTextBox_GotFocus( object sender, RoutedEventArgs e ) {
             if ( ViewModel.SelectedItem is VideoItem selectedItem && sender is TextBox textBox ) {
-                textBox.Text = selectedItem.FileName;
+                if ( _isEditingFileName == false ) {
+                    textBox.Text = selectedItem.FileName;
+                    _oldSelectedItem = selectedItem;
+                    _isEditingFileName = true;
+                }
             }
         }
 
@@ -548,10 +555,11 @@ namespace VideoManager3_WinUI {
                 return;
             }
 
-            if ( selectedItem.FileName != textBox.Text ) {
-                await ViewModel.RenameFileAsync( selectedItem, textBox.Text );
+            if ( _oldSelectedItem.FileName != textBox.Text && _oldSelectedItem == selectedItem ) {
+                await ViewModel.RenameFileAsync( _oldSelectedItem, textBox.Text );
             }
             textBox.Text = selectedItem.FileNameWithoutArtists;
+            _isEditingFileName = false;
         }
 
         // ファイル名編集テキストボックスのキーイベントハンドラー
@@ -564,6 +572,7 @@ namespace VideoManager3_WinUI {
                 if ( sender is TextBox textBox && ViewModel.SelectedItem is VideoItem selectedItem ) {
                     textBox.Text = selectedItem.FileName;
                 }
+                _isEditingFileName = false;
                 // フォーカスを選択中アイテムに戻す
                 FocusSelectedItem();
             }

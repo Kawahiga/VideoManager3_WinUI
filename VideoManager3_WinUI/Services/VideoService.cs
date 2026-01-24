@@ -118,7 +118,7 @@ namespace VideoManager3_WinUI.Services {
                 // サムネイルのbyte[]の読み込みをバックグラウンドで実行
                 _ = Task.Run( () => LoadThumbnailBytesAsync( video ) );
                 // プレビューGIFのパスを読み込み
-                _ = Task.Run( async () => await LoadPreviewGifPathAsync( video ) );
+                _ = Task.Run( () => LoadPreviewGifPathAsync( video ) );
             }
         }
 
@@ -258,6 +258,8 @@ namespace VideoManager3_WinUI.Services {
                     tag.TagVideoItem.Remove( videoItem );
                 }
                 foreach ( var artist in videoItem.ArtistsInVideo ) {
+                    artist.LikeCount = Math.Max( 0, artist.LikeCount - 1 ); // いいね数を1減らす
+                    await _databaseService.AddOrUpdateArtistAsync( artist );
                     artist.VideosInArtist.Remove( videoItem );
                 }
                 Videos.Remove( videoItem );

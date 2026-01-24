@@ -544,26 +544,30 @@ namespace VideoManager3_WinUI.ViewModels {
                 "削除",
                 "キャンセル");
 
-            if ( confirmed ) {
-                // 削除前のインデックスを保持
-                var previousIndex = FilteredVideos.IndexOf(SelectedItem);
-
-                bool success = await _videoService.DeleteVideoAsync(SelectedItem);
-                if ( !success ) {
-                    await UIManager.ShowMessageDialogAsync( "削除エラー", "ファイルの削除に失敗しました。ファイルが他のプログラムで使用されていないか、アクセス許可があるか確認してください。" );
-                    return;
-                }
-                ApplyFilters();
-
-                // 削除後にフォーカスを当てる
-                if ( FilteredVideos.Any() ) {
-                    // インデックスがリストの範囲内に収まるように調整
-                    var newIndex = Math.Max(0, Math.Min(previousIndex, FilteredVideos.Count - 1));
-                    SelectedItem = FilteredVideos[newIndex];
-                } else {
-                    SelectedItem = null;
-                }
+            if ( !confirmed ) {
+                // キャンセル
+                return;
             }
+            
+            // 削除前のインデックスを保持
+            var previousIndex = FilteredVideos.IndexOf(SelectedItem);
+
+            bool success = await _videoService.DeleteVideoAsync(SelectedItem);
+            if ( !success ) {
+                await UIManager.ShowMessageDialogAsync( "削除エラー", "ファイルの削除に失敗しました。ファイルが他のプログラムで使用されていないか、アクセス許可があるか確認してください。" );
+                return;
+            }
+            ApplyFilters();
+
+            // 削除後にフォーカスを当てる
+            if ( FilteredVideos.Any() ) {
+                // インデックスがリストの範囲内に収まるように調整
+                var newIndex = Math.Max(0, Math.Min(previousIndex, FilteredVideos.Count - 1));
+                SelectedItem = FilteredVideos[newIndex];
+            } else {
+                SelectedItem = null;
+            }
+        }
         }
 
         /// <summary>

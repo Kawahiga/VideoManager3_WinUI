@@ -26,12 +26,13 @@ namespace VideoManager3_WinUI {
         private SettingService _settingService;
         private AppWindow _appWindow;
 
+        public string ApplicationTitle ="動画管理くん";
+
         // コンテキストメニューが開いているかを追跡するフラグ
         private bool _isFileNameContextFlyoutOpen = false;
 
         public MainWindow() {
             this.InitializeComponent();
-            this.Title = "動画管理くん";
 
             // ViewModelの初期化とデータコンテキストの設定
             ViewModel = new MainViewModel();

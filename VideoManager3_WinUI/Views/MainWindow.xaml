@@ -9,7 +9,9 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:ui="using:CommunityToolkit.WinUI.UI.Controls"
     mc:Ignorable="d"
+    Title="{x:Bind ApplicationTitle}"
     Closed="Window_Closed">
+
 
     <!-- ウィンドウ全体のレイアウトを定義するGrid -->
     <Grid x:Name="RootGrid" AllowDrop="True" Tapped="RootGrid_Tapped" KeyDown="RootGrid_KeyDown">

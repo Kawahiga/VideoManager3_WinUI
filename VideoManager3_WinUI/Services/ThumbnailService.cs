@@ -17,6 +17,11 @@ namespace VideoManager3_WinUI.Services {
         private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(4); // 同時実行数を4に制限
         private static readonly Random _random = new Random();
         private const int NumberOfCandidates = 5; // 生成するサムネイル候補の数
+        
+        // GIFの仕様: 3秒間, 10fps, 幅320px
+        private static readonly int _gifDurationSeconds = 3; // GIFの再生時間
+        private static readonly int _gifFps = 10;   // GIFのフレームレート
+        private static readonly int _thamSize = 640; // サムネイルの幅（png,gif共通）
 
         // サムネイルをキャッシュするパス
         private readonly string TempCacheFolder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "Thumbnails");
@@ -108,7 +113,7 @@ namespace VideoManager3_WinUI.Services {
                         .Seek( captureTime ) ) // ここもInput Seekにして高速化
                         .OutputToFile( candidatePath, true, options => options
                         .WithCustomArgument( "-vframes 1" )
-                        .WithCustomArgument( "-vf scale=640:-1:flags=bilinear" ) ) // 640pxにリサイズ
+                        .WithCustomArgument( "-vf scale=" + _thamSize + ":-1:flags=bilinear" ) )
                         .ProcessAsynchronously();
 
                     if ( File.Exists( candidatePath ) ) {
@@ -224,16 +229,12 @@ namespace VideoManager3_WinUI.Services {
                 var duration = mediaInfo.Duration;
                 var startTime = TimeSpan.FromSeconds(duration.TotalSeconds * 0.45);
 
-                // GIFの仕様: 3秒間, 10fps, 幅320px
-                // 修正点1: Input Seekingに変更 (.Seek を FromFileInput に移動)
-                // 修正点2: スケーリングを lanczos から neighbor または bilinear に変更して高速化
-
                 await FFMpegArguments
                     .FromFileInput( videoPath, true, options => options
                         .Seek( startTime ) ) // ← 入力側でシークすることで、一瞬でジャンプします
                     .OutputToFile( gifPath, true, options => options
-                        .WithCustomArgument( "-vf \"fps=10,scale=320:-1:flags=bilinear\"" ) // bilinearに変更
-                        .WithDuration( TimeSpan.FromSeconds( 3 ) ) )
+                        .WithCustomArgument( "-vf \"fps=" + _gifFps + ",scale=" + _thamSize + ":-1:flags=bilinear\"" ) // bilinearに変更
+                        .WithDuration( TimeSpan.FromSeconds( _gifDurationSeconds ) ) )
                     .ProcessAsynchronously();
 
                 if ( File.Exists( gifPath ) ) {

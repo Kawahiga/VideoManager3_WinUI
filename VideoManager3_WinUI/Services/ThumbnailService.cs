@@ -103,7 +103,13 @@ namespace VideoManager3_WinUI.Services {
                     var captureTime = TimeSpan.FromSeconds(duration.TotalSeconds * randomPoint);
 
                     string candidatePath = Path.Combine(tempFolderForCandidates, $"{i}.png");
-                    await FFMpeg.SnapshotAsync( videoPath, candidatePath, captureTime: captureTime );
+                    await FFMpegArguments
+                        .FromFileInput( videoPath, true, options => options
+                        .Seek( captureTime ) ) // ここもInput Seekにして高速化
+                        .OutputToFile( candidatePath, true, options => options
+                        .WithCustomArgument( "-vframes 1" )
+                        .WithCustomArgument( "-vf scale=640:-1:flags=bilinear" ) ) // 640pxにリサイズ
+                        .ProcessAsynchronously();
 
                     if ( File.Exists( candidatePath ) ) {
                         candidatePaths.Add( candidatePath );
@@ -148,24 +154,23 @@ namespace VideoManager3_WinUI.Services {
                 var colors = new HashSet<Rgba32>();
 
                 image.ProcessPixelRows( accessor => {
-                    for ( int y = 0; y < accessor.Height; y++ ) {
+                    for ( int y = 0; y < accessor.Height; y += 10 ) { // y++ を y += 10 に変更（行を間引く）
                         var row = accessor.GetRowSpan(y);
-                        for ( int x = 0; x < row.Length; x++ ) {
+                        for ( int x = 0; x < row.Length; x += 10 ) { // x++ を x += 10 に変更（列を間引く）
                             var pixel = row[x];
-                            // 輝度計算にNTSC方式の係数を使用
+
+                            // 輝度計算 (処理回数が1/100になるため高速)
                             double luminance = 0.299 * pixel.R + 0.587 * pixel.G + 0.114 * pixel.B;
                             totalLuminance += luminance;
                             luminances.Add( luminance );
 
-                            // 色の多様性のためにピクセルをサンプリングする
-                            if ( (x % 10 == 0) && (y % 10 == 0) ) {
-                                colors.Add( pixel );
-                            }
+                            // 色のサンプリング（条件分岐なしで常に追加できる）
+                            colors.Add( pixel );
                         }
                     }
                 } );
 
-                double avgLuminance = totalLuminance / (image.Width * image.Height);
+                double avgLuminance = totalLuminance / luminances.Count;
                 double stdDev = Math.Sqrt(luminances.Average(l => Math.Pow(l - avgLuminance, 2)));
 
                 // 値を0-1のスケールに正規化する
@@ -280,7 +285,7 @@ namespace VideoManager3_WinUI.Services {
 
                     foreach ( var file in cachedFiles ) {
                         var fileName = Path.GetFileName(file);
-                        if ( !validCacheKeys.Contains( fileName ) && !validGifCacheKeys.Contains(fileName) ) {
+                        if ( !validCacheKeys.Contains( fileName ) && !validGifCacheKeys.Contains( fileName ) ) {
                             try {
                                 File.Delete( file );
                                 deleteCount++;

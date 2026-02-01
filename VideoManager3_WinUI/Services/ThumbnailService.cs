@@ -217,17 +217,18 @@ namespace VideoManager3_WinUI.Services {
             try {
                 var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
                 var duration = mediaInfo.Duration;
-
-                // GIFの開始時間を動画全体の45%の位置に設定
                 var startTime = TimeSpan.FromSeconds(duration.TotalSeconds * 0.45);
 
-                // GIFの仕様: 3秒間, 1秒あたり10フレーム, 幅320px
+                // GIFの仕様: 3秒間, 10fps, 幅320px
+                // 修正点1: Input Seekingに変更 (.Seek を FromFileInput に移動)
+                // 修正点2: スケーリングを lanczos から neighbor または bilinear に変更して高速化
+
                 await FFMpegArguments
-                    .FromFileInput( videoPath )
+                    .FromFileInput( videoPath, true, options => options
+                        .Seek( startTime ) ) // ← 入力側でシークすることで、一瞬でジャンプします
                     .OutputToFile( gifPath, true, options => options
-                        .WithCustomArgument( "-vf \"fps=10,scale=320:-1:flags=lanczos\"" )
-                        .WithDuration( TimeSpan.FromSeconds( 3 ) )
-                        .Seek( startTime ) )
+                        .WithCustomArgument( "-vf \"fps=10,scale=320:-1:flags=bilinear\"" ) // bilinearに変更
+                        .WithDuration( TimeSpan.FromSeconds( 3 ) ) )
                     .ProcessAsynchronously();
 
                 if ( File.Exists( gifPath ) ) {

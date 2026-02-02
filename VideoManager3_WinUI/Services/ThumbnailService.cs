@@ -15,7 +15,6 @@ using Windows.Storage;
 namespace VideoManager3_WinUI.Services {
     public class ThumbnailService {
         private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(4); // 同時実行数を4に制限
-        private static readonly Random _random = new Random();
         private const int NumberOfCandidates = 5; // 生成するサムネイル候補の数
         
         // GIFの仕様: 3秒間, 10fps, 幅320px
@@ -104,7 +103,7 @@ namespace VideoManager3_WinUI.Services {
                 // 候補を生成
                 for ( int i = 0; i < NumberOfCandidates; i++ ) {
                     // 動画の10%から90%の間でランダムな時間を指定
-                    double randomPoint = _random.NextDouble() * 0.8 + 0.1;
+                    double randomPoint = Random.Shared.NextDouble() * 0.8 + 0.1;
                     var captureTime = TimeSpan.FromSeconds(duration.TotalSeconds * randomPoint);
 
                     string candidatePath = Path.Combine(tempFolderForCandidates, $"{i}.png");
@@ -122,8 +121,9 @@ namespace VideoManager3_WinUI.Services {
                 }
 
                 if ( candidatePaths.Count == 0 ) {
-                    // 候補が一つも生成されなかった場合、古い方法にフォールバックする
-                    await FFMpeg.SnapshotAsync( videoPath, finalThumbnailPath, captureTime: TimeSpan.FromSeconds( 5 ) );
+                    // 候補が一つも生成されなかった場合、動画全体の中央からスナップショットを取得する
+                    var fallbackTime = duration.TotalSeconds > 5 ? TimeSpan.FromSeconds(5) : TimeSpan.FromSeconds(duration.TotalSeconds / 2);
+                    await FFMpeg.SnapshotAsync( videoPath, finalThumbnailPath, captureTime: fallbackTime );
                     return;
                 }
 
@@ -138,7 +138,7 @@ namespace VideoManager3_WinUI.Services {
 
                 // 最適な候補を最終的な保存先にコピーする
                 if ( bestCandidate.Path != null ) {
-                    File.Copy( bestCandidate.Path, finalThumbnailPath, true );
+                    File.Move( bestCandidate.Path, finalThumbnailPath, true );
                 }
             } finally {
                 // 一時的な候補ファイルとフォルダをクリーンアップする

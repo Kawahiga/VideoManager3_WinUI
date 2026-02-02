@@ -76,22 +76,22 @@ namespace VideoManager3_WinUI.Services {
             // ThumbnailService を呼び出してサムネイルを再生成
             var imageBytes = await _thumbnailService.CreateThumbnailAsync(thumbnailSourcePath);
 
-            if ( imageBytes != null && imageBytes.Length > 0 ) {
-                videoItem.Thumbnail = imageBytes;
-                // UIで表示されている画像を更新するためにリロード処理を呼び出す
-                await videoItem.ReloadThumbnailImageAsync();
-            }
-
             // プレビューGIFの生成を非同期で開始
             _ = Task.Run( async () => {
                 if ( string.IsNullOrEmpty( thumbnailSourcePath ) ) {
                     return;
                 }
-                var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
+                var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath,true);
                 if ( !string.IsNullOrEmpty( gifPath ) ) {
                     videoItem.PreviewGifPath = gifPath;
                 }
             } );
+            
+            if ( imageBytes != null && imageBytes.Length > 0 ) {
+                videoItem.Thumbnail = imageBytes;
+                // UIで表示されている画像を更新するためにリロード処理を呼び出す
+                await videoItem.ReloadThumbnailImageAsync();
+            }
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace VideoManager3_WinUI.Services {
             if ( string.IsNullOrEmpty( gifSourcePath ) ) {
                 return; // GIFのソースが見つからない場合は処理を終了
             }
-            var gifPath = await _thumbnailService.CreatePreviewGifAsync(gifSourcePath);
+            var gifPath = await _thumbnailService.CreatePreviewGifAsync(gifSourcePath,true);
             if ( !string.IsNullOrEmpty( gifPath ) ) {
                 videoItem.PreviewGifPath = gifPath;
             }
@@ -711,7 +711,7 @@ namespace VideoManager3_WinUI.Services {
                     }
                     if ( string.IsNullOrEmpty( thumbnailSourcePath ) )
                         return;
-                    var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath);
+                    var gifPath = await _thumbnailService.CreatePreviewGifAsync(thumbnailSourcePath,true);
                     if ( !string.IsNullOrEmpty( gifPath ) ) {
                         videoItem.PreviewGifPath = gifPath;
                     }

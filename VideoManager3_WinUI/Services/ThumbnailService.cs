@@ -207,7 +207,7 @@ namespace VideoManager3_WinUI.Services {
         /// <summary>
         /// プレビュー用のGIFを生成し、そのファイルパスを返す
         /// </summary>
-        public async Task<string?> CreatePreviewGifAsync( string videoPath ) {
+        public async Task<string?> CreatePreviewGifAsync( string videoPath, bool recreate ) {
             if ( string.IsNullOrEmpty( videoPath ) || !File.Exists( videoPath ) ) {
                 return null;
             }
@@ -218,9 +218,17 @@ namespace VideoManager3_WinUI.Services {
 
             string gifPath = Path.Combine(TempCacheFolder, GetCacheKey(videoPath, ".gif"));
 
-            // 既にGIFキャッシュが存在する場合はそのパスを返す
-            if ( File.Exists( gifPath ) ) {
-                return gifPath;
+            if ( recreate ) {
+                if ( File.Exists( gifPath ) ) {
+                    // 強制的に再作成するために元ファイルを消す
+                    File.Delete( gifPath );
+                }
+                
+            } else {
+                if ( File.Exists( gifPath ) ) {
+                    // 既にGIFキャッシュが存在する場合はそのパスを返す
+                    return gifPath;
+                }
             }
 
             await _semaphore.WaitAsync();

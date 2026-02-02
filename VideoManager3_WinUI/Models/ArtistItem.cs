@@ -47,9 +47,9 @@ namespace VideoManager3_WinUI.Models {
             get => _isFavorite;
             set {
                 _isFavorite = value;
-                if ( _isFavorite == false )
+                if ( _isFavorite == false ) {
                     ArtistColor = new SolidColorBrush( Colors.DarkSlateGray );
-                else {
+                } else {
                     ArtistColor = new SolidColorBrush( Colors.Pink );
                 }
                 PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( nameof( IsFavorite ) ) );

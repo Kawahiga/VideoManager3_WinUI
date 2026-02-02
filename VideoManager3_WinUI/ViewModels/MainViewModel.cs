@@ -49,6 +49,7 @@ namespace VideoManager3_WinUI.ViewModels {
         public IAsyncRelayCommand CleanupCommand { get; private set; }
         public IRelayCommand ClearAllFiltersCommand { get; private set; }
         public IAsyncRelayCommand RecreateThumbnailCommand { get; private set; }
+        public IAsyncRelayCommand RecreateGIFCommand { get; private set; }
 
         // 選択されたファイルアイテムを保持するプロパティ
         private VideoItem? _selectedItem;
@@ -187,6 +188,7 @@ namespace VideoManager3_WinUI.ViewModels {
             CleanupCommand = new AsyncRelayCommand( ExecuteCleanupAsync );
             ClearAllFiltersCommand = new RelayCommand( ClearAllFilters );
             RecreateThumbnailCommand = new AsyncRelayCommand( RecreateThumbnailAsync, () => SelectedItem != null );
+            RecreateGIFCommand = new AsyncRelayCommand( RecreateGIFAsync, () => SelectedItem != null );
 
             // 動画とタグの初期読み込み
             _ = LoadInitialDataAsync();
@@ -593,6 +595,24 @@ namespace VideoManager3_WinUI.ViewModels {
             } catch ( Exception ex ) {
                 Debug.WriteLine( $"サムネイルの再作成に失敗しました: {ex.Message}" );
                 await UIManager.ShowMessageDialogAsync( "エラー", "サムネイルの再作成に失敗しました。" );
+            } finally {
+                IsProcessing = false;
+            }
+        }
+
+        /// <summary>
+        /// 選択されたビデオのGIFアニメーションを再作成します。
+        /// </summary>
+        private async Task RecreateGIFAsync() {
+            if ( SelectedItem == null ) {
+                return;
+            }
+            try {
+                IsProcessing = true;
+                await _videoService.CreatePreviewGifAsync( SelectedItem );
+            } catch ( Exception ex ) {
+                Debug.WriteLine( $"GIFアニメーションの再作成に失敗しました: {ex.Message}" );
+                await UIManager.ShowMessageDialogAsync( "エラー", "GIFアニメーションの再作成に失敗しました。" );
             } finally {
                 IsProcessing = false;
             }

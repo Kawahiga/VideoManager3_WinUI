@@ -227,7 +227,9 @@ namespace VideoManager3_WinUI.Services {
             try {
                 var mediaInfo = await FFProbe.AnalyseAsync(videoPath);
                 var duration = mediaInfo.Duration;
-                var startTime = TimeSpan.FromSeconds(duration.TotalSeconds * 0.45);
+                // 動画のランダムな位置から開始  10%から90%の間
+                double randomPoint = Random.Shared.NextDouble()  * 0.8 + 0.1;
+                var startTime = TimeSpan.FromSeconds(duration.TotalSeconds * randomPoint);
 
                 await FFMpegArguments
                     .FromFileInput( videoPath, true, options => options

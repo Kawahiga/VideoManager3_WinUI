@@ -176,6 +176,33 @@ namespace VideoManager3_WinUI.Services {
         }
 
         /// <summary>
+        /// 指定されたビデオのGIFサムネイルを強制的に再作成し、UIを更新します。
+        /// </summary>
+        public async Task CreatePreviewGifAsync( VideoItem videoItem ) {
+            if ( videoItem == null || string.IsNullOrEmpty( videoItem.FilePath ) )
+                return;
+            string? gifSourcePath = videoItem.FilePath;
+            // パスがディレクトリかどうかを確認
+            if ( Directory.Exists( videoItem.FilePath ) ) {
+                try {
+                    // サポートされている拡張子を持つ最初のファイルを検索
+                    gifSourcePath = Directory.EnumerateFiles( videoItem.FilePath, "*.*", SearchOption.TopDirectoryOnly )
+                                                   .FirstOrDefault( f => SupportedVideoExtensions.Contains( Path.GetExtension( f ).ToLowerInvariant() ) );
+                } catch ( Exception ex ) {
+                    Debug.WriteLine( $"Error searching for video file in directory {videoItem.FilePath}: {ex.Message}" );
+                    gifSourcePath = null; // エラーが発生した場合はGIF生成を中止
+                }
+            }
+            if ( string.IsNullOrEmpty( gifSourcePath ) ) {
+                return; // GIFのソースが見つからない場合は処理を終了
+            }
+            var gifPath = await _thumbnailService.CreatePreviewGifAsync(gifSourcePath);
+            if ( !string.IsNullOrEmpty( gifPath ) ) {
+                videoItem.PreviewGifPath = gifPath;
+            }
+        }
+
+        /// <summary>
         /// 選択された動画またはフォルダを削除します。
         /// ファイル/フォルダを先に削除し、成功した場合にDBとセッションデータを削除します。
         /// </summary>
